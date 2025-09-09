@@ -30,6 +30,8 @@ export const Primary: Story = {
   args: {
     primary: true,
     label: 'Button',
+    backgroundColor: "#6d7bf9",
+    size: "small"
   },
 };
 

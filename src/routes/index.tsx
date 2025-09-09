@@ -15,6 +15,7 @@ export default function LandingPage() {
                 label="Enter Lobby"
                 primary
                 size="large"
+                backgroundColor="#f02121"
                 onClick={() => navigate({ to: '/lobby' })}
             />
         </div>
