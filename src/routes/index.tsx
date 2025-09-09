@@ -1,13 +1,22 @@
 import { createFileRoute } from '@tanstack/react-router'
+import { Button } from '../presentation/components/Button'
+import { useNavigate } from '@tanstack/react-router'
 
 export const Route = createFileRoute('/')({
-    component: Index,
+    component: LandingPage,
 })
+export default function LandingPage() {
+    const navigate = useNavigate()
 
-function Index() {
     return (
-        <div className="p-2">
-            <h3>Welcome Home!</h3>
+        <div className="page">
+            <h1>Welcome to the Game!</h1>
+            <Button
+                label="Enter Lobby"
+                primary
+                size="large"
+                onClick={() => navigate({ to: '/lobby' })}
+            />
         </div>
     )
 }
