@@ -4,6 +4,9 @@ import "../src/app.css";
 
 const preview: Preview = {
   parameters: {
+      pseudo:{
+        hover: true,
+      },
     controls: {
       matchers: {
        color: /(background|color)$/i,

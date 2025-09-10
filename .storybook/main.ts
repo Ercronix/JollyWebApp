@@ -1,6 +1,6 @@
 import type { StorybookConfig } from '@storybook/react-vite';
 import tsconfigPaths from 'vite-tsconfig-paths';
-import * as  path from "path";
+import * as path from 'path';
 
 const config: StorybookConfig = {
   stories: [
@@ -12,7 +12,8 @@ const config: StorybookConfig = {
     "@storybook/addon-docs",
     "@storybook/addon-onboarding",
     "@storybook/addon-a11y",
-    "@storybook/addon-vitest"
+    "@storybook/addon-vitest",
+    'storybook-addon-pseudo-states'
   ],
   framework: {
     name: "@storybook/react-vite",
