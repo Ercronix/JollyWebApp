@@ -36,3 +36,52 @@ export const Ghost: Story = {
         children: "Button",
     },
 };
+// 🌈 Gradient Variants
+export const PurpleToBlue: Story = {
+    args: {
+        colorscheme: "purpleToBlue",
+        children: "Purple to Blue",
+    },
+};
+
+export const CyanToBlue: Story = {
+    args: {
+        colorscheme: "cyanToBlue",
+        children: "Cyan to Blue",
+    },
+};
+
+export const GreenToBlue: Story = {
+    args: {
+        colorscheme: "greenToBlue",
+        children: "Green to Blue",
+    },
+};
+
+export const PurpleToPink: Story = {
+    args: {
+        colorscheme: "purpleToPink",
+        children: "Purple to Pink",
+    },
+};
+
+export const PinkToOrange: Story = {
+    args: {
+        colorscheme: "pinkToOrange",
+        children: "Pink to Orange",
+    },
+};
+
+export const TealToLime: Story = {
+    args: {
+        colorscheme: "tealToLime",
+        children: "Teal to Lime",
+    },
+};
+
+export const RedToYellow: Story = {
+    args: {
+        colorscheme: "redToYellow",
+        children: "Red to Yellow",
+    },
+};
