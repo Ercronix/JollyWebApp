@@ -20,7 +20,7 @@ const landingStyles = cva(
             },
         },
         defaultVariants: {
-            colorscheme: "purpleToPink",
+            colorscheme: "purpleToBlue",
         },
     }
 );

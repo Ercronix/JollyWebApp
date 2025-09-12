@@ -10,7 +10,7 @@ export function LandingPage() {
             <p className="mb-6 text-gray-700 dark:text-gray-300">
                 Join a lobby to get started!
             </p>
-            <Button onClick={() => navigate({ to: "/lobby" })} colorscheme="pinkToOrange">
+            <Button onClick={() => navigate({ to: "/lobby" })} colorscheme="purpleToBlue" variant="solid">
                 Join Lobby
             </Button>
         </>
