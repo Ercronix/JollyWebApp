@@ -27,8 +27,8 @@ export const FewLobbies: Story = {
     render: () => (
         <LobbyPage
             lobbies={[
-                { id: 1, name: "Solo Players", players: 1 },
-                { id: 2, name: "Quick Squad", players: 3 },
+                { id: 1, name: "Solo Players", playerCount: 1 },
+                { id: 2, name: "Quick Squad", playerCount: 3 },
             ]}
         />
     ),
@@ -40,7 +40,7 @@ export const ManyLobbies: Story = {
             lobbies={Array.from({ length: 20 }, (_, i) => ({
                 id: i + 1,
                 name: `Lobby ${i + 1}`,
-                players: Math.floor(Math.random() * 20),
+                playerCount: Math.floor(Math.random() * 20),
             }))}
         />
     ),
