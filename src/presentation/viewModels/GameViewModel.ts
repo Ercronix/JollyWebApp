@@ -1,8 +1,11 @@
 import React, { useState } from "react";
+import { UserModel } from "@/core/models/UserModel";
 
 export type Player = {
     id: number;
     name: string;
+    userId?: string; // Link to actual user
+    isCurrentUser: boolean; // Flag to identify the current user
     totalScore: number;
     currentRoundScore: number | null;
     hasSubmitted: boolean;
@@ -16,6 +19,7 @@ export type GameState = {
     tempScores: { [playerId: number]: string };
     allPlayersSubmitted: boolean;
     submittedCount: number;
+    currentUserId: string;
 };
 
 export type GameSearchParams = {
@@ -36,16 +40,41 @@ export class GameViewModel {
         this.setGameState = setGameState;
     }
 
-    // Initialize game with lobby data
+    // Initialize game with lobby data and current user
     static initializeGame(searchParams: GameSearchParams): GameState {
+        const userModel = UserModel.getInstance();
+        const currentUser = userModel.getCurrentUser();
+
+        if (!currentUser) {
+            throw new Error("No user logged in");
+        }
+
         const playerCount = searchParams.playerCount || 4;
-        const players = Array.from({ length: playerCount }, (_, index) => ({
-            id: index + 1,
-            name: `Player ${index + 1}`,
+        const players: Player[] = [];
+
+        // First player is always the current user
+        players.push({
+            id: 1,
+            name: currentUser.username,
+            userId: currentUser.id,
+            isCurrentUser: true,
             totalScore: 0,
             currentRoundScore: null,
             hasSubmitted: false
-        }));
+        });
+
+        // Add other players (AI/placeholder players for now)
+        for (let i = 2; i <= playerCount; i++) {
+            players.push({
+                id: i,
+                name: `Player ${i}`,
+                userId: undefined,
+                isCurrentUser: false,
+                totalScore: 0,
+                currentRoundScore: null,
+                hasSubmitted: false
+            });
+        }
 
         const allPlayersSubmitted = players.every(player => player.hasSubmitted);
         const submittedCount = players.filter(player => player.hasSubmitted).length;
@@ -57,12 +86,23 @@ export class GameViewModel {
             showReorderMode: false,
             tempScores: {},
             allPlayersSubmitted,
-            submittedCount
+            submittedCount,
+            currentUserId: currentUser.id
         };
     }
 
-// Handle score input changes
+    // Check if current user can edit this player's score
+    canEditPlayerScore = (playerId: number): boolean => {
+        const player = this.gameState.players.find(p => p.id === playerId);
+        return player?.isCurrentUser || false;
+    };
+
+    // Handle score input changes (only for current user)
     handleScoreInput = (playerId: number, value: string) => {
+        if (!this.canEditPlayerScore(playerId)) {
+            return; // Ignore input for other players
+        }
+
         this.setGameState(prev => ({
             ...prev,
             tempScores: {
@@ -72,8 +112,12 @@ export class GameViewModel {
         }));
     };
 
-    // Submit score for a player
+    // Submit score for a player (only current user can submit their own)
     handleSubmitScore = (playerId: number) => {
+        if (!this.canEditPlayerScore(playerId)) {
+            return; // Can't submit for other players
+        }
+
         const scoreValue = parseInt(this.gameState.tempScores[playerId] || '0');
         if (isNaN(scoreValue)) return;
 
@@ -213,18 +257,37 @@ export class GameViewModel {
         return this.gameState.players[this.gameState.currentDealer];
     };
 
-    // Check if player can submit score
+    // Check if player can submit score (considering user permissions)
     canSubmitScore = (playerId: number) => {
+        if (!this.canEditPlayerScore(playerId)) {
+            return false;
+        }
         const tempScore = this.gameState.tempScores[playerId];
         return tempScore && tempScore.trim() !== '';
+    };
+
+    // Get current user's player
+    getCurrentUserPlayer = () => {
+        return this.gameState.players.find(player => player.isCurrentUser);
+    };
+
+    // Check if current user has submitted their score
+    hasCurrentUserSubmitted = () => {
+        const currentUserPlayer = this.getCurrentUserPlayer();
+        return currentUserPlayer?.hasSubmitted || false;
     };
 }
 
 // Custom hook for Game ViewModel
 export function useGameViewModel(searchParams: GameSearchParams) {
-    const [gameState, setGameState] = useState<GameState>(() =>
-        GameViewModel.initializeGame(searchParams)
-    );
+    const [gameState, setGameState] = useState<GameState>(() => {
+        try {
+            return GameViewModel.initializeGame(searchParams);
+        } catch (error) {
+            // If no user is logged in, redirect would be handled by the route component
+            throw error;
+        }
+    });
 
     const viewModel = new GameViewModel(gameState, setGameState);
 

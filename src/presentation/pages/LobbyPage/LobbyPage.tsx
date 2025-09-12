@@ -1,8 +1,10 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { Button } from "@/presentation/components/Button";
 import { Input } from "@/presentation/components/input";
 import { Text } from "@/presentation/components/Text";
+import { useNavigate } from "@tanstack/react-router";
 import { useLobbyViewModel } from "@/presentation/viewModels/LobbyViewModel";
+import { UserModel } from "@/core/models/UserModel";
 import type { Lobby } from "@/presentation/viewModels/LobbyViewModel";
 
 type LobbyPageProps = {
@@ -10,12 +12,34 @@ type LobbyPageProps = {
 };
 
 export function LobbyPage({ lobbies: initialLobbies }: LobbyPageProps) {
+    const navigate = useNavigate();
     const { lobbies, lobbyName, setLobbyName, joinLobby, createLobby, refreshLobbies } =
         useLobbyViewModel(initialLobbies);
 
+    // Check if user is logged in and get user info
+    useEffect(() => {
+        const userModel = UserModel.getInstance();
+        if (!userModel.isLoggedIn()) {
+            navigate({ to: "/" });
+            return;
+        }
+    }, [navigate]);
+
+    const userModel = UserModel.getInstance();
+    const currentUser = userModel.getCurrentUser();
+
+    const handleLogout = () => {
+        userModel.clearUser();
+        navigate({ to: "/" });
+    };
+
+    if (!currentUser) {
+        return null; // This shouldn't happen due to useEffect redirect, but just in case
+    }
+
     return (
         <div className="flex flex-col items-center gap-12 py-8">
-            {/* Header */}
+            {/* Header with User Info */}
             <div className="text-center space-y-6 animate-in fade-in duration-1000">
                 <div className="relative">
                     <Text
@@ -28,9 +52,16 @@ export function LobbyPage({ lobbies: initialLobbies }: LobbyPageProps) {
                     </Text>
                     <div className="absolute inset-0 bg-gradient-to-r from-purple-300 via-pink-300 to-blue-300 opacity-20 blur-xl"></div>
                 </div>
-                <Text size="lg" className="text-gray-300 animate-in slide-in-from-bottom-4 duration-1000 delay-300">
-                    Join a lobby or create one
-                </Text>
+
+                <div className="space-y-2">
+                    <Text size="lg" className="text-gray-300 animate-in slide-in-from-bottom-4 duration-1000 delay-300">
+                        Welcome,  <span className="text-purple-300 font-semibold">{currentUser.username}</span>!
+                    </Text>
+                    <div className="space-y-2"></div>
+                    <Text size="lg" className="text-gray-400">
+                        Join a lobby or create one to start
+                    </Text>
+                </div>
 
                 <div className="flex justify-center gap-8 mt-8">
                     <div className="text-center group">
@@ -40,6 +71,19 @@ export function LobbyPage({ lobbies: initialLobbies }: LobbyPageProps) {
                         <div className="text-sm text-gray-400">Active Lobbies</div>
                     </div>
                 </div>
+            </div>
+
+            {/* User Controls */}
+            <div className="flex gap-4 items-center">
+                <Button
+                    colorscheme="pinkToOrange"
+                    variant="ghost"
+                    size="sm"
+                    onClick={handleLogout}
+                    className="hover:scale-110 transition-transform"
+                >
+                    🚪 Switch User
+                </Button>
             </div>
 
             {/* Lobby List */}
@@ -60,7 +104,7 @@ export function LobbyPage({ lobbies: initialLobbies }: LobbyPageProps) {
                                 key={lobby.id}
                                 className={`group relative overflow-hidden rounded-2xl bg-white/10 backdrop-blur-xl border border-white/20 p-6 shadow-lg hover:shadow-2xl hover:shadow-purple-500/25 transition-all duration-500 hover:-translate-y-2 hover:scale-105 cursor-pointer animate-in slide-in-from-bottom-8 duration-700`}
                                 style={{
-                                    animationDelay: `${index * 150}ms`, // uses `index` so no unused var error
+                                    animationDelay: `${index * 150}ms`,
                                 }}
                             >
                                 <div className="absolute inset-0 bg-gradient-to-r from-purple-500/50 via-pink-500/50 to-blue-500/50 opacity-0 group-hover:opacity-100 transition-opacity duration-500 rounded-2xl blur-sm"></div>
@@ -83,7 +127,7 @@ export function LobbyPage({ lobbies: initialLobbies }: LobbyPageProps) {
                                             className="w-full group-hover:scale-105 transition-transform duration-300"
                                             onClick={() => joinLobby(lobby)}
                                         >
-                                            Join Lobby
+                                            Join as {currentUser.username}
                                         </Button>
                                     </div>
                                 </div>
@@ -104,6 +148,9 @@ export function LobbyPage({ lobbies: initialLobbies }: LobbyPageProps) {
                                 Create a Lobby
                             </Text>
                             <div className="w-24 h-1 bg-gradient-to-r from-green-400 to-blue-400 mx-auto rounded-full"></div>
+                            <Text size="sm" className="text-purple-300">
+                                You'll be the host as <span className="font-semibold">{currentUser.username}</span>
+                            </Text>
                         </div>
 
                         <div className="space-y-4">
