@@ -281,6 +281,7 @@ export class GameViewModel {
 // Custom hook for Game ViewModel
 export function useGameViewModel(searchParams: GameSearchParams) {
     const [gameState, setGameState] = useState<GameState>(() => {
+        // eslint-disable-next-line no-useless-catch
         try {
             return GameViewModel.initializeGame(searchParams);
         } catch (error) {

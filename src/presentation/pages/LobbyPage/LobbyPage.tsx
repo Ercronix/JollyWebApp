@@ -1,10 +1,9 @@
-import React, { useEffect } from "react";
+// LobbyPage.tsx
+import React from "react";
 import { Button } from "@/presentation/components/Button";
 import { Input } from "@/presentation/components/input";
 import { Text } from "@/presentation/components/Text";
-import { useNavigate } from "@tanstack/react-router";
 import { useLobbyViewModel } from "@/presentation/viewModels/LobbyViewModel";
-import { UserModel } from "@/core/models/UserModel";
 import type { Lobby } from "@/presentation/viewModels/LobbyViewModel";
 
 type LobbyPageProps = {
@@ -12,29 +11,26 @@ type LobbyPageProps = {
 };
 
 export function LobbyPage({ lobbies: initialLobbies }: LobbyPageProps) {
-    const navigate = useNavigate();
-    const { lobbies, lobbyName, setLobbyName, joinLobby, createLobby, refreshLobbies } =
-        useLobbyViewModel(initialLobbies);
+    const {
+        lobbies,
+        lobbyName,
+        setLobbyName,
+        joinLobby,
+        createLobby,
+        refreshLobbies,
+        currentUser,
+        handleLogout,
+    } = useLobbyViewModel(initialLobbies);
 
-    // Check if user is logged in and get user info
-    useEffect(() => {
-        const userModel = UserModel.getInstance();
-        if (!userModel.isLoggedIn()) {
-            navigate({ to: "/" });
-            return;
-        }
-    }, [navigate]);
-
-    const userModel = UserModel.getInstance();
-    const currentUser = userModel.getCurrentUser();
-
-    const handleLogout = () => {
-        userModel.clearUser();
-        navigate({ to: "/" });
-    };
-
+    // Show a tiny "redirecting" state instead of returning null so it's not a blank page
     if (!currentUser) {
-        return null; // This shouldn't happen due to useEffect redirect, but just in case
+        return (
+            <div className="flex items-center justify-center h-screen">
+                <Text size="lg" className="text-gray-400">
+                    Redirecting to login...
+                </Text>
+            </div>
+        );
     }
 
     return (
@@ -55,7 +51,7 @@ export function LobbyPage({ lobbies: initialLobbies }: LobbyPageProps) {
 
                 <div className="space-y-2">
                     <Text size="lg" className="text-gray-300 animate-in slide-in-from-bottom-4 duration-1000 delay-300">
-                        Welcome,  <span className="text-purple-300 font-semibold">{currentUser.username}</span>!
+                        Welcome, <span className="text-purple-300 font-semibold">{currentUser.username}</span>!
                     </Text>
                     <div className="space-y-2"></div>
                     <Text size="lg" className="text-gray-400">

@@ -1,5 +1,7 @@
-import { useCallback, useState } from "react";
+// useLobbyViewModel.ts
+import { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
+import { UserModel, type User } from "@/core/models/UserModel";
 
 export type Lobby = {
     id: number;
@@ -19,6 +21,26 @@ export function useLobbyViewModel(initialLobbies?: Lobby[]) {
     const [lobbies, setLobbies] = useState<Lobby[]>(initialLobbies ?? DEFAULT_LOBBIES);
     const [lobbyName, setLobbyName] = useState<string>("");
 
+    // reactive user state (so view re-renders when we clear/set user)
+    const [currentUser, setCurrentUser] = useState<User | null>(() => {
+        return UserModel.getInstance().getCurrentUser();
+    });
+
+    // on mount, ensure we have a logged-in user; otherwise redirect to "/"
+    useEffect(() => {
+        const userModel = UserModel.getInstance();
+        const u = userModel.getCurrentUser();
+        setCurrentUser(u);
+
+        if (!u) {
+            // not logged in -> redirect to login/landing
+            navigate({ to: "/" });
+        }
+        // we intentionally run this only on mount; user model changes happen via setUser/clearUser
+        // which should be done by other app flows (login/logout) and we update local state there.
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
+
     const joinLobby = useCallback(
         (lobby: Lobby) => {
             navigate({
@@ -34,6 +56,14 @@ export function useLobbyViewModel(initialLobbies?: Lobby[]) {
     );
 
     const createLobby = useCallback(() => {
+        // ensure user still exists
+        const user = UserModel.getInstance().getCurrentUser();
+        if (!user) {
+            // if not logged in, send to root
+            navigate({ to: "/" });
+            return;
+        }
+
         const newLobby: Lobby = {
             id: Date.now(),
             name: lobbyName.trim() || "New Lobby",
@@ -54,7 +84,6 @@ export function useLobbyViewModel(initialLobbies?: Lobby[]) {
     }, [navigate, lobbyName]);
 
     const refreshLobbies = useCallback(() => {
-        // simple simulated refresh: randomize player counts for demo
         setLobbies(() =>
             (initialLobbies ?? DEFAULT_LOBBIES).map((l) => ({
                 ...l,
@@ -63,6 +92,13 @@ export function useLobbyViewModel(initialLobbies?: Lobby[]) {
         );
     }, [initialLobbies]);
 
+    const handleLogout = useCallback(() => {
+        const userModel = UserModel.getInstance();
+        userModel.clearUser();
+        setCurrentUser(null);
+        navigate({ to: "/" });
+    }, [navigate]);
+
     return {
         lobbies,
         lobbyName,
@@ -70,5 +106,7 @@ export function useLobbyViewModel(initialLobbies?: Lobby[]) {
         joinLobby,
         createLobby,
         refreshLobbies,
+        currentUser,
+        handleLogout,
     } as const;
 }
