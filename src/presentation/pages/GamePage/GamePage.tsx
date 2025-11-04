@@ -192,11 +192,6 @@ export function GamePage() {
                                                         <Text className="text-gray-400">
                                                             Total: <span className="text-white font-semibold">{player.totalScore}</span>
                                                         </Text>
-                                                        {player.currentRoundScore !== null && (
-                                                            <Text className="text-blue-300">
-                                                                This Round: <span className="font-semibold">{player.currentRoundScore}</span>
-                                                            </Text>
-                                                        )}
                                                     </div>
                                                 </div>
                                             </div>
@@ -206,7 +201,6 @@ export function GamePage() {
                                                 <div className="flex items-center gap-3">
                                                     <Input
                                                         type="number"
-                                                        placeholder="Your score"
                                                         value={gameState.tempScores[player.id] || ''}
                                                         onChange={(e) => viewModel.handleScoreInput(player.id, e.target.value)}
                                                         className="w-24 text-center text-white bg-white/5 border-white/30 focus:border-purple-400 placeholder-gray-400"
@@ -240,7 +234,7 @@ export function GamePage() {
                                                         {player.currentRoundScore}
                                                     </Text>
                                                     <Text size="sm" className="text-green-400">
-                                                        {player.isCurrentUser ? 'your score' : 'submitted'}
+                                                        {player.isCurrentUser ? ' points' : 'submitted'}
                                                     </Text>
                                                 </div>
                                             )}

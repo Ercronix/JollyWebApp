@@ -1,6 +1,5 @@
 // MainLayout.tsx
 import type { ReactNode } from "react";
-import { Navbar } from "../components/Navbar";
 
 type MainLayoutProps = {
     children: ReactNode;
@@ -35,7 +34,6 @@ export function MainLayout({ children }: MainLayoutProps) {
 
             {/* Content with proper z-index */}
             <div className="relative z-10 flex flex-col min-h-screen">
-                <Navbar />
                 <main className="flex-1 container mx-auto px-4 py-6">
                     {children}
                 </main>
