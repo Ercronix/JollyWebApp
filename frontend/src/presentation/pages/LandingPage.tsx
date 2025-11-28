@@ -3,7 +3,6 @@ import { Button } from "@/presentation/components/Button";
 import { Input } from "@/presentation/components/input";
 import { Text } from "@/presentation/components/Text";
 import { useNavigate } from "@tanstack/react-router";
-import { UserModel } from "@/core/models/UserModel";
 
 export function LandingPage() {
     const navigate = useNavigate();
@@ -17,9 +16,6 @@ export function LandingPage() {
 
         setIsLoading(true);
 
-        // Set the user in the model
-        const userModel = UserModel.getInstance();
-        userModel.setUser(username);
 
         // Navigate to lobby after a brief delay for UX
         setTimeout(() => {

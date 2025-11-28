@@ -1,10 +1,8 @@
-// LobbyPage.tsx
 import React from "react";
 import { Button } from "@/presentation/components/Button";
 import { Input } from "@/presentation/components/input";
 import { Text } from "@/presentation/components/Text";
-import { useLobbyViewModel } from "@/presentation/viewModels/LobbyViewModel";
-import type { Lobby } from "@/presentation/viewModels/LobbyViewModel";
+import { useLobbyPage, type Lobby } from "@/presentation/hooks/useLobbyPage";
 
 type LobbyPageProps = {
     lobbies?: Lobby[]; // optional seeds
@@ -12,15 +10,15 @@ type LobbyPageProps = {
 
 export function LobbyPage({ lobbies: initialLobbies }: LobbyPageProps) {
     const {
+        currentUser,
         lobbies,
         lobbyName,
         setLobbyName,
         joinLobby,
         createLobby,
         refreshLobbies,
-        currentUser,
         handleLogout,
-    } = useLobbyViewModel(initialLobbies);
+    } = useLobbyPage(initialLobbies);
 
     // Show a tiny "redirecting" state instead of returning null so it's not a blank page
     if (!currentUser) {
@@ -95,7 +93,7 @@ export function LobbyPage({ lobbies: initialLobbies }: LobbyPageProps) {
                     <div className="text-center text-gray-400">No lobbies available. Create one!</div>
                 ) : (
                     <div className="grid gap-4 md:grid-cols-2">
-                        {lobbies.map((lobby, index) => (
+                        {lobbies.map((lobby: { id: any; name: any; playerCount: any; }, index: number) => (
                             <div
                                 key={lobby.id}
                                 className={`group relative overflow-hidden rounded-2xl bg-white/10 backdrop-blur-xl border border-white/20 p-6 shadow-lg hover:shadow-2xl hover:shadow-purple-500/25 transition-all duration-500 hover:-translate-y-2 hover:scale-105 cursor-pointer animate-in slide-in-from-bottom-8 duration-700`}
