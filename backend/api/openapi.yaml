@@ -1,0 +1,510 @@
+openapi: 3.0.4
+info:
+  title: JollyAPI
+  version: "1.0"
+servers:
+- url: http://localhost:3000
+paths:
+  /users/me:
+    get:
+      summary: Get current logged-in user
+      operationId: getCurrentUserGET
+      responses:
+        "200":
+          description: Current user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "401":
+          description: Not authenticated
+      x-swagger-router-controller: Users
+  /users/login:
+    post:
+      summary: Login user
+      operationId: loginUserPOST
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginRequest"
+        required: true
+      responses:
+        "200":
+          description: User logged in
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+      x-swagger-router-controller: Users
+  /users/logout:
+    post:
+      summary: Logout user
+      operationId: logoutUserPOST
+      responses:
+        "204":
+          description: No content
+      x-swagger-router-controller: Users
+  /api/lobbies:
+    get:
+      summary: List all lobbies
+      operationId: listLobbiesGET
+      responses:
+        "200":
+          description: List of lobbies
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LobbyListResponse"
+      x-swagger-router-controller: Lobbies
+    post:
+      summary: Create a lobby
+      operationId: createLobbyPOST
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateLobbyRequest"
+        required: true
+      responses:
+        "201":
+          description: Lobby created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Lobby"
+      x-swagger-router-controller: Lobbies
+  /api/lobbies/{lobbyId}/join:
+    post:
+      summary: Join a lobby
+      operationId: joinLobbyPOST
+      parameters:
+      - name: lobbyId
+        in: path
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: integer
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/JoinLobbyRequest"
+        required: true
+      responses:
+        "200":
+          description: Joined lobby
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/inline_response_200"
+      x-swagger-router-controller: Lobbies
+  /api/games/{gameId}:
+    get:
+      summary: Get game state
+      operationId: getGameStateGET
+      parameters:
+      - name: gameId
+        in: path
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: integer
+      responses:
+        "200":
+          description: Game state
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Game"
+      x-swagger-router-controller: Games
+  /api/games/{gameId}/submitScore:
+    post:
+      summary: Submit player score
+      operationId: submitScorePOST
+      parameters:
+      - name: gameId
+        in: path
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: integer
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SubmitScoreRequest"
+        required: true
+      responses:
+        "200":
+          description: Score submitted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/inline_response_200_1"
+      x-swagger-router-controller: Games
+  /api/games/{gameId}/nextRound:
+    post:
+      summary: Advance to next round
+      operationId: nextRoundPOST
+      parameters:
+      - name: gameId
+        in: path
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: integer
+      responses:
+        "200":
+          description: Round advanced
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NextRoundResponse"
+      x-swagger-router-controller: Games
+  /api/games/{gameId}/reorderPlayers:
+    post:
+      summary: Reorder players
+      operationId: reorderPlayersPOST
+      parameters:
+      - name: gameId
+        in: path
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: integer
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ReorderPlayersRequest"
+        required: true
+      responses:
+        "200":
+          description: Players reordered
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Game"
+      x-swagger-router-controller: Games
+  /api/games/{gameId}/resetRound:
+    post:
+      summary: Reset current round
+      operationId: resetRoundPOST
+      parameters:
+      - name: gameId
+        in: path
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: integer
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ResetRoundRequest"
+      responses:
+        "200":
+          description: Round reset
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/inline_response_200_2"
+      x-swagger-router-controller: Games
+  /api/games/{gameId}/events:
+    get:
+      summary: Subscribe to game events (SSE)
+      operationId: subscribeToGameEventsGET
+      parameters:
+      - name: gameId
+        in: path
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: integer
+      responses:
+        "200":
+          description: Event stream
+          content:
+            text/event-stream:
+              schema:
+                type: string
+                x-content-type: text/event-stream
+      x-swagger-router-controller: Default
+  /admin/games/{gameId}/forceNextRound:
+    post:
+      summary: Force next round (Admin)
+      operationId: forceNextRoundPOST
+      parameters:
+      - name: gameId
+        in: path
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: integer
+      responses:
+        "200":
+          description: Forced next round
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NextRoundResponse"
+      security:
+      - bearerAuth: []
+      x-swagger-router-controller: Admin
+components:
+  schemas:
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        username:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+      example:
+        createdAt: 2000-01-23T04:56:07.000+00:00
+        id: 046b6c7f-0b8a-43b9-b35d-6489e6daee91
+        username: username
+    LoginRequest:
+      type: object
+      properties:
+        username:
+          type: string
+    Lobby:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        playerCount:
+          type: integer
+        createdAt:
+          type: string
+          format: date-time
+      example:
+        createdAt: 2000-01-23T04:56:07.000+00:00
+        playerCount: 0
+        name: name
+        id: 046b6c7f-0b8a-43b9-b35d-6489e6daee91
+    CreateLobbyRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        userId:
+          type: string
+          format: uuid
+    JoinLobbyRequest:
+      type: object
+      properties:
+        userId:
+          type: string
+          format: uuid
+    Player:
+      type: object
+      properties:
+        name:
+          type: string
+        userId:
+          type: string
+          format: uuid
+        totalScore:
+          type: integer
+        currentRoundScore:
+          type: integer
+        hasSubmitted:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+      example:
+        createdAt: 2000-01-23T04:56:07.000+00:00
+        currentRoundScore: 6
+        name: name
+        hasSubmitted: true
+        userId: 046b6c7f-0b8a-43b9-b35d-6489e6daee91
+        totalScore: 0
+    Game:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        players:
+          type: array
+          items:
+            $ref: "#/components/schemas/Player"
+        currentDealer:
+          type: string
+          format: uuid
+        currentRound:
+          type: integer
+        createdAt:
+          type: string
+          format: date-time
+      example:
+        currentDealer: 046b6c7f-0b8a-43b9-b35d-6489e6daee91
+        currentRound: 1
+        createdAt: 2000-01-23T04:56:07.000+00:00
+        players:
+        - createdAt: 2000-01-23T04:56:07.000+00:00
+          currentRoundScore: 6
+          name: name
+          hasSubmitted: true
+          userId: 046b6c7f-0b8a-43b9-b35d-6489e6daee91
+          totalScore: 0
+        - createdAt: 2000-01-23T04:56:07.000+00:00
+          currentRoundScore: 6
+          name: name
+          hasSubmitted: true
+          userId: 046b6c7f-0b8a-43b9-b35d-6489e6daee91
+          totalScore: 0
+        id: 046b6c7f-0b8a-43b9-b35d-6489e6daee91
+    SubmitScoreRequest:
+      type: object
+      properties:
+        playerId:
+          type: string
+          format: uuid
+        score:
+          type: integer
+    ReorderPlayersRequest:
+      type: object
+      properties:
+        fromIndex:
+          type: integer
+        toIndex:
+          type: integer
+        userId:
+          type: string
+          format: uuid
+    NextRoundResponse:
+      type: object
+      properties:
+        game:
+          $ref: "#/components/schemas/Game"
+        message:
+          type: string
+      example:
+        game:
+          currentDealer: 046b6c7f-0b8a-43b9-b35d-6489e6daee91
+          currentRound: 1
+          createdAt: 2000-01-23T04:56:07.000+00:00
+          players:
+          - createdAt: 2000-01-23T04:56:07.000+00:00
+            currentRoundScore: 6
+            name: name
+            hasSubmitted: true
+            userId: 046b6c7f-0b8a-43b9-b35d-6489e6daee91
+            totalScore: 0
+          - createdAt: 2000-01-23T04:56:07.000+00:00
+            currentRoundScore: 6
+            name: name
+            hasSubmitted: true
+            userId: 046b6c7f-0b8a-43b9-b35d-6489e6daee91
+            totalScore: 0
+          id: 046b6c7f-0b8a-43b9-b35d-6489e6daee91
+        message: message
+    ResetRoundRequest:
+      type: object
+      properties:
+        userId:
+          type: string
+          format: uuid
+    LobbyListResponse:
+      type: array
+      items:
+        $ref: "#/components/schemas/Lobby"
+    inline_response_200:
+      type: object
+      properties:
+        lobby:
+          $ref: "#/components/schemas/Lobby"
+        playerId:
+          type: integer
+      example:
+        lobby:
+          createdAt: 2000-01-23T04:56:07.000+00:00
+          playerCount: 0
+          name: name
+          id: 046b6c7f-0b8a-43b9-b35d-6489e6daee91
+        playerId: 0
+    inline_response_200_1:
+      type: object
+      properties:
+        game:
+          $ref: "#/components/schemas/Game"
+        player:
+          $ref: "#/components/schemas/Player"
+      example:
+        game:
+          currentDealer: 046b6c7f-0b8a-43b9-b35d-6489e6daee91
+          currentRound: 1
+          createdAt: 2000-01-23T04:56:07.000+00:00
+          players:
+          - createdAt: 2000-01-23T04:56:07.000+00:00
+            currentRoundScore: 6
+            name: name
+            hasSubmitted: true
+            userId: 046b6c7f-0b8a-43b9-b35d-6489e6daee91
+            totalScore: 0
+          - createdAt: 2000-01-23T04:56:07.000+00:00
+            currentRoundScore: 6
+            name: name
+            hasSubmitted: true
+            userId: 046b6c7f-0b8a-43b9-b35d-6489e6daee91
+            totalScore: 0
+          id: 046b6c7f-0b8a-43b9-b35d-6489e6daee91
+        player:
+          createdAt: 2000-01-23T04:56:07.000+00:00
+          currentRoundScore: 6
+          name: name
+          hasSubmitted: true
+          userId: 046b6c7f-0b8a-43b9-b35d-6489e6daee91
+          totalScore: 0
+    inline_response_200_2:
+      type: object
+      properties:
+        game:
+          $ref: "#/components/schemas/Game"
+        message:
+          type: string
+      example:
+        game:
+          currentDealer: 046b6c7f-0b8a-43b9-b35d-6489e6daee91
+          currentRound: 1
+          createdAt: 2000-01-23T04:56:07.000+00:00
+          players:
+          - createdAt: 2000-01-23T04:56:07.000+00:00
+            currentRoundScore: 6
+            name: name
+            hasSubmitted: true
+            userId: 046b6c7f-0b8a-43b9-b35d-6489e6daee91
+            totalScore: 0
+          - createdAt: 2000-01-23T04:56:07.000+00:00
+            currentRoundScore: 6
+            name: name
+            hasSubmitted: true
+            userId: 046b6c7f-0b8a-43b9-b35d-6489e6daee91
+            totalScore: 0
+          id: 046b6c7f-0b8a-43b9-b35d-6489e6daee91
+        message: message
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
