@@ -18,7 +18,7 @@ paths:
                 $ref: "#/components/schemas/User"
         "401":
           description: Not authenticated
-      x-swagger-router-controller: Users
+      x-swagger-router-controller: Default
   /users/login:
     post:
       summary: Login user
@@ -36,7 +36,7 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/User"
-      x-swagger-router-controller: Users
+      x-swagger-router-controller: Default
   /users/logout:
     post:
       summary: Logout user
@@ -44,7 +44,7 @@ paths:
       responses:
         "204":
           description: No content
-      x-swagger-router-controller: Users
+      x-swagger-router-controller: Default
   /api/lobbies:
     get:
       summary: List all lobbies
@@ -56,7 +56,7 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/LobbyListResponse"
-      x-swagger-router-controller: Lobbies
+      x-swagger-router-controller: Default
     post:
       summary: Create a lobby
       operationId: createLobbyPOST
@@ -73,7 +73,7 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Lobby"
-      x-swagger-router-controller: Lobbies
+      x-swagger-router-controller: Default
   /api/lobbies/{lobbyId}/join:
     post:
       summary: Join a lobby
@@ -85,7 +85,8 @@ paths:
         style: simple
         explode: false
         schema:
-          type: integer
+          type: string
+          format: uuid
       requestBody:
         content:
           application/json:
@@ -99,7 +100,7 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/inline_response_200"
-      x-swagger-router-controller: Lobbies
+      x-swagger-router-controller: Default
   /api/games/{gameId}:
     get:
       summary: Get game state
@@ -111,7 +112,8 @@ paths:
         style: simple
         explode: false
         schema:
-          type: integer
+          type: string
+          format: uuid
       responses:
         "200":
           description: Game state
@@ -119,7 +121,7 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Game"
-      x-swagger-router-controller: Games
+      x-swagger-router-controller: Default
   /api/games/{gameId}/submitScore:
     post:
       summary: Submit player score
@@ -131,7 +133,8 @@ paths:
         style: simple
         explode: false
         schema:
-          type: integer
+          type: string
+          format: uuid
       requestBody:
         content:
           application/json:
@@ -145,7 +148,7 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/inline_response_200_1"
-      x-swagger-router-controller: Games
+      x-swagger-router-controller: Default
   /api/games/{gameId}/nextRound:
     post:
       summary: Advance to next round
@@ -157,7 +160,8 @@ paths:
         style: simple
         explode: false
         schema:
-          type: integer
+          type: string
+          format: uuid
       responses:
         "200":
           description: Round advanced
@@ -165,7 +169,7 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/NextRoundResponse"
-      x-swagger-router-controller: Games
+      x-swagger-router-controller: Default
   /api/games/{gameId}/reorderPlayers:
     post:
       summary: Reorder players
@@ -177,7 +181,8 @@ paths:
         style: simple
         explode: false
         schema:
-          type: integer
+          type: string
+          format: uuid
       requestBody:
         content:
           application/json:
@@ -191,7 +196,7 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Game"
-      x-swagger-router-controller: Games
+      x-swagger-router-controller: Default
   /api/games/{gameId}/resetRound:
     post:
       summary: Reset current round
@@ -203,7 +208,8 @@ paths:
         style: simple
         explode: false
         schema:
-          type: integer
+          type: string
+          format: uuid
       requestBody:
         content:
           application/json:
@@ -216,7 +222,7 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/inline_response_200_2"
-      x-swagger-router-controller: Games
+      x-swagger-router-controller: Default
   /api/games/{gameId}/events:
     get:
       summary: Subscribe to game events (SSE)
@@ -228,7 +234,8 @@ paths:
         style: simple
         explode: false
         schema:
-          type: integer
+          type: string
+          format: uuid
       responses:
         "200":
           description: Event stream
@@ -249,7 +256,8 @@ paths:
         style: simple
         explode: false
         schema:
-          type: integer
+          type: string
+          format: uuid
       responses:
         "200":
           description: Forced next round
@@ -257,9 +265,7 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/NextRoundResponse"
-      security:
-      - bearerAuth: []
-      x-swagger-router-controller: Admin
+      x-swagger-router-controller: Default
 components:
   schemas:
     User:

@@ -1,5 +1,8 @@
 'use strict';
-
+const EventService = require('../service/EventService');
+const LobbiesService = require('../service/LobbiesService');
+const UsersService = require('../service/UsersService');
+const GamesService = require('../service/GamesService');
 
 /**
  * Create a lobby
@@ -7,20 +10,25 @@
  * body CreateLobbyRequest 
  * returns Lobby
  **/
-exports.createLobbyPOST = function(body) {
+module.exports.createLobbyPOST = function(body) {
   return new Promise(function(resolve, reject) {
-    var examples = {};
-    examples['application/json'] = {
-  "createdAt" : "2000-01-23T04:56:07.000+00:00",
-  "playerCount" : 0,
-  "name" : "name",
-  "id" : "046b6c7f-0b8a-43b9-b35d-6489e6daee91"
-};
-    if (Object.keys(examples).length > 0) {
-      resolve(examples[Object.keys(examples)[0]]);
-    } else {
-      resolve();
-    }
+      try {
+          const { name, userId } = body;
+
+          if (!name) {
+              return reject({ status: 400, message: 'Lobby name is required' });
+          }
+
+          const user = UsersService.getUserById(userId);
+          if (!user) {
+              return reject({ status: 401, message: 'User not found' });
+          }
+
+          const lobby = LobbiesService.createLobby(name, userId, user.username);
+          resolve(lobby);
+      } catch (error) {
+          reject({ status: 500, message: error.message });
+      }
   });
 }
 
@@ -31,38 +39,14 @@ exports.createLobbyPOST = function(body) {
  * gameId Integer 
  * returns NextRoundResponse
  **/
-exports.forceNextRoundPOST = function(gameId) {
+module.exports.forceNextRoundPOST = function(gameId) {
   return new Promise(function(resolve, reject) {
-    var examples = {};
-    examples['application/json'] = {
-  "game" : {
-    "currentDealer" : "046b6c7f-0b8a-43b9-b35d-6489e6daee91",
-    "currentRound" : 1,
-    "createdAt" : "2000-01-23T04:56:07.000+00:00",
-    "players" : [ {
-      "createdAt" : "2000-01-23T04:56:07.000+00:00",
-      "currentRoundScore" : 6,
-      "name" : "name",
-      "hasSubmitted" : true,
-      "userId" : "046b6c7f-0b8a-43b9-b35d-6489e6daee91",
-      "totalScore" : 0
-    }, {
-      "createdAt" : "2000-01-23T04:56:07.000+00:00",
-      "currentRoundScore" : 6,
-      "name" : "name",
-      "hasSubmitted" : true,
-      "userId" : "046b6c7f-0b8a-43b9-b35d-6489e6daee91",
-      "totalScore" : 0
-    } ],
-    "id" : "046b6c7f-0b8a-43b9-b35d-6489e6daee91"
-  },
-  "message" : "message"
-};
-    if (Object.keys(examples).length > 0) {
-      resolve(examples[Object.keys(examples)[0]]);
-    } else {
-      resolve();
-    }
+      try {
+          const result = GamesService.nextRound(gameId, true);
+          resolve(result);
+      } catch (error) {
+          reject({ status: 400, message: error.message });
+      }
   });
 }
 
@@ -72,21 +56,19 @@ exports.forceNextRoundPOST = function(gameId) {
  *
  * returns User
  **/
-exports.getCurrentUserGET = function() {
-  return new Promise(function(resolve, reject) {
-    var examples = {};
-    examples['application/json'] = {
-  "createdAt" : "2000-01-23T04:56:07.000+00:00",
-  "id" : "046b6c7f-0b8a-43b9-b35d-6489e6daee91",
-  "username" : "username"
+module.exports.getCurrentUserGET = function (sessionId) {
+    return new Promise(function (resolve, reject) {
+        try {
+            const user = UsersService.getUserBySession(sessionId);
+            if (!user) {
+                return reject({ status: 401, message: 'Not authenticated' });
+            }
+            resolve(user);
+        } catch (error) {
+            reject({ status: 500, message: error.message });
+        }
+    });
 };
-    if (Object.keys(examples).length > 0) {
-      resolve(examples[Object.keys(examples)[0]]);
-    } else {
-      resolve();
-    }
-  });
-}
 
 
 /**
@@ -95,65 +77,44 @@ exports.getCurrentUserGET = function() {
  * gameId Integer 
  * returns Game
  **/
-exports.getGameStateGET = function(gameId) {
-  return new Promise(function(resolve, reject) {
-    var examples = {};
-    examples['application/json'] = {
-  "currentDealer" : "046b6c7f-0b8a-43b9-b35d-6489e6daee91",
-  "currentRound" : 1,
-  "createdAt" : "2000-01-23T04:56:07.000+00:00",
-  "players" : [ {
-    "createdAt" : "2000-01-23T04:56:07.000+00:00",
-    "currentRoundScore" : 6,
-    "name" : "name",
-    "hasSubmitted" : true,
-    "userId" : "046b6c7f-0b8a-43b9-b35d-6489e6daee91",
-    "totalScore" : 0
-  }, {
-    "createdAt" : "2000-01-23T04:56:07.000+00:00",
-    "currentRoundScore" : 6,
-    "name" : "name",
-    "hasSubmitted" : true,
-    "userId" : "046b6c7f-0b8a-43b9-b35d-6489e6daee91",
-    "totalScore" : 0
-  } ],
-  "id" : "046b6c7f-0b8a-43b9-b35d-6489e6daee91"
+module.exports.getGameStateGET = function (gameId) {
+    return new Promise(function (resolve, reject) {
+        try {
+            const game = GamesService.getGameById(gameId);
+            if (!game) {
+                return reject({ status: 404, message: 'Game not found' });
+            }
+            resolve(GamesService.getGameResponse(game));
+        } catch (error) {
+            reject({ status: 500, message: error.message });
+        }
+    });
 };
-    if (Object.keys(examples).length > 0) {
-      resolve(examples[Object.keys(examples)[0]]);
-    } else {
-      resolve();
-    }
-  });
-}
 
 
 /**
  * Join a lobby
  *
  * body JoinLobbyRequest 
- * lobbyId Integer 
+ * lobbyId uuid
  * returns inline_response_200
  **/
-exports.joinLobbyPOST = function(body,lobbyId) {
-  return new Promise(function(resolve, reject) {
-    var examples = {};
-    examples['application/json'] = {
-  "lobby" : {
-    "createdAt" : "2000-01-23T04:56:07.000+00:00",
-    "playerCount" : 0,
-    "name" : "name",
-    "id" : "046b6c7f-0b8a-43b9-b35d-6489e6daee91"
-  },
-  "playerId" : 0
+module.exports.joinLobbyPOST = function (body, lobbyId) {
+    return new Promise(function (resolve, reject) {
+        try {
+            const { userId } = body;
+
+            const user = UsersService.getUserById(userId);
+            if (!user) {
+                return reject({ status: 401, message: 'User not found' });
+            }
+            const result = LobbiesService.joinLobby(lobbyId, userId, user.username);
+            resolve(result);
+        } catch (error) {
+            reject({ status: 400, message: error.message });
+        }
+    });
 };
-    if (Object.keys(examples).length > 0) {
-      resolve(examples[Object.keys(examples)[0]]);
-    } else {
-      resolve();
-    }
-  });
-}
 
 
 /**
@@ -161,27 +122,16 @@ exports.joinLobbyPOST = function(body,lobbyId) {
  *
  * returns LobbyListResponse
  **/
-exports.listLobbiesGET = function() {
-  return new Promise(function(resolve, reject) {
-    var examples = {};
-    examples['application/json'] = [ {
-  "createdAt" : "2000-01-23T04:56:07.000+00:00",
-  "playerCount" : 0,
-  "name" : "name",
-  "id" : "046b6c7f-0b8a-43b9-b35d-6489e6daee91"
-}, {
-  "createdAt" : "2000-01-23T04:56:07.000+00:00",
-  "playerCount" : 0,
-  "name" : "name",
-  "id" : "046b6c7f-0b8a-43b9-b35d-6489e6daee91"
-} ];
-    if (Object.keys(examples).length > 0) {
-      resolve(examples[Object.keys(examples)[0]]);
-    } else {
-      resolve();
-    }
-  });
-}
+module.exports.listLobbiesGET = function () {
+    return new Promise(function (resolve, reject) {
+        try {
+            const lobbies = LobbiesService.listLobbies();
+            resolve(lobbies);
+        } catch (error) {
+            reject({ status: 500, message: error.message });
+        }
+    });
+};
 
 
 /**
@@ -190,21 +140,22 @@ exports.listLobbiesGET = function() {
  * body LoginRequest 
  * returns User
  **/
-exports.loginUserPOST = function(body) {
-  return new Promise(function(resolve, reject) {
-    var examples = {};
-    examples['application/json'] = {
-  "createdAt" : "2000-01-23T04:56:07.000+00:00",
-  "id" : "046b6c7f-0b8a-43b9-b35d-6489e6daee91",
-  "username" : "username"
+module.exports.loginUserPOST = function (body) {
+    return new Promise(function (resolve, reject) {
+        try {
+            const { username } = body;
+
+            if (!username) {
+                return reject({ status: 400, message: 'Username is required' });
+            }
+
+            const { user, sessionId } = UsersService.loginUser(username);
+            resolve({ user, sessionId });
+        } catch (error) {
+            reject({ status: 500, message: error.message });
+        }
+    });
 };
-    if (Object.keys(examples).length > 0) {
-      resolve(examples[Object.keys(examples)[0]]);
-    } else {
-      resolve();
-    }
-  });
-}
 
 
 /**
@@ -212,11 +163,16 @@ exports.loginUserPOST = function(body) {
  *
  * no response value expected for this operation
  **/
-exports.logoutUserPOST = function() {
-  return new Promise(function(resolve, reject) {
-    resolve();
-  });
-}
+module.exports.logoutUserPOST = function (sessionId) {
+    return new Promise(function (resolve, reject) {
+        try {
+            UsersService.logoutUser(sessionId);
+            resolve();
+        } catch (error) {
+            reject({ status: 500, message: error.message });
+        }
+    });
+};
 
 
 /**
@@ -225,40 +181,16 @@ exports.logoutUserPOST = function() {
  * gameId Integer 
  * returns NextRoundResponse
  **/
-exports.nextRoundPOST = function(gameId) {
-  return new Promise(function(resolve, reject) {
-    var examples = {};
-    examples['application/json'] = {
-  "game" : {
-    "currentDealer" : "046b6c7f-0b8a-43b9-b35d-6489e6daee91",
-    "currentRound" : 1,
-    "createdAt" : "2000-01-23T04:56:07.000+00:00",
-    "players" : [ {
-      "createdAt" : "2000-01-23T04:56:07.000+00:00",
-      "currentRoundScore" : 6,
-      "name" : "name",
-      "hasSubmitted" : true,
-      "userId" : "046b6c7f-0b8a-43b9-b35d-6489e6daee91",
-      "totalScore" : 0
-    }, {
-      "createdAt" : "2000-01-23T04:56:07.000+00:00",
-      "currentRoundScore" : 6,
-      "name" : "name",
-      "hasSubmitted" : true,
-      "userId" : "046b6c7f-0b8a-43b9-b35d-6489e6daee91",
-      "totalScore" : 0
-    } ],
-    "id" : "046b6c7f-0b8a-43b9-b35d-6489e6daee91"
-  },
-  "message" : "message"
+module.exports.nextRoundPOST = function (gameId) {
+    return new Promise(function (resolve, reject) {
+        try {
+            const result = GamesService.nextRound(gameId, false);
+            resolve(result);
+        } catch (error) {
+            reject({ status: 400, message: error.message });
+        }
+    });
 };
-    if (Object.keys(examples).length > 0) {
-      resolve(examples[Object.keys(examples)[0]]);
-    } else {
-      resolve();
-    }
-  });
-}
 
 
 /**
@@ -268,37 +200,23 @@ exports.nextRoundPOST = function(gameId) {
  * gameId Integer 
  * returns Game
  **/
-exports.reorderPlayersPOST = function(body,gameId) {
-  return new Promise(function(resolve, reject) {
-    var examples = {};
-    examples['application/json'] = {
-  "currentDealer" : "046b6c7f-0b8a-43b9-b35d-6489e6daee91",
-  "currentRound" : 1,
-  "createdAt" : "2000-01-23T04:56:07.000+00:00",
-  "players" : [ {
-    "createdAt" : "2000-01-23T04:56:07.000+00:00",
-    "currentRoundScore" : 6,
-    "name" : "name",
-    "hasSubmitted" : true,
-    "userId" : "046b6c7f-0b8a-43b9-b35d-6489e6daee91",
-    "totalScore" : 0
-  }, {
-    "createdAt" : "2000-01-23T04:56:07.000+00:00",
-    "currentRoundScore" : 6,
-    "name" : "name",
-    "hasSubmitted" : true,
-    "userId" : "046b6c7f-0b8a-43b9-b35d-6489e6daee91",
-    "totalScore" : 0
-  } ],
-  "id" : "046b6c7f-0b8a-43b9-b35d-6489e6daee91"
+module.exports.reorderPlayersPOST = function (body, gameId) {
+    return new Promise(function (resolve, reject) {
+        try {
+            const { fromIndex, toIndex, userId } = body;
+
+            const user = UsersService.getUserById(userId);
+            if (!user) {
+                return reject({ status: 401, message: 'User not found' });
+            }
+
+            const game = GamesService.reorderPlayers(gameId, fromIndex, toIndex);
+            resolve(GamesService.getGameResponse(game));
+        } catch (error) {
+            reject({ status: 400, message: error.message });
+        }
+    });
 };
-    if (Object.keys(examples).length > 0) {
-      resolve(examples[Object.keys(examples)[0]]);
-    } else {
-      resolve();
-    }
-  });
-}
 
 
 /**
@@ -308,40 +226,25 @@ exports.reorderPlayersPOST = function(body,gameId) {
  * gameId Integer 
  * returns inline_response_200_2
  **/
-exports.resetRoundPOST = function(body,gameId) {
-  return new Promise(function(resolve, reject) {
-    var examples = {};
-    examples['application/json'] = {
-  "game" : {
-    "currentDealer" : "046b6c7f-0b8a-43b9-b35d-6489e6daee91",
-    "currentRound" : 1,
-    "createdAt" : "2000-01-23T04:56:07.000+00:00",
-    "players" : [ {
-      "createdAt" : "2000-01-23T04:56:07.000+00:00",
-      "currentRoundScore" : 6,
-      "name" : "name",
-      "hasSubmitted" : true,
-      "userId" : "046b6c7f-0b8a-43b9-b35d-6489e6daee91",
-      "totalScore" : 0
-    }, {
-      "createdAt" : "2000-01-23T04:56:07.000+00:00",
-      "currentRoundScore" : 6,
-      "name" : "name",
-      "hasSubmitted" : true,
-      "userId" : "046b6c7f-0b8a-43b9-b35d-6489e6daee91",
-      "totalScore" : 0
-    } ],
-    "id" : "046b6c7f-0b8a-43b9-b35d-6489e6daee91"
-  },
-  "message" : "message"
+module.exports.resetRoundPOST = function (body, gameId) {
+    return new Promise(function (resolve, reject) {
+        try {
+            const { userId } = body || {};
+
+            if (userId) {
+                const user = UsersService.getUserById(userId);
+                if (!user) {
+                    return reject({ status: 401, message: 'User not found' });
+                }
+            }
+
+            const result = GamesService.resetRound(gameId);
+            resolve(result);
+        } catch (error) {
+            reject({ status: 400, message: error.message });
+        }
+    });
 };
-    if (Object.keys(examples).length > 0) {
-      resolve(examples[Object.keys(examples)[0]]);
-    } else {
-      resolve();
-    }
-  });
-}
 
 
 /**
@@ -351,47 +254,22 @@ exports.resetRoundPOST = function(body,gameId) {
  * gameId Integer 
  * returns inline_response_200_1
  **/
-exports.submitScorePOST = function(body,gameId) {
-  return new Promise(function(resolve, reject) {
-    var examples = {};
-    examples['application/json'] = {
-  "game" : {
-    "currentDealer" : "046b6c7f-0b8a-43b9-b35d-6489e6daee91",
-    "currentRound" : 1,
-    "createdAt" : "2000-01-23T04:56:07.000+00:00",
-    "players" : [ {
-      "createdAt" : "2000-01-23T04:56:07.000+00:00",
-      "currentRoundScore" : 6,
-      "name" : "name",
-      "hasSubmitted" : true,
-      "userId" : "046b6c7f-0b8a-43b9-b35d-6489e6daee91",
-      "totalScore" : 0
-    }, {
-      "createdAt" : "2000-01-23T04:56:07.000+00:00",
-      "currentRoundScore" : 6,
-      "name" : "name",
-      "hasSubmitted" : true,
-      "userId" : "046b6c7f-0b8a-43b9-b35d-6489e6daee91",
-      "totalScore" : 0
-    } ],
-    "id" : "046b6c7f-0b8a-43b9-b35d-6489e6daee91"
-  },
-  "player" : {
-    "createdAt" : "2000-01-23T04:56:07.000+00:00",
-    "currentRoundScore" : 6,
-    "name" : "name",
-    "hasSubmitted" : true,
-    "userId" : "046b6c7f-0b8a-43b9-b35d-6489e6daee91",
-    "totalScore" : 0
-  }
+module.exports.submitScorePOST = function (body, gameId) {
+    return new Promise(function (resolve, reject) {
+        try {
+            const { playerId, score } = body;
+
+            if (typeof score !== 'number') {
+                return reject({ status: 400, message: 'Score must be a number' });
+            }
+
+            const result = GamesService.submitScore(gameId, playerId, score);
+            resolve(result);
+        } catch (error) {
+            reject({ status: 400, message: error.message });
+        }
+    });
 };
-    if (Object.keys(examples).length > 0) {
-      resolve(examples[Object.keys(examples)[0]]);
-    } else {
-      resolve();
-    }
-  });
-}
 
 
 /**
@@ -400,15 +278,33 @@ exports.submitScorePOST = function(body,gameId) {
  * gameId Integer 
  * returns String
  **/
-exports.subscribeToGameEventsGET = function(gameId) {
-  return new Promise(function(resolve, reject) {
-    var examples = {};
-    examples['application/json'] = "";
-    if (Object.keys(examples).length > 0) {
-      resolve(examples[Object.keys(examples)[0]]);
-    } else {
-      resolve();
+
+module.exports.subscribeToGameEventsGET = function subscribeToGameEventsGET(req, res, next) {
+    const gameId = req.params.gameId;
+
+    // Verify game exists
+    const GamesService = require('../service/GamesService');
+    const game = GamesService.getGameById(gameId);
+
+    if (!game) {
+        return res.status(404).json({ message: 'Game not found' });
     }
-  });
-}
+
+    // Add client to event service
+    EventService.addClient(gameId, res);
+
+    // Keep connection alive with heartbeat
+    const heartbeatInterval = setInterval(() => {
+        try {
+            res.write(': heartbeat\n\n');
+        } catch (error) {
+            clearInterval(heartbeatInterval);
+        }
+    }, 30000); // Every 30 seconds
+
+    // Clean up on close
+    res.on('close', () => {
+        clearInterval(heartbeatInterval);
+    });
+};
 
