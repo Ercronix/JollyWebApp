@@ -79,7 +79,8 @@ class LobbiesService {
             id: lobby.id,
             name: lobby.name,
             playerCount: lobby.playerCount,
-            createdAt: lobby.createdAt
+            createdAt: lobby.createdAt,
+            gameId: lobby.gameId
         };
     }
 

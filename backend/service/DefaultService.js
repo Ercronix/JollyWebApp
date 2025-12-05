@@ -7,47 +7,47 @@ const GamesService = require('../service/GamesService');
 /**
  * Create a lobby
  *
- * body CreateLobbyRequest 
+ * body CreateLobbyRequest
  * returns Lobby
  **/
 module.exports.createLobbyPOST = function(body) {
-  return new Promise(function(resolve, reject) {
-      try {
-          const { name, userId } = body;
+    return new Promise(function(resolve, reject) {
+        try {
+            const { name, userId } = body;
 
-          if (!name) {
-              return reject({ status: 400, message: 'Lobby name is required' });
-          }
+            if (!name) {
+                return reject({ status: 400, message: 'Lobby name is required' });
+            }
 
-          const user = UsersService.getUserById(userId);
-          if (!user) {
-              return reject({ status: 401, message: 'User not found' });
-          }
+            const user = UsersService.getUserById(userId);
+            if (!user) {
+                return reject({ status: 401, message: 'User not found' });
+            }
 
-          const lobby = LobbiesService.createLobby(name, userId, user.username);
-          resolve(lobby);
-      } catch (error) {
-          reject({ status: 500, message: error.message });
-      }
-  });
+            const lobby = LobbiesService.createLobby(name, userId, user.username);
+            resolve(lobby);
+        } catch (error) {
+            reject({ status: 500, message: error.message });
+        }
+    });
 }
 
 
 /**
  * Force next round (Admin)
  *
- * gameId Integer 
+ * gameId Integer
  * returns NextRoundResponse
  **/
 module.exports.forceNextRoundPOST = function(gameId) {
-  return new Promise(function(resolve, reject) {
-      try {
-          const result = GamesService.nextRound(gameId, true);
-          resolve(result);
-      } catch (error) {
-          reject({ status: 400, message: error.message });
-      }
-  });
+    return new Promise(function(resolve, reject) {
+        try {
+            const result = GamesService.nextRound(gameId, true);
+            resolve(result);
+        } catch (error) {
+            reject({ status: 400, message: error.message });
+        }
+    });
 }
 
 
@@ -74,7 +74,7 @@ module.exports.getCurrentUserGET = function (sessionId) {
 /**
  * Get game state
  *
- * gameId Integer 
+ * gameId Integer
  * returns Game
  **/
 module.exports.getGameStateGET = function (gameId) {
@@ -95,7 +95,7 @@ module.exports.getGameStateGET = function (gameId) {
 /**
  * Join a lobby
  *
- * body JoinLobbyRequest 
+ * body JoinLobbyRequest
  * lobbyId uuid
  * returns inline_response_200
  **/
@@ -137,21 +137,30 @@ module.exports.listLobbiesGET = function () {
 /**
  * Login user
  *
- * body LoginRequest 
+ * body LoginRequest
  * returns User
  **/
 module.exports.loginUserPOST = function (body) {
+    console.log('=== LOGIN SERVICE CALLED ===');
+    console.log('Received body:', body);
+
     return new Promise(function (resolve, reject) {
         try {
             const { username } = body;
+            console.log('Username:', username);
 
             if (!username) {
+                console.log('ERROR: Username is required');
                 return reject({ status: 400, message: 'Username is required' });
             }
 
+            console.log('Calling UsersService.loginUser...');
             const { user, sessionId } = UsersService.loginUser(username);
+            console.log('Login successful:', { user, sessionId });
+
             resolve({ user, sessionId });
         } catch (error) {
+            console.error('ERROR in loginUserPOST:', error);
             reject({ status: 500, message: error.message });
         }
     });
@@ -178,7 +187,7 @@ module.exports.logoutUserPOST = function (sessionId) {
 /**
  * Advance to next round
  *
- * gameId Integer 
+ * gameId Integer
  * returns NextRoundResponse
  **/
 module.exports.nextRoundPOST = function (gameId) {
@@ -196,8 +205,8 @@ module.exports.nextRoundPOST = function (gameId) {
 /**
  * Reorder players
  *
- * body ReorderPlayersRequest 
- * gameId Integer 
+ * body ReorderPlayersRequest
+ * gameId Integer
  * returns Game
  **/
 module.exports.reorderPlayersPOST = function (body, gameId) {
@@ -223,7 +232,7 @@ module.exports.reorderPlayersPOST = function (body, gameId) {
  * Reset current round
  *
  * body ResetRoundRequest  (optional)
- * gameId Integer 
+ * gameId Integer
  * returns inline_response_200_2
  **/
 module.exports.resetRoundPOST = function (body, gameId) {
@@ -250,8 +259,8 @@ module.exports.resetRoundPOST = function (body, gameId) {
 /**
  * Submit player score
  *
- * body SubmitScoreRequest 
- * gameId Integer 
+ * body SubmitScoreRequest
+ * gameId Integer
  * returns inline_response_200_1
  **/
 module.exports.submitScorePOST = function (body, gameId) {
@@ -275,7 +284,7 @@ module.exports.submitScorePOST = function (body, gameId) {
 /**
  * Subscribe to game events (SSE)
  *
- * gameId Integer 
+ * gameId Integer
  * returns String
  **/
 
@@ -307,4 +316,3 @@ module.exports.subscribeToGameEventsGET = function subscribeToGameEventsGET(req,
         clearInterval(heartbeatInterval);
     });
 };
-

@@ -1,28 +1,97 @@
-// LobbyPage.tsx
-import React from "react";
+// src/presentation/pages/LobbyPage.tsx
+import React, { useState, useEffect } from "react";
 import { Button } from "@/presentation/components/Button";
 import { Input } from "@/presentation/components/input";
 import { Text } from "@/presentation/components/Text";
-import { useLobbyViewModel } from "@/presentation/viewModels/LobbyViewModel";
-import type { Lobby } from "@/presentation/viewModels/LobbyViewModel";
+import { useNavigate } from "@tanstack/react-router";
+import { UserModel } from "@/core/models/UserModel";
+import type { Lobby } from "@/core/api/client";
+import {
+    useLobbies,
+    useCreateLobby,
+    useJoinLobby,
+    useLogout,
+} from "@/core/api/hooks";
 
-type LobbyPageProps = {
-    lobbies?: Lobby[]; // optional seeds
-};
+export function LobbyPage() {
+    const navigate = useNavigate();
+    const [lobbyName, setLobbyName] = useState("");
+    const [currentUser, setCurrentUser] = useState(() => UserModel.getInstance().getCurrentUser());
 
-export function LobbyPage({ lobbies: initialLobbies }: LobbyPageProps) {
-    const {
-        lobbies,
-        lobbyName,
-        setLobbyName,
-        joinLobby,
-        createLobby,
-        refreshLobbies,
-        currentUser,
-        handleLogout,
-    } = useLobbyViewModel(initialLobbies);
+    const { data: lobbies = [], isLoading, refetch } = useLobbies();
+    const createLobbyMutation = useCreateLobby();
+    const joinLobbyMutation = useJoinLobby();
+    const logoutMutation = useLogout();
 
-    // Show a tiny "redirecting" state instead of returning null so it's not a blank page
+    // Check if user is logged in
+    useEffect(() => {
+        if (!currentUser) {
+            navigate({ to: "/" });
+        }
+    }, [currentUser, navigate]);
+
+    const handleCreateLobby = async () => {
+        if (!lobbyName.trim() || !currentUser) return;
+
+        try {
+            const lobby = await createLobbyMutation.mutateAsync({
+                name: lobbyName.trim(),
+                userId: currentUser.id,
+            });
+
+            // Navigate to game with the gameId from the lobby
+            if (lobby.gameId) {
+                await navigate({
+                    to: "/Game",
+                    search: {
+                        gameId: lobby.gameId,
+                        lobbyName: lobby.name,
+                    },
+                });
+            }
+        } catch (error) {
+            console.error('Failed to create lobby:', error);
+        }
+    };
+
+    const handleJoinLobby = async (lobby: Lobby) => {
+        if (!currentUser) return;
+
+        try {
+            const result = await joinLobbyMutation.mutateAsync({
+                lobbyId: lobby.id,
+                userId: currentUser.id,
+            });
+
+            // Get gameId from lobby service
+            // The backend should return gameId, but if not, we need to fetch it
+            const gameId = result.lobby.gameId || lobby.gameId;
+
+            if (gameId) {
+                await navigate({
+                    to: "/Game",
+                    search: {
+                        gameId: gameId,
+                        lobbyName: lobby.name,
+                    },
+                });
+            }
+        } catch (error) {
+            console.error('Failed to join lobby:', error);
+        }
+    };
+
+    const handleLogout = async () => {
+        try {
+            await logoutMutation.mutateAsync();
+            UserModel.getInstance().clearUser();
+            setCurrentUser(null);
+            navigate({ to: "/" });
+        } catch (error) {
+            console.error('Logout failed:', error);
+        }
+    };
+
     if (!currentUser) {
         return (
             <div className="flex items-center justify-center h-screen">
@@ -53,7 +122,6 @@ export function LobbyPage({ lobbies: initialLobbies }: LobbyPageProps) {
                     <Text size="lg" className="text-gray-300 animate-in slide-in-from-bottom-4 duration-1000 delay-300">
                         Welcome, <span className="text-purple-300 font-semibold">{currentUser.username}</span>!
                     </Text>
-                    <div className="space-y-2"></div>
                     <Text size="lg" className="text-gray-400">
                         Join a lobby or create one to start
                     </Text>
@@ -77,6 +145,7 @@ export function LobbyPage({ lobbies: initialLobbies }: LobbyPageProps) {
                     size="sm"
                     onClick={handleLogout}
                     className="hover:scale-110 transition-transform"
+                    disabled={logoutMutation.isPending}
                 >
                     🚪 Switch User
                 </Button>
@@ -91,14 +160,16 @@ export function LobbyPage({ lobbies: initialLobbies }: LobbyPageProps) {
                     <div className="w-24 h-1 bg-gradient-to-r from-purple-400 to-blue-400 mx-auto rounded-full"></div>
                 </div>
 
-                {lobbies.length === 0 ? (
+                {isLoading ? (
+                    <div className="text-center text-gray-400">Loading lobbies...</div>
+                ) : lobbies.length === 0 ? (
                     <div className="text-center text-gray-400">No lobbies available. Create one!</div>
                 ) : (
                     <div className="grid gap-4 md:grid-cols-2">
-                        {lobbies.map((lobby, index) => (
+                        {lobbies.map((lobby: Lobby, index: number) => (
                             <div
                                 key={lobby.id}
-                                className={`group relative overflow-hidden rounded-2xl bg-white/10 backdrop-blur-xl border border-white/20 p-6 shadow-lg hover:shadow-2xl hover:shadow-purple-500/25 transition-all duration-500 hover:-translate-y-2 hover:scale-105 cursor-pointer animate-in slide-in-from-bottom-8 duration-700`}
+                                className="group relative overflow-hidden rounded-2xl bg-white/10 backdrop-blur-xl border border-white/20 p-6 shadow-lg hover:shadow-2xl hover:shadow-purple-500/25 transition-all duration-500 hover:-translate-y-2 hover:scale-105 cursor-pointer animate-in slide-in-from-bottom-8 duration-700"
                                 style={{
                                     animationDelay: `${index * 150}ms`,
                                 }}
@@ -121,9 +192,10 @@ export function LobbyPage({ lobbies: initialLobbies }: LobbyPageProps) {
                                             colorscheme="purpleToBlue"
                                             variant="solid"
                                             className="w-full group-hover:scale-105 transition-transform duration-300"
-                                            onClick={() => joinLobby(lobby)}
+                                            onClick={() => handleJoinLobby(lobby)}
+                                            disabled={joinLobbyMutation.isPending}
                                         >
-                                            Join as {currentUser.username}
+                                            {joinLobbyMutation.isPending ? 'Joining...' : `Join as ${currentUser.username}`}
                                         </Button>
                                     </div>
                                 </div>
@@ -156,6 +228,7 @@ export function LobbyPage({ lobbies: initialLobbies }: LobbyPageProps) {
                                     onChange={(e: React.ChangeEvent<HTMLInputElement>) => setLobbyName(e.target.value)}
                                     placeholder="Enter lobby name..."
                                     className="text-white bg-white/5 border-white/30 focus:border-purple-400 focus:ring-purple-400/50 placeholder-gray-400 transition-all duration-300 hover:bg-white/10"
+                                    disabled={createLobbyMutation.isPending}
                                 />
                                 <div className="absolute inset-0 bg-gradient-to-r from-purple-500/20 to-blue-500/20 rounded-lg opacity-0 hover:opacity-100 transition-opacity duration-300 pointer-events-none"></div>
                             </div>
@@ -164,9 +237,10 @@ export function LobbyPage({ lobbies: initialLobbies }: LobbyPageProps) {
                                 colorscheme="greenToBlue"
                                 variant="solid"
                                 className="w-full text-lg py-3 hover:scale-105 transition-transform duration-300"
-                                onClick={createLobby}
+                                onClick={handleCreateLobby}
+                                disabled={!lobbyName.trim() || createLobbyMutation.isPending}
                             >
-                                Create Lobby 🚀
+                                {createLobbyMutation.isPending ? 'Creating...' : 'Create Lobby 🚀'}
                             </Button>
                         </div>
                     </div>
@@ -180,7 +254,8 @@ export function LobbyPage({ lobbies: initialLobbies }: LobbyPageProps) {
                     variant="ghost"
                     size="md"
                     className="group hover:scale-110 transition-transform duration-300"
-                    onClick={refreshLobbies}
+                    onClick={() => refetch()}
+                    disabled={isLoading}
                 >
                     <span className="group-hover:animate-spin inline-block mr-2">🔄</span>
                     Refresh Lobbies

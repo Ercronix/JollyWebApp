@@ -1,40 +1,165 @@
+// src/presentation/pages/GamePage.tsx
+import { useState, useEffect } from "react";
 import { Button } from "@/presentation/components/Button";
 import { Input } from "@/presentation/components/input";
 import { Text } from "@/presentation/components/Text";
 import { useNavigate, useSearch } from "@tanstack/react-router";
-import { useGameViewModel, type GameSearchParams } from "@/presentation/viewModels/GameViewModel";
 import { MainLayout } from "@/presentation/layout/MainLayout";
 import { UserModel } from "@/core/models/UserModel";
-import { useEffect } from "react";
+import type { Player } from "@/core/api/client";
+import {
+    useGameState,
+    useGameEvents,
+    useSubmitScore,
+    useNextRound,
+    useResetRound,
+    useReorderPlayers,
+} from "@/core/api/hooks";
+
+export type GameSearchParams = {
+    gameId?: string;
+    lobbyName?: string;
+};
 
 export function GamePage() {
     const navigate = useNavigate();
     const searchParams = useSearch({ from: '/Game' }) as GameSearchParams;
+    const currentUser = UserModel.getInstance().getCurrentUser();
+
+    const [showReorderMode, setShowReorderMode] = useState(false);
+    const [tempScores, setTempScores] = useState<Record<string, string>>({});
+    const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
+
+    // React Query hooks
+    const { data: game, isLoading } = useGameState(searchParams.gameId);
+    const submitScoreMutation = useSubmitScore();
+    const nextRoundMutation = useNextRound();
+    const resetRoundMutation = useResetRound();
+    const reorderPlayersMutation = useReorderPlayers();
+
+    // Subscribe to SSE events
+    useGameEvents(searchParams.gameId);
 
     // Check if user is logged in
     useEffect(() => {
-        const userModel = UserModel.getInstance();
-        if (!userModel.isLoggedIn()) {
+        if (!currentUser) {
             navigate({ to: "/" });
-            return;
         }
-    }, [navigate]);
+    }, [currentUser, navigate]);
 
-    const { gameState, viewModel } = useGameViewModel(searchParams);
+    if (!currentUser) {
+        return null;
+    }
+
+    if (isLoading) {
+        return (
+            <div className="flex items-center justify-center h-screen">
+                <Text size="lg" className="text-gray-400">
+                    Loading game...
+                </Text>
+            </div>
+        );
+    }
+
+    if (!game || !searchParams.gameId) {
+        return (
+            <div className="flex items-center justify-center h-screen">
+                <Text size="lg" className="text-red-400">
+                    Game not found
+                </Text>
+            </div>
+        );
+    }
 
     const handleLeaveLobby = () => {
         navigate({ to: "/lobby" });
     };
 
-    const gameStats = viewModel.getGameStats();
-    const currentDealer = viewModel.getCurrentDealer();
-    const currentUserPlayer = viewModel.getCurrentUserPlayer();
-    const hasCurrentUserSubmitted = viewModel.hasCurrentUserSubmitted();
+    const handleScoreInput = (playerId: string, value: string) => {
+        const currentUserPlayer = game.players.find((p: any) => p.userId === currentUser.id);
+        if (currentUserPlayer?.userId !== playerId) {
+            return; // Can only edit own score
+        }
+        setTempScores(prev => ({ ...prev, [playerId]: value }));
+    };
+
+    const handleSubmitScore = async (playerId: string) => {
+        const scoreValue = parseInt(tempScores[playerId] || '0');
+        if (isNaN(scoreValue)) return;
+
+        try {
+            await submitScoreMutation.mutateAsync({
+                gameId: searchParams.gameId!,
+                playerId,
+                score: scoreValue,
+            });
+            setTempScores(prev => {
+                const newScores = { ...prev };
+                delete newScores[playerId];
+                return newScores;
+            });
+        } catch (error) {
+            console.error('Failed to submit score:', error);
+        }
+    };
+
+    const handleNextRound = async () => {
+        try {
+            await nextRoundMutation.mutateAsync(searchParams.gameId!);
+        } catch (error) {
+            console.error('Failed to advance round:', error);
+        }
+    };
+
+    const handleResetRound = async () => {
+        try {
+            await resetRoundMutation.mutateAsync({
+                gameId: searchParams.gameId!,
+                userId: currentUser.id,
+            });
+            setTempScores({});
+        } catch (error) {
+            console.error('Failed to reset round:', error);
+        }
+    };
+
+    const handleDragStart = (e: React.DragEvent, index: number) => {
+        setDraggedIndex(index);
+        e.dataTransfer.effectAllowed = 'move';
+    };
+
+    const handleDragOver = (e: React.DragEvent) => {
+        e.preventDefault();
+    };
+
+    const handleDrop = async (e: React.DragEvent, toIndex: number) => {
+        e.preventDefault();
+        if (draggedIndex === null || draggedIndex === toIndex) return;
+
+        try {
+            await reorderPlayersMutation.mutateAsync({
+                gameId: searchParams.gameId!,
+                fromIndex: draggedIndex,
+                toIndex,
+                userId: currentUser.id,
+            });
+        } catch (error) {
+            console.error('Failed to reorder players:', error);
+        }
+        setDraggedIndex(null);
+    };
+
+    // Computed values
+    const currentUserPlayer = game.players.find((p: Player) => p.userId === currentUser.id);
+    const hasCurrentUserSubmitted = currentUserPlayer?.hasSubmitted || false;
+    const allPlayersSubmitted = game.players.every((p: Player) => p.hasSubmitted);
+    const submittedCount = game.players.filter((p: Player) => p.hasSubmitted).length;
+    const currentDealer = game.players.find((p: Player) => p.userId === game.currentDealer);
+    const highestTotalScore = Math.max(...game.players.map((p: Player) => p.totalScore));
 
     return (
         <div className="min-h-screen relative overflow-hidden">
             <MainLayout>
-                {/* Content */}
                 <div className="relative z-10 container mx-auto px-4 py-6">
                     <div className="flex flex-col gap-6 max-w-4xl mx-auto">
 
@@ -50,7 +175,7 @@ export function GamePage() {
                             </Text>
                             <div className="flex justify-center items-center gap-4 flex-wrap">
                                 <Text size="lg" className="text-gray-300">
-                                    Round {gameStats.currentRound}
+                                    Round {game.currentRound}
                                 </Text>
                                 <Text size="lg" className="text-yellow-300 flex items-center gap-2">
                                     🃏 Dealer: {currentDealer?.name}
@@ -61,71 +186,83 @@ export function GamePage() {
                                     Playing as: <span className="font-semibold">{currentUserPlayer.name}</span>
                                 </Text>
                             )}
+                            {game.isFinished && (
+                                <Text size="xl" className="text-green-300 font-bold animate-pulse">
+                                    🎉 Game Over! Winner: {game.players.find((p: Player) => p.userId === game.winner)?.name} 🎉
+                                </Text>
+                            )}
                         </div>
 
                         {/* Round Status */}
-                        <div className="text-center">
-                            <div className="inline-flex items-center gap-3 px-6 py-3 rounded-full bg-white/10 backdrop-blur-xl border border-white/20">
-                                <div className={`w-3 h-3 rounded-full ${gameState.allPlayersSubmitted ? 'bg-green-400' : 'bg-orange-400'} animate-pulse`}></div>
-                                <Text className="text-white font-medium">
-                                    {gameState.allPlayersSubmitted
-                                        ? "✅ All players submitted - Ready for next round!"
-                                        : `⏳ Waiting for scores (${gameStats.submittedProgress})`
-                                    }
-                                </Text>
+                        {!game.isFinished && (
+                            <div className="text-center">
+                                <div className="inline-flex items-center gap-3 px-6 py-3 rounded-full bg-white/10 backdrop-blur-xl border border-white/20">
+                                    <div className={`w-3 h-3 rounded-full ${allPlayersSubmitted ? 'bg-green-400' : 'bg-orange-400'} animate-pulse`}></div>
+                                    <Text className="text-white font-medium">
+                                        {allPlayersSubmitted
+                                            ? "✅ All players submitted - Ready for next round!"
+                                            : `⏳ Waiting for scores (${submittedCount}/${game.players.length})`
+                                        }
+                                    </Text>
+                                </div>
+
+                                {!hasCurrentUserSubmitted && (
+                                    <div className="mt-2">
+                                        <Text size="sm" className="text-yellow-300">
+                                            💭 Your turn to submit a score!
+                                        </Text>
+                                    </div>
+                                )}
+
+                                {hasCurrentUserSubmitted && !allPlayersSubmitted && (
+                                    <div className="mt-2">
+                                        <Text size="sm" className="text-green-300">
+                                            ✅ You've submitted! Waiting for other players...
+                                        </Text>
+                                    </div>
+                                )}
                             </div>
-
-                            {/* Current user status */}
-                            {!hasCurrentUserSubmitted && (
-                                <div className="mt-2">
-                                    <Text size="sm" className="text-yellow-300">
-                                        💭 Your turn to submit a score!
-                                    </Text>
-                                </div>
-                            )}
-
-                            {hasCurrentUserSubmitted && !gameState.allPlayersSubmitted && (
-                                <div className="mt-2">
-                                    <Text size="sm" className="text-green-300">
-                                        ✅ You've submitted! Waiting for other players...
-                                    </Text>
-                                </div>
-                            )}
-                        </div>
+                        )}
 
                         {/* Controls */}
                         <div className="flex flex-wrap justify-center gap-3">
-                            <Button
-                                colorscheme="purpleToBlue"
-                                variant="solid"
-                                size="md"
-                                onClick={viewModel.toggleReorderMode}
-                                className="hover:scale-105 transition-transform duration-300"
-                            >
-                                {gameState.showReorderMode ? "👁️ View Mode" : "🔧 Reorder Players"}
-                            </Button>
+                            {!game.isFinished && (
+                                <>
+                                    <Button
+                                        colorscheme="purpleToBlue"
+                                        variant="solid"
+                                        size="md"
+                                        onClick={() => setShowReorderMode(!showReorderMode)}
+                                        className="hover:scale-105 transition-transform duration-300"
+                                    >
+                                        {showReorderMode ? "👁️ View Mode" : "🔧 Reorder Players"}
+                                    </Button>
 
-                            {gameState.allPlayersSubmitted && (
-                                <Button
-                                    colorscheme="greenToBlue"
-                                    variant="solid"
-                                    size="md"
-                                    onClick={viewModel.handleNextRound}
-                                    className="hover:scale-105 transition-transform duration-300 animate-pulse"
-                                >
-                                    🎯 Next Round
-                                </Button>
+                                    {allPlayersSubmitted && (
+                                        <Button
+                                            colorscheme="greenToBlue"
+                                            variant="solid"
+                                            size="md"
+                                            onClick={handleNextRound}
+                                            disabled={nextRoundMutation.isPending}
+                                            className="hover:scale-105 transition-transform duration-300 animate-pulse"
+                                        >
+                                            🎯 Next Round
+                                        </Button>
+                                    )}
+
+                                    <Button
+                                        colorscheme="cyanToBlue"
+                                        variant="outline"
+                                        size="md"
+                                        onClick={handleResetRound}
+                                        disabled={resetRoundMutation.isPending}
+                                        className="hover:scale-105 transition-transform duration-300"
+                                    >
+                                        🔄 Reset Round
+                                    </Button>
+                                </>
                             )}
-
-                            <Button
-                                colorscheme="cyanToBlue"
-                                variant="outline"
-                                size="md"
-                                onClick={viewModel.handleResetRound}
-                                className="hover:scale-105 transition-transform duration-300"
-                            >
-                                🔄 Reset Round
-                            </Button>
 
                             <Button
                                 colorscheme="pinkToOrange"
@@ -145,132 +282,137 @@ export function GamePage() {
                             </div>
 
                             <div className="space-y-3">
-                                {gameState.players.map((player, index) => (
-                                    <div
-                                        key={player.id}
-                                        draggable={gameState.showReorderMode}
-                                        onDragStart={(e) => viewModel.handleDragStart(e, index)}
-                                        onDragOver={viewModel.handleDragOver}
-                                        onDrop={(e) => viewModel.handleDrop(e, index)}
-                                        className={`group relative overflow-hidden rounded-2xl backdrop-blur-xl border p-4 shadow-lg transition-all duration-300 animate-in slide-in-from-left-6 ${
-                                            player.hasSubmitted
-                                                ? 'bg-green-500/10 border-green-500/30 shadow-green-500/25'
-                                                : player.isCurrentUser
-                                                    ? 'bg-purple-500/10 border-purple-500/30 hover:shadow-purple-500/25 ring-1 ring-purple-400/50'
-                                                    : 'bg-white/10 border-white/20 hover:shadow-purple-500/25'
-                                        } ${
-                                            index === gameState.currentDealer
-                                                ? 'ring-2 ring-yellow-400 bg-yellow-500/5'
-                                                : ''
-                                        } ${
-                                            gameState.showReorderMode ? 'cursor-move hover:scale-102' : ''
-                                        }`}
-                                        style={{
-                                            animationDelay: `${index * 100}ms`,
-                                        }}
-                                    >
-                                        <div className="flex items-center justify-between gap-4">
-                                            {/* Player Info */}
-                                            <div className="flex items-center gap-4">
-                                                <div className={`flex items-center justify-center w-12 h-12 rounded-full border font-bold text-lg text-white ${
-                                                    player.isCurrentUser
-                                                        ? 'bg-purple-500/30 border-purple-300/50'
-                                                        : 'bg-gray-500/20 border-gray-300/30'
-                                                }`}>
-                                                    {player.isCurrentUser ? '👤' : index + 1}
-                                                </div>
+                                {game.players.map((player: Player, index: number) => {
+                                    const isCurrentUser = player.userId === currentUser.id;
+                                    const isDealer = player.userId === game.currentDealer;
 
-                                                <div>
-                                                    <Text size="lg" weight="semibold" className="text-white flex items-center gap-2">
-                                                        {player.name}
-                                                        {player.isCurrentUser && <span className="text-purple-400 text-sm">(You)</span>}
-                                                        {index === gameState.currentDealer && <span className="text-yellow-400">🃏</span>}
-                                                        {player.hasSubmitted && <span className="text-green-400">✅</span>}
-                                                        {gameState.showReorderMode && <span className="text-gray-400 text-sm">🔗</span>}
-                                                    </Text>
-                                                    <div className="flex items-center gap-4 text-sm">
-                                                        <Text className="text-gray-400">
-                                                            Total: <span className="text-white font-semibold">{player.totalScore}</span>
+                                    return (
+                                        <div
+                                            key={player.userId}
+                                            draggable={showReorderMode}
+                                            onDragStart={(e) => handleDragStart(e, index)}
+                                            onDragOver={handleDragOver}
+                                            onDrop={(e) => handleDrop(e, index)}
+                                            className={`group relative overflow-hidden rounded-2xl backdrop-blur-xl border p-4 shadow-lg transition-all duration-300 animate-in slide-in-from-left-6 ${
+                                                player.hasSubmitted
+                                                    ? 'bg-green-500/10 border-green-500/30 shadow-green-500/25'
+                                                    : isCurrentUser
+                                                        ? 'bg-purple-500/10 border-purple-500/30 hover:shadow-purple-500/25 ring-1 ring-purple-400/50'
+                                                        : 'bg-white/10 border-white/20 hover:shadow-purple-500/25'
+                                            } ${
+                                                isDealer
+                                                    ? 'ring-2 ring-yellow-400 bg-yellow-500/5'
+                                                    : ''
+                                            } ${
+                                                showReorderMode ? 'cursor-move hover:scale-102' : ''
+                                            }`}
+                                            style={{
+                                                animationDelay: `${index * 100}ms`,
+                                            }}
+                                        >
+                                            <div className="flex items-center justify-between gap-4">
+                                                {/* Player Info */}
+                                                <div className="flex items-center gap-4">
+                                                    <div className={`flex items-center justify-center w-12 h-12 rounded-full border font-bold text-lg text-white ${
+                                                        isCurrentUser
+                                                            ? 'bg-purple-500/30 border-purple-300/50'
+                                                            : 'bg-gray-500/20 border-gray-300/30'
+                                                    }`}>
+                                                        {isCurrentUser ? '👤' : index + 1}
+                                                    </div>
+
+                                                    <div>
+                                                        <Text size="lg" weight="semibold" className="text-white flex items-center gap-2">
+                                                            {player.name}
+                                                            {isCurrentUser && <span className="text-purple-400 text-sm">(You)</span>}
+                                                            {isDealer && <span className="text-yellow-400">🃏</span>}
+                                                            {player.hasSubmitted && <span className="text-green-400">✅</span>}
+                                                            {showReorderMode && <span className="text-gray-400 text-sm">🔗</span>}
                                                         </Text>
+                                                        <div className="flex items-center gap-4 text-sm">
+                                                            <Text className="text-gray-400">
+                                                                Total: <span className="text-white font-semibold">{player.totalScore}</span>
+                                                            </Text>
+                                                        </div>
                                                     </div>
                                                 </div>
+
+                                                {/* Score Input - Only for current user */}
+                                                {!showReorderMode && !player.hasSubmitted && isCurrentUser && !game.isFinished && (
+                                                    <div className="flex items-center gap-3">
+                                                        <Input
+                                                            type="number"
+                                                            value={tempScores[player.userId] || ''}
+                                                            onChange={(e) => handleScoreInput(player.userId, e.target.value)}
+                                                            className="w-24 text-center text-white bg-white/5 border-white/30 focus:border-purple-400 placeholder-gray-400"
+                                                        />
+                                                        <Button
+                                                            size="sm"
+                                                            colorscheme="greenToBlue"
+                                                            variant="solid"
+                                                            onClick={() => handleSubmitScore(player.userId)}
+                                                            disabled={!tempScores[player.userId] || submitScoreMutation.isPending}
+                                                            className="hover:scale-110 transition-transform disabled:opacity-50"
+                                                        >
+                                                            Submit
+                                                        </Button>
+                                                    </div>
+                                                )}
+
+                                                {/* Non-editable player display */}
+                                                {!showReorderMode && !isCurrentUser && !player.hasSubmitted && !game.isFinished && (
+                                                    <div className="text-right">
+                                                        <Text size="sm" className="text-gray-400">
+                                                            Waiting for player...
+                                                        </Text>
+                                                    </div>
+                                                )}
+
+                                                {/* Submitted score display */}
+                                                {!showReorderMode && player.hasSubmitted && (
+                                                    <div className="text-right">
+                                                        <Text size="xl" weight="bold" className="text-green-300">
+                                                            {player.currentRoundScore}
+                                                        </Text>
+                                                        <Text size="sm" className="text-green-400">
+                                                            {isCurrentUser ? 'points' : 'submitted'}
+                                                        </Text>
+                                                    </div>
+                                                )}
                                             </div>
-
-                                            {/* Score Input - Only for current user and when not in reorder mode */}
-                                            {!gameState.showReorderMode && !player.hasSubmitted && player.isCurrentUser && (
-                                                <div className="flex items-center gap-3">
-                                                    <Input
-                                                        type="number"
-                                                        value={gameState.tempScores[player.id] || ''}
-                                                        onChange={(e) => viewModel.handleScoreInput(player.id, e.target.value)}
-                                                        className="w-24 text-center text-white bg-white/5 border-white/30 focus:border-purple-400 placeholder-gray-400"
-                                                    />
-                                                    <Button
-                                                        size="sm"
-                                                        colorscheme="greenToBlue"
-                                                        variant="solid"
-                                                        onClick={() => viewModel.handleSubmitScore(player.id)}
-                                                        disabled={!viewModel.canSubmitScore(player.id)}
-                                                        className="hover:scale-110 transition-transform disabled:opacity-50"
-                                                    >
-                                                        Submit
-                                                    </Button>
-                                                </div>
-                                            )}
-
-                                            {/* Non-editable player display */}
-                                            {!gameState.showReorderMode && !player.isCurrentUser && !player.hasSubmitted && (
-                                                <div className="text-right">
-                                                    <Text size="sm" className="text-gray-400">
-                                                        Waiting for player...
-                                                    </Text>
-                                                </div>
-                                            )}
-
-                                            {/* Submitted score display */}
-                                            {!gameState.showReorderMode && player.hasSubmitted && (
-                                                <div className="text-right">
-                                                    <Text size="xl" weight="bold" className="text-green-300">
-                                                        {player.currentRoundScore}
-                                                    </Text>
-                                                    <Text size="sm" className="text-green-400">
-                                                        {player.isCurrentUser ? ' points' : 'submitted'}
-                                                    </Text>
-                                                </div>
-                                            )}
                                         </div>
-                                    </div>
-                                ))}
+                                    );
+                                })}
                             </div>
                         </div>
 
                         {/* Game Stats */}
                         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6">
                             <div className="text-center p-4 rounded-xl bg-white/5 backdrop-blur-xl border border-white/10">
-                                <Text size="sm" className="text-gray-400">Current Round: </Text>
+                                <Text size="sm" className="text-gray-400">Current Round</Text>
                                 <Text size="xl" weight="bold" className="text-purple-300">
-                                    {gameStats.currentRound}
+                                    {game.currentRound}
                                 </Text>
                             </div>
 
                             <div className="text-center p-4 rounded-xl bg-white/5 backdrop-blur-xl border border-white/10">
-                                <Text size="sm" className="text-gray-400">Submitted: </Text>
+                                <Text size="sm" className="text-gray-400">Submitted</Text>
                                 <Text size="xl" weight="bold" className="text-blue-300">
-                                    {gameStats.submittedProgress}
+                                    {submittedCount}/{game.players.length}
                                 </Text>
                             </div>
 
                             <div className="text-center p-4 rounded-xl bg-white/5 backdrop-blur-xl border border-white/10">
-                                <Text size="sm" className="text-gray-400">Current Dealer: </Text>
+                                <Text size="sm" className="text-gray-400">Current Dealer</Text>
                                 <Text size="xl" weight="bold" className="text-yellow-300">
-                                    {gameStats.currentDealerName?.split(' ')[1] || gameStats.currentDealerName}
+                                    {currentDealer?.name?.split(' ')[0] || 'N/A'}
                                 </Text>
                             </div>
 
                             <div className="text-center p-4 rounded-xl bg-white/5 backdrop-blur-xl border border-white/10">
-                                <Text size="sm" className="text-gray-400">Highest Total: </Text>
+                                <Text size="sm" className="text-gray-400">Highest Total</Text>
                                 <Text size="xl" weight="bold" className="text-green-300">
-                                    {gameStats.highestTotalScore}
+                                    {highestTotalScore}
                                 </Text>
                             </div>
                         </div>
@@ -278,13 +420,15 @@ export function GamePage() {
                         {/* Instructions */}
                         <div className="text-center mt-6 p-4 rounded-xl bg-white/5 backdrop-blur-xl border border-white/10">
                             <Text className="text-gray-300 text-sm">
-                                {gameState.showReorderMode
-                                    ? "🔧 Drag and drop players to change turn order. The dealer position will adjust automatically."
-                                    : gameState.allPlayersSubmitted
-                                        ? "🎯 All scores submitted! Click 'Next Round' to continue and advance the dealer."
-                                        : hasCurrentUserSubmitted
-                                            ? "✅ You've submitted your score! Waiting for other players to finish."
-                                            : "📝 Enter your round score and click Submit. Only you can edit your own score."
+                                {game.isFinished
+                                    ? "🎉 Game has ended! Check out the final scores above."
+                                    : showReorderMode
+                                        ? "🔧 Drag and drop players to change turn order. The dealer position will adjust automatically."
+                                        : allPlayersSubmitted
+                                            ? "🎯 All scores submitted! Click 'Next Round' to continue and advance the dealer."
+                                            : hasCurrentUserSubmitted
+                                                ? "✅ You've submitted your score! Waiting for other players to finish."
+                                                : "🎲 Enter your round score and click Submit. Only you can edit your own score."
                                 }
                             </Text>
                         </div>

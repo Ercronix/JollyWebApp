@@ -1,35 +1,46 @@
+// src/presentation/pages/LandingPage.tsx
 import React, { useState } from "react";
 import { Button } from "@/presentation/components/Button";
 import { Input } from "@/presentation/components/input";
 import { Text } from "@/presentation/components/Text";
 import { useNavigate } from "@tanstack/react-router";
 import { UserModel } from "@/core/models/UserModel";
+import { useLogin } from "@/core/api/hooks";
 
 export function LandingPage() {
     const navigate = useNavigate();
     const [username, setUsername] = useState("");
-    const [isLoading, setIsLoading] = useState(false);
+    const [error, setError] = useState<string | null>(null);
+    const loginMutation = useLogin();
 
     const handleEnterGame = async () => {
         if (!username.trim()) {
             return;
         }
 
-        setIsLoading(true);
+        try {
+            console.log('Starting login with username:', username.trim());
+            setError(null);
 
-        // Set the user in the model
-        const userModel = UserModel.getInstance();
-        userModel.setUser(username);
+            const response = await loginMutation.mutateAsync(username.trim());
+            console.log('Login response received:', response);
 
-        // Navigate to lobby after a brief delay for UX
-        setTimeout(() => {
+            // Save user to local model
+            const userModel = UserModel.getInstance();
+            userModel.setUser(response.user);
+            console.log('User saved to model:', response.user);
+
+            // Navigate to lobby
+            console.log('Navigating to lobby...');
             navigate({ to: "/lobby" });
-            setIsLoading(false);
-        }, 500);
+        } catch (error) {
+            console.error('Login failed:', error);
+            setError(error instanceof Error ? error.message : 'Login failed');
+        }
     };
 
     const handleKeyPress = (e: React.KeyboardEvent) => {
-        if (e.key === 'Enter' && username.trim()) {
+        if (e.key === 'Enter' && username.trim() && !loginMutation.isPending) {
             handleEnterGame();
         }
     };
@@ -101,10 +112,16 @@ export function LandingPage() {
                                     placeholder="Enter your username..."
                                     maxLength={20}
                                     className="text-white bg-white/5 border-white/30 focus:border-purple-400 focus:ring-purple-400/50 placeholder-gray-400 transition-all duration-300 hover:bg-white/10 text-center text-lg py-3"
-                                    disabled={isLoading}
+                                    disabled={loginMutation.isPending}
                                 />
                                 <div className="absolute inset-0 bg-gradient-to-r from-purple-500/20 to-blue-500/20 rounded-lg opacity-0 hover:opacity-100 transition-opacity duration-300 pointer-events-none"></div>
                             </div>
+
+                            {(loginMutation.isError || error) && (
+                                <Text size="sm" className="text-red-400 text-center">
+                                    {error || 'Login failed. Please try again.'}
+                                </Text>
+                            )}
 
                             <Button
                                 colorscheme="purpleToBlue"
@@ -112,9 +129,9 @@ export function LandingPage() {
                                 size="lg"
                                 className="w-full text-lg py-4 hover:scale-105 transition-transform duration-300 disabled:opacity-50 disabled:scale-100"
                                 onClick={handleEnterGame}
-                                disabled={!username.trim() || isLoading}
+                                disabled={!username.trim() || loginMutation.isPending}
                             >
-                                {isLoading ? (
+                                {loginMutation.isPending ? (
                                     <span className="flex items-center justify-center gap-2">
                                         <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
                                         Entering Game...

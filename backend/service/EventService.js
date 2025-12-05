@@ -11,12 +11,13 @@ class EventService {
         }
         this.clients.get(gameId).add(res);
 
-        // Setup headers for SSE
+        // Setup headers for SSE - Fixed CORS for credentials
         res.writeHead(200, {
             'Content-Type': 'text/event-stream',
             'Cache-Control': 'no-cache',
             'Connection': 'keep-alive',
-            'Access-Control-Allow-Origin': '*'
+            'Access-Control-Allow-Origin': 'http://localhost:5173', // Your frontend URL
+            'Access-Control-Allow-Credentials': 'true'
         });
 
         // Send initial connection message

@@ -1,8 +1,8 @@
-// UserModel.ts
+// src/core/models/UserModel.ts
 export type User = {
     id: string;
     username: string;
-    createdAt: Date;
+    createdAt: string;
 };
 
 const STORAGE_KEY = "app_user_v1";
@@ -28,12 +28,8 @@ export class UserModel {
             if (!raw) return;
             const parsed = JSON.parse(raw);
             if (!parsed || !parsed.id) return;
-            this.currentUser = {
-                ...parsed,
-                createdAt: parsed.createdAt ? new Date(parsed.createdAt) : new Date(),
-            };
+            this.currentUser = parsed;
         } catch (e) {
-            // If storage is corrupted or unavailable, ignore and start fresh
             console.warn("UserModel: failed to load from storage", e);
             this.currentUser = null;
         }
@@ -42,11 +38,7 @@ export class UserModel {
     private saveToStorage(): void {
         try {
             if (this.currentUser) {
-                const toSave = {
-                    ...this.currentUser,
-                    createdAt: this.currentUser.createdAt.toISOString(),
-                };
-                localStorage.setItem(STORAGE_KEY, JSON.stringify(toSave));
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(this.currentUser));
             } else {
                 localStorage.removeItem(STORAGE_KEY);
             }
@@ -55,20 +47,9 @@ export class UserModel {
         }
     }
 
-    setUser(username: string): User {
-        const id = typeof crypto !== "undefined" && (crypto as any).randomUUID
-            ? (crypto as any).randomUUID()
-            : String(Date.now()) + Math.random().toString(36).slice(2, 9);
-
-        const user: User = {
-            id,
-            username: username.trim(),
-            createdAt: new Date(),
-        };
-
+    setUser(user: User): void {
         this.currentUser = user;
         this.saveToStorage();
-        return user;
     }
 
     getCurrentUser(): User | null {

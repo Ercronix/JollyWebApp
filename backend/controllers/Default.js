@@ -19,7 +19,7 @@ module.exports.createLobbyPOST = function createLobbyPOST (req, res, next) {
 };
 
 module.exports.forceNextRoundPOST = function forceNextRoundPOST (req, res, next) {
-    const gameId = req.openapi.pathParams.gameId;
+    const gameId = req.params.gameId;
     Default.forceNextRoundPOST(gameId)
         .then(function (response) {
             utils.writeJson(res, response);
@@ -41,7 +41,7 @@ module.exports.getCurrentUserGET = function getCurrentUserGET (req, res, next) {
 };
 
 module.exports.getGameStateGET = function getGameStateGET (req, res, next) {
-    const gameId = req.openapi.pathParams.gameId;
+    const gameId = req.params.gameId;
     Default.getGameStateGET(gameId)
         .then(function (response) {
             utils.writeJson(res, response);
@@ -53,7 +53,7 @@ module.exports.getGameStateGET = function getGameStateGET (req, res, next) {
 
 module.exports.joinLobbyPOST = function joinLobbyPOST (req, res, next) {
     const body = req.body;
-    const lobbyId = req.openapi.pathParams.lobbyId;
+    const lobbyId = req.params.lobbyId;
 
     Default.joinLobbyPOST(body, lobbyId)
         .then(function (response) {
@@ -81,8 +81,10 @@ module.exports.loginUserPOST = function loginUserPOST (req, res, next) {
             // Set session cookie
             res.cookie('sessionId', response.sessionId, {
                 httpOnly: true,
-                maxAge: 24 * 60 * 60 * 1000 // 24 hours
+                maxAge: 24 * 60 * 60 * 1000, // 24 hours
+                sameSite: 'lax'
             });
+
             utils.writeJson(res, response);
         })
         .catch(function (error) {
@@ -103,7 +105,7 @@ module.exports.logoutUserPOST = function logoutUserPOST (req, res, next) {
 };
 
 module.exports.nextRoundPOST = function nextRoundPOST (req, res, next) {
-    const gameId = req.openapi.pathParams.gameId;
+    const gameId = req.params.gameId;
     Default.nextRoundPOST(gameId)
         .then(function (response) {
             utils.writeJson(res, response);
@@ -115,7 +117,7 @@ module.exports.nextRoundPOST = function nextRoundPOST (req, res, next) {
 
 module.exports.reorderPlayersPOST = function reorderPlayersPOST (req, res, next) {
     const body = req.body;
-    const gameId = req.openapi.pathParams.gameId;
+    const gameId = req.params.gameId;
     Default.reorderPlayersPOST(body, gameId)
         .then(function (response) {
             utils.writeJson(res, response);
@@ -127,7 +129,7 @@ module.exports.reorderPlayersPOST = function reorderPlayersPOST (req, res, next)
 
 module.exports.resetRoundPOST = function resetRoundPOST (req, res, next) {
     const body = req.body;
-    const gameId = req.openapi.pathParams.gameId;
+    const gameId = req.params.gameId;
     Default.resetRoundPOST(body, gameId)
         .then(function (response) {
             utils.writeJson(res, response);
@@ -139,7 +141,7 @@ module.exports.resetRoundPOST = function resetRoundPOST (req, res, next) {
 
 module.exports.submitScorePOST = function submitScorePOST (req, res, next) {
     const body = req.body;
-    const gameId = req.openapi.pathParams.gameId;
+    const gameId = req.params.gameId;
     Default.submitScorePOST(body, gameId)
         .then(function (response) {
             utils.writeJson(res, response);
@@ -149,12 +151,8 @@ module.exports.submitScorePOST = function submitScorePOST (req, res, next) {
         });
 };
 
-module.exports.subscribeToGameEventsGET = function subscribeToGameEventsGET (req, res, next, gameId) {
-  Default.subscribeToGameEventsGET(gameId)
-    .then(function (response) {
-      utils.writeJson(res, response);
-    })
-    .catch(function (response) {
-      utils.writeJson(res, response);
-    });
+module.exports.subscribeToGameEventsGET = function subscribeToGameEventsGET (req, res, next) {
+    const gameId = req.params.gameId;
+    // Call the service function directly with req, res, next
+    Default.subscribeToGameEventsGET(req, res, next);
 };
