@@ -80,10 +80,6 @@ export class ApiClient {
         this.sessionId = sessionId;
     }
 
-    static getSessionId(): string | null {
-        return this.sessionId;
-    }
-
     private static getHeaders(): HeadersInit {
         const headers: HeadersInit = {
             'Content-Type': 'application/json',
