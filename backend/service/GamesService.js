@@ -6,7 +6,7 @@ const EventService = require('./EventService');
 class GamesService {
     constructor() {
         this.games = new Map(); // gameId -> Game
-        this.POINTS_GOAL = 100; // Game ends when a player reaches this score
+        this.POINTS_GOAL = 1000; // Game ends when a player reaches this score
     }
 
     createGame(lobbyId, players) {
@@ -56,6 +56,17 @@ class GamesService {
             createdAt: new Date().toISOString()
         });
 
+        // Send event to all clients
+        EventService.sendEvent(gameId, {
+            type: 'PLAYER_JOINED',
+            game: this.getGameResponse(game),
+            player: {
+                userId,
+                name: username,
+                score: 0
+            }
+        });
+
         return game;
     }
 
@@ -80,6 +91,21 @@ class GamesService {
 
         player.currentRoundScore = score;
         player.hasSubmitted = true;
+
+        // Check if all players have submitted
+        const allPlayersSubmitted = this.allPlayersSubmitted(game);
+
+        // Send event to all clients
+        EventService.sendEvent(gameId, {
+            type: 'SCORE_SUBMITTED',
+            game: this.getGameResponse(game),
+            player: {
+                userId: player.userId,
+                name: player.name,
+                score: score
+            },
+            allPlayersSubmitted
+        });
 
         return { game, player };
     }
@@ -171,6 +197,12 @@ class GamesService {
 
         const [movedPlayer] = game.players.splice(fromIndex, 1);
         game.players.splice(toIndex, 0, movedPlayer);
+
+        // Send event to all clients
+        EventService.sendEvent(gameId, {
+            type: 'PLAYERS_REORDERED',
+            game: this.getGameResponse(game)
+        });
 
         return game;
     }

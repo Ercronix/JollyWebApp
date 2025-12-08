@@ -1,7 +1,7 @@
 // src/core/api/hooks.ts
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { ApiClient, type GameEvent } from './client';
-import { useEffect } from 'react';
+import {ApiClient, type GameEvent} from './client';
+import {useEffect} from 'react';
 
 // Query keys
 export const queryKeys = {
@@ -155,11 +155,14 @@ export function useForceNextRound() {
 }
 
 // SSE hook for game events
+// SSE hook for game events
 export function useGameEvents(gameId: string | undefined) {
     const queryClient = useQueryClient();
 
     useEffect(() => {
         if (!gameId) return;
+
+        console.log('Subscribing to game events for gameId:', gameId);
 
         const unsubscribe = ApiClient.subscribeToGameEvents(gameId, (eventData: GameEvent) => {
             console.log('Game event received:', eventData);
@@ -173,15 +176,21 @@ export function useGameEvents(gameId: string | undefined) {
                 case 'ROUND_RESET':
                 case 'SCORE_SUBMITTED':
                 case 'PLAYER_JOINED':
+                case 'PLAYERS_REORDERED':
                     // Update game state in cache
                     if (eventData.game) {
+                        console.log('Updating game state from SSE event:', eventData.type);
+                        console.log('New game state:', eventData.game);
                         queryClient.setQueryData(queryKeys.game(gameId), eventData.game);
+                        // Force refetch to ensure UI updates
+                        queryClient.invalidateQueries({ queryKey: queryKeys.game(gameId) });
                     }
                     break;
 
                 case 'GAME_ENDED':
                     if (eventData.game) {
                         queryClient.setQueryData(queryKeys.game(gameId), eventData.game);
+                        queryClient.invalidateQueries({ queryKey: queryKeys.game(gameId) });
                     }
                     // Show winner notification
                     if (eventData.winner) {
@@ -195,6 +204,7 @@ export function useGameEvents(gameId: string | undefined) {
         });
 
         return () => {
+            console.log('Unsubscribing from game events');
             unsubscribe();
         };
     }, [gameId, queryClient]);

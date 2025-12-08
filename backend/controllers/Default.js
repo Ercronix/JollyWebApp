@@ -152,7 +152,5 @@ module.exports.submitScorePOST = function submitScorePOST (req, res, next) {
 };
 
 module.exports.subscribeToGameEventsGET = function subscribeToGameEventsGET (req, res, next) {
-    const gameId = req.params.gameId;
-    // Call the service function directly with req, res, next
     Default.subscribeToGameEventsGET(req, res, next);
 };

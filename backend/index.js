@@ -67,6 +67,7 @@ try {
     app.post('/api/games/:gameId/nextRound', DefaultController.nextRoundPOST);
     app.post('/api/games/:gameId/reorderPlayers', DefaultController.reorderPlayersPOST);
     app.post('/api/games/:gameId/resetRound', DefaultController.resetRoundPOST);
+
     app.get('/api/games/:gameId/events', DefaultController.subscribeToGameEventsGET);
 
     // Admin routes

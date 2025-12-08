@@ -55,14 +55,20 @@ export interface NextRoundResponse {
 }
 
 export interface GameEvent {
-    type: 'CONNECTED' | 'ROUND_STARTED' | 'ROUND_RESET' | 'SCORE_SUBMITTED' | 'PLAYER_JOINED' | 'GAME_ENDED';
+    type: 'CONNECTED' | 'ROUND_STARTED' | 'ROUND_RESET' | 'SCORE_SUBMITTED' | 'PLAYER_JOINED' | 'PLAYERS_REORDERED' | 'GAME_ENDED';
     game?: Game;
     gameId?: string;
+    player?: {
+        userId: string;
+        name: string;
+        score: number;
+    };
     winner?: {
         userId: string;
         name: string;
         totalScore: number;
     };
+    allPlayersSubmitted?: boolean;
 }
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080';
@@ -214,7 +220,7 @@ export class ApiClient {
         );
     }
 
-    // SSE endpoint
+// SSE endpoint
     static subscribeToGameEvents(gameId: string, onEvent: (data: GameEvent) => void): () => void {
         const eventSource = new EventSource(
             `${API_BASE_URL}/api/games/${gameId}/events`,
@@ -232,7 +238,6 @@ export class ApiClient {
 
         eventSource.onerror = (error) => {
             console.error('SSE connection error:', error);
-            eventSource.close();
         };
 
         return () => {

@@ -141,26 +141,17 @@ module.exports.listLobbiesGET = function () {
  * returns User
  **/
 module.exports.loginUserPOST = function (body) {
-    console.log('=== LOGIN SERVICE CALLED ===');
-    console.log('Received body:', body);
-
     return new Promise(function (resolve, reject) {
         try {
             const { username } = body;
-            console.log('Username:', username);
 
             if (!username) {
-                console.log('ERROR: Username is required');
                 return reject({ status: 400, message: 'Username is required' });
             }
 
-            console.log('Calling UsersService.loginUser...');
             const { user, sessionId } = UsersService.loginUser(username);
-            console.log('Login successful:', { user, sessionId });
-
             resolve({ user, sessionId });
         } catch (error) {
-            console.error('ERROR in loginUserPOST:', error);
             reject({ status: 500, message: error.message });
         }
     });
@@ -288,7 +279,7 @@ module.exports.submitScorePOST = function (body, gameId) {
  * returns String
  **/
 
-module.exports.subscribeToGameEventsGET = function subscribeToGameEventsGET(req, res, next) {
+module.exports.subscribeToGameEventsGET = function subscribeToGameEventsGET(req, res) {
     const gameId = req.params.gameId;
 
     // Verify game exists

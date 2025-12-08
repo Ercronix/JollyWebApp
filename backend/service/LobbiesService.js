@@ -31,10 +31,6 @@ class LobbiesService {
         return lobby;
     }
 
-    getLobbyById(lobbyId) {
-        return this.lobbies.get(lobbyId);
-    }
-
     listLobbies() {
         return Array.from(this.lobbies.values()).map(lobby => ({
             id: lobby.id,
@@ -82,11 +78,6 @@ class LobbiesService {
             createdAt: lobby.createdAt,
             gameId: lobby.gameId
         };
-    }
-
-    getGameIdForLobby(lobbyId) {
-        const lobby = this.lobbies.get(lobbyId);
-        return lobby ? lobby.gameId : null;
     }
 }
 
