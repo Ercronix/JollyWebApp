@@ -1,5 +1,5 @@
 // src/presentation/pages/GamePage.tsx
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { Button } from "@/presentation/components/Button";
 import { Input } from "@/presentation/components/input";
 import { Text } from "@/presentation/components/Text";

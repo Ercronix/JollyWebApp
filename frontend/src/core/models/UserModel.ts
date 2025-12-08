@@ -60,16 +60,4 @@ export class UserModel {
         this.currentUser = null;
         this.saveToStorage();
     }
-
-    isLoggedIn(): boolean {
-        return this.currentUser !== null;
-    }
-
-    getUsername(): string {
-        return this.currentUser?.username || "";
-    }
-
-    getUserId(): string {
-        return this.currentUser?.id || "";
-    }
 }

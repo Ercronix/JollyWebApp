@@ -3,6 +3,7 @@ import React, { useState, useEffect } from "react";
 import { Button } from "@/presentation/components/Button";
 import { Input } from "@/presentation/components/input";
 import { Text } from "@/presentation/components/Text";
+import { DeleteConfirmationModal } from "@/presentation/components/DeleteConfirmationModal";
 import { useNavigate } from "@tanstack/react-router";
 import { UserModel } from "@/core/models/UserModel";
 import type { Lobby } from "@/core/api/client";
@@ -11,17 +12,23 @@ import {
     useCreateLobby,
     useJoinLobby,
     useLogout,
+    useDeleteLobby,
 } from "@/core/api/hooks";
 
 export function LobbyPage() {
     const navigate = useNavigate();
     const [lobbyName, setLobbyName] = useState("");
     const [currentUser, setCurrentUser] = useState(() => UserModel.getInstance().getCurrentUser());
+    const [deleteConfirmation, setDeleteConfirmation] = useState<{ show: boolean; lobby: Lobby | null }>({
+        show: false,
+        lobby: null,
+    });
 
     const { data: lobbies = [], isLoading, refetch } = useLobbies();
     const createLobbyMutation = useCreateLobby();
     const joinLobbyMutation = useJoinLobby();
     const logoutMutation = useLogout();
+    const deleteLobbyMutation = useDeleteLobby();
 
     // Check if user is logged in
     useEffect(() => {
@@ -64,7 +71,6 @@ export function LobbyPage() {
             });
 
             // Get gameId from lobby service
-            // The backend should return gameId, but if not, we need to fetch it
             const gameId = result.lobby.gameId || lobby.gameId;
 
             if (gameId) {
@@ -79,6 +85,28 @@ export function LobbyPage() {
         } catch (error) {
             console.error('Failed to join lobby:', error);
         }
+    };
+
+    const handleDeleteLobby = (lobby: Lobby) => {
+        setDeleteConfirmation({ show: true, lobby });
+    };
+
+    const confirmDeleteLobby = async () => {
+        if (!deleteConfirmation.lobby || !currentUser) return;
+
+        try {
+            await deleteLobbyMutation.mutateAsync({
+                lobbyId: deleteConfirmation.lobby.id,
+                userId: currentUser.id,
+            });
+            setDeleteConfirmation({ show: false, lobby: null });
+        } catch (error) {
+            console.error('Failed to delete lobby:', error);
+        }
+    };
+
+    const cancelDeleteLobby = () => {
+        setDeleteConfirmation({ show: false, lobby: null });
     };
 
     const handleLogout = async () => {
@@ -104,6 +132,17 @@ export function LobbyPage() {
 
     return (
         <div className="flex flex-col items-center gap-12 py-8">
+            {/* Delete Confirmation Modal */}
+            <DeleteConfirmationModal
+                isOpen={deleteConfirmation.show}
+                title="Delete Lobby?"
+                message="Are you sure you want to delete"
+                itemName={deleteConfirmation.lobby?.name}
+                onConfirm={confirmDeleteLobby}
+                onCancel={cancelDeleteLobby}
+                isDeleting={deleteLobbyMutation.isPending}
+            />
+
             {/* Header with User Info */}
             <div className="text-center space-y-6 animate-in fade-in duration-1000">
                 <div className="relative">
@@ -169,12 +208,25 @@ export function LobbyPage() {
                         {lobbies.map((lobby: Lobby, index: number) => (
                             <div
                                 key={lobby.id}
-                                className="group relative overflow-hidden rounded-2xl bg-white/10 backdrop-blur-xl border border-white/20 p-6 shadow-lg hover:shadow-2xl hover:shadow-purple-500/25 transition-all duration-500 hover:-translate-y-2 hover:scale-105 cursor-pointer animate-in slide-in-from-bottom-8 duration-700"
+                                className="group relative overflow-hidden rounded-2xl bg-white/10 backdrop-blur-xl border border-white/20 p-6 shadow-lg hover:shadow-2xl hover:shadow-purple-500/25 transition-all duration-500 hover:-translate-y-2 hover:scale-105 animate-in slide-in-from-bottom-8 duration-700"
                                 style={{
                                     animationDelay: `${index * 150}ms`,
                                 }}
                             >
                                 <div className="absolute inset-0 bg-gradient-to-r from-purple-500/50 via-pink-500/50 to-blue-500/50 opacity-0 group-hover:opacity-100 transition-opacity duration-500 rounded-2xl blur-sm"></div>
+
+                                {/* Delete Button */}
+                                <button
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleDeleteLobby(lobby);
+                                    }}
+                                    className="absolute top-3 right-3 z-20 bg-red-500/80 hover:bg-red-600 text-white rounded-full w-8 h-8 flex items-center justify-center transition-all duration-300 hover:scale-110 opacity-0 group-hover:opacity-100"
+                                    disabled={deleteLobbyMutation.isPending}
+                                    aria-label="Delete lobby"
+                                >
+                                    🗑️
+                                </button>
 
                                 <div className="relative z-10 space-y-4">
                                     <Text size="lg" weight="semibold" className="text-white group-hover:text-purple-300 transition-colors">

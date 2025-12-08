@@ -35,6 +35,18 @@ class GamesService {
         return this.games.get(gameId);
     }
 
+    deleteGame(gameId) {
+        const game = this.games.get(gameId);
+        if (!game) {
+            return;
+        }
+
+        // Remove the game
+        this.games.delete(gameId);
+
+        console.log(`[GamesService] Game ${gameId} deleted`);
+    }
+
     addPlayerToGame(gameId, userId, username) {
         const game = this.games.get(gameId);
         if (!game) {

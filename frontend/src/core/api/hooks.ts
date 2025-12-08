@@ -70,6 +70,18 @@ export function useJoinLobby() {
     });
 }
 
+export function useDeleteLobby() {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: ({ lobbyId, userId }: { lobbyId: string; userId: string }) =>
+            ApiClient.deleteLobby(lobbyId, userId),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: queryKeys.lobbies });
+        },
+    });
+}
+
 // Game hooks
 export function useGameState(gameId: string | undefined) {
     return useQuery({
@@ -154,7 +166,6 @@ export function useForceNextRound() {
     });
 }
 
-// SSE hook for game events
 // SSE hook for game events
 export function useGameEvents(gameId: string | undefined) {
     const queryClient = useQueryClient();

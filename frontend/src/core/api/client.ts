@@ -165,6 +165,16 @@ export class ApiClient {
         );
     }
 
+    static async deleteLobby(lobbyId: string, userId: string): Promise<void> {
+        return this.request<void>(
+            `/api/lobbies/${lobbyId}`,
+            {
+                method: 'DELETE',
+                body: JSON.stringify({ userId }),
+            }
+        );
+    }
+
     // Game endpoints
     static async getGameState(gameId: string): Promise<Game> {
         return this.request<Game>(`/api/games/${gameId}`, { method: 'GET' });
@@ -220,7 +230,7 @@ export class ApiClient {
         );
     }
 
-// SSE endpoint
+    // SSE endpoint
     static subscribeToGameEvents(gameId: string, onEvent: (data: GameEvent) => void): () => void {
         const eventSource = new EventSource(
             `${API_BASE_URL}/api/games/${gameId}/events`,

@@ -14,6 +14,7 @@ class LobbiesService {
             name,
             playerCount: 0,
             players: [], // Array of { userId, name }
+            createdBy: userId, // Track who created the lobby
             createdAt: new Date().toISOString(),
             gameId: null
         };
@@ -36,7 +37,8 @@ class LobbiesService {
             id: lobby.id,
             name: lobby.name,
             playerCount: lobby.playerCount,
-            createdAt: lobby.createdAt
+            createdAt: lobby.createdAt,
+            gameId: lobby.gameId
         }));
     }
 
@@ -68,6 +70,27 @@ class LobbiesService {
         }
 
         return { lobby: this.getLobbyResponse(lobby), playerId: userId };
+    }
+
+    deleteLobby(lobbyId, userId) {
+        const lobby = this.lobbies.get(lobbyId);
+        if (!lobby) {
+            throw new Error('Lobby not found');
+        }
+
+        // Optional: Add permission check - only creator can delete
+        // Uncomment if you want to restrict deletion to lobby creator
+        // if (lobby.createdBy !== userId) {
+        //     throw new Error('Only the lobby creator can delete this lobby');
+        // }
+
+        // Delete associated game if it exists
+        if (lobby.gameId) {
+            GamesService.deleteGame(lobby.gameId);
+        }
+
+        // Delete the lobby
+        this.lobbies.delete(lobbyId);
     }
 
     getLobbyResponse(lobby) {

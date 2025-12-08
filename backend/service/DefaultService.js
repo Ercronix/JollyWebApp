@@ -34,6 +34,32 @@ module.exports.createLobbyPOST = function(body) {
 
 
 /**
+ * Delete a lobby
+ *
+ * body DeleteLobbyRequest
+ * lobbyId uuid
+ * returns void
+ **/
+module.exports.deleteLobbyDELETE = function(body, lobbyId) {
+    return new Promise(function(resolve, reject) {
+        try {
+            const { userId } = body;
+
+            const user = UsersService.getUserById(userId);
+            if (!user) {
+                return reject({ status: 401, message: 'User not found' });
+            }
+
+            LobbiesService.deleteLobby(lobbyId, userId);
+            resolve();
+        } catch (error) {
+            reject({ status: error.message.includes('not found') ? 404 : 403, message: error.message });
+        }
+    });
+}
+
+
+/**
  * Force next round (Admin)
  *
  * gameId Integer
