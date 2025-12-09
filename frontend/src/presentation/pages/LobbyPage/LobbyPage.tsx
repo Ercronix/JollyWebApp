@@ -4,6 +4,7 @@ import { Button } from "@/presentation/components/Button";
 import { Input } from "@/presentation/components/input";
 import { Text } from "@/presentation/components/Text";
 import { DeleteConfirmationModal } from "@/presentation/components/DeleteConfirmationModal";
+import { ArchiveConfirmationModal } from "@/presentation/components/ArchiveConfirmationModal";
 import { useNavigate } from "@tanstack/react-router";
 import { UserModel } from "@/core/models/UserModel";
 import type { Lobby } from "@/core/api/client";
@@ -13,6 +14,7 @@ import {
     useJoinLobby,
     useLogout,
     useDeleteLobby,
+    useArchiveLobby,
 } from "@/core/api/hooks";
 
 export function LobbyPage() {
@@ -23,12 +25,17 @@ export function LobbyPage() {
         show: false,
         lobby: null,
     });
+    const [archiveConfirmation, setArchiveConfirmation] = useState<{ show: boolean; lobby: Lobby | null}>({
+        show: false,
+        lobby: null,
+    })
 
     const { data: lobbies = [], isLoading, refetch } = useLobbies();
     const createLobbyMutation = useCreateLobby();
     const joinLobbyMutation = useJoinLobby();
     const logoutMutation = useLogout();
     const deleteLobbyMutation = useDeleteLobby();
+    const archiveLobbyMutation = useArchiveLobby();
 
     // Check if user is logged in
     useEffect(() => {
@@ -91,6 +98,22 @@ export function LobbyPage() {
         setDeleteConfirmation({ show: true, lobby });
     };
 
+    const handleArchiveLobby = (lobby: Lobby) => {
+        setArchiveConfirmation({ show: true, lobby });
+    }
+
+    const confirmArchiveLobby = async() => {
+        if (!archiveConfirmation.lobby) return;
+        try {
+            await archiveLobbyMutation.mutateAsync({
+                lobbyId: archiveConfirmation.lobby.id
+            });
+            setArchiveConfirmation({show: false, lobby: null});
+        }catch (error) {
+            console.error('Failed to archive lobby:', error);
+        }
+    };
+
     const confirmDeleteLobby = async () => {
         if (!deleteConfirmation.lobby || !currentUser) return;
 
@@ -108,6 +131,10 @@ export function LobbyPage() {
     const cancelDeleteLobby = () => {
         setDeleteConfirmation({ show: false, lobby: null });
     };
+
+    const cancelArchiveLobby = () => {
+      setArchiveConfirmation({ show: false, lobby: null });
+    }
 
     const handleLogout = async () => {
         try {
@@ -141,6 +168,16 @@ export function LobbyPage() {
                 onConfirm={confirmDeleteLobby}
                 onCancel={cancelDeleteLobby}
                 isDeleting={deleteLobbyMutation.isPending}
+            />
+
+            <ArchiveConfirmationModal
+                isOpen={archiveConfirmation.show}
+                title="Archive Lobby?"
+                message="Are you sure you want to archive"
+                itemName={archiveConfirmation.lobby?.name}
+                onConfirm={confirmArchiveLobby}
+                onCancel={cancelArchiveLobby}
+                isArchiving={archiveLobbyMutation.isPending}
             />
 
             {/* Header with User Info */}
@@ -215,6 +252,19 @@ export function LobbyPage() {
                             >
                                 <div className="absolute inset-0 bg-gradient-to-r from-purple-500/50 via-pink-500/50 to-blue-500/50 opacity-0 group-hover:opacity-100 transition-opacity duration-500 rounded-2xl blur-sm"></div>
 
+                                {/* Archive Button */}
+                                <button
+                                    onClick={(event )=>{
+                                        event.stopPropagation();
+                                        handleArchiveLobby(lobby);
+                                    }}
+                                    className="absolute top-3 right-15 z-20 bg-red-200/80 hover:bg-brown-300 text-white rounded-full w-8 h-8 flex items-center justify-center transition-all duration-300 hover:scale-110 opacity-0 group-hover:opacity-100"
+                                    disabled={archiveLobbyMutation.isPending}
+                                    aria-label="Archive Lobby"
+                                    >
+                                    🗄️
+                                </button>
+
                                 {/* Delete Button */}
                                 <button
                                     onClick={(e) => {
@@ -267,7 +317,7 @@ export function LobbyPage() {
                             <Text size="xl" weight="semibold" className="text-white">
                                 Create a Lobby
                             </Text>
-                            <div className="w-24 h-1 bg-gradient-to-r from-green-400 to-blue-400 mx-auto rounded-full"></div>
+                            <div className="w-35 h-1 bg-gradient-to-r from-green-400 to-blue-400 mx-auto rounded-full"></div>
                             <Text size="sm" className="text-purple-300">
                                 You'll be the host as <span className="font-semibold">{currentUser.username}</span>
                             </Text>

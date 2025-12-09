@@ -171,6 +171,15 @@ export class ApiClient {
         );
     }
 
+    static async archiveLobby(lobbyId: string): Promise<void> {
+        return this.request<void>(
+            `/api/lobbies/${lobbyId}/archive`,
+            {
+                method: 'POST',
+            }
+        )
+    }
+
     // Game endpoints
     static async getGameState(gameId: string): Promise<Game> {
         return this.request<Game>(`/api/games/${gameId}`, { method: 'GET' });

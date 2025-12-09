@@ -82,6 +82,18 @@ export function useDeleteLobby() {
     });
 }
 
+export function useArchiveLobby(){
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: ({ lobbyId }: { lobbyId: string }) =>
+            ApiClient.archiveLobby(lobbyId),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: queryKeys.lobbies });
+        }
+    })
+}
+
 // Game hooks
 export function useGameState(gameId: string | undefined) {
     return useQuery({
