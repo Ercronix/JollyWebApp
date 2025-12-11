@@ -77,7 +77,7 @@ export function GamePage() {
     };
 
     const handleScoreInput = (playerId: string, value: string) => {
-        const currentUserPlayer = game.players.find((p: any) => p.userId === currentUser.id);
+        const currentUserPlayer = game.players.find((p: Player) => p.userId === currentUser.id);
         if (currentUserPlayer?.userId !== playerId) {
             return;
         }
