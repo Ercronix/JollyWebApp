@@ -1,75 +1,14 @@
 // src/core/api/client.ts
-
-// Type definitions based on backend API
-export interface User {
-    id: string;
-    username: string;
-    createdAt: string;
-}
-
-export interface Player {
-    name: string;
-    userId: string;
-    totalScore: number;
-    currentRoundScore: number;
-    hasSubmitted: boolean;
-    createdAt: string;
-}
-
-export interface Game {
-    id: string;
-    players: Player[];
-    currentDealer: string;
-    currentRound: number;
-    createdAt: string;
-    isFinished: boolean;
-    winner: string | null;
-}
-
-export interface Lobby {
-    id: string;
-    name: string;
-    playerCount: number;
-    createdAt: string;
-    gameId?: string;
-}
-
-export interface LoginResponse {
-    user: User;
-    sessionId: string;
-}
-
-export interface JoinLobbyResponse {
-    lobby: Lobby;
-    playerId: string;
-}
-
-export interface SubmitScoreResponse {
-    game: Game;
-    player: Player;
-}
-
-export interface NextRoundResponse {
-    game: Game;
-    message: string;
-}
-
-export interface GameEvent {
-    type: 'CONNECTED' | 'ROUND_STARTED' | 'ROUND_RESET' | 'SCORE_SUBMITTED' | 'PLAYER_JOINED' | 'PLAYERS_REORDERED' | 'GAME_ENDED';
-    game?: Game;
-    gameId?: string;
-    player?: {
-        userId: string;
-        name: string;
-        score: number;
-    };
-    winner?: {
-        userId: string;
-        name: string;
-        totalScore: number;
-    };
-    allPlayersSubmitted?: boolean;
-}
+import type {
+    User,
+    Game,
+    Lobby,
+    LoginResponse,
+    JoinLobbyResponse,
+    SubmitScoreResponse,
+    NextRoundResponse,
+    GameEvent
+} from '@/types';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080';
 

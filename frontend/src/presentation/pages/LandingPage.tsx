@@ -32,7 +32,7 @@ export function LandingPage() {
 
             // Navigate to lobby
             console.log('Navigating to lobby...');
-            navigate({ to: "/lobby" });
+            await navigate({to: "/lobby"});
         } catch (error) {
             console.error('Login failed:', error);
             setError(error instanceof Error ? error.message : 'Login failed');

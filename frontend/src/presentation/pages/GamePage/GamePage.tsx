@@ -28,6 +28,7 @@ export function GamePage() {
 
     const [showReorderMode, setShowReorderMode] = useState(false);
     const [tempScores, setTempScores] = useState<Record<string, string>>({});
+    const [scoreErrors, setScoreErrors] = useState<Record<string, string>>({});
     const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
 
     // React Query hooks
@@ -78,14 +79,60 @@ export function GamePage() {
     const handleScoreInput = (playerId: string, value: string) => {
         const currentUserPlayer = game.players.find((p: any) => p.userId === currentUser.id);
         if (currentUserPlayer?.userId !== playerId) {
-            return; // Can only edit own score
+            return;
         }
+
+        // Allow empty string
+        if (value === '') {
+            setTempScores(prev => ({ ...prev, [playerId]: value }));
+            setScoreErrors(prev => {
+                const newErrors = { ...prev };
+                delete newErrors[playerId];
+                return newErrors;
+            });
+            return;
+        }
+        if (!/^(-?\d*)$/.test(value)) {
+            return;
+        }
+
+        const numericValue = parseInt(value, 10);
+
+        // Check if divisible by 5
+        if (numericValue % 5 !== 0) {
+            setScoreErrors(prev => ({
+                ...prev,
+                [playerId]: 'Score must be divisible by 5'
+            }));
+        } else {
+            setScoreErrors(prev => {
+                const newErrors = { ...prev };
+                delete newErrors[playerId];
+                return newErrors;
+            });
+        }
+
         setTempScores(prev => ({ ...prev, [playerId]: value }));
     };
 
     const handleSubmitScore = async (playerId: string) => {
         const scoreValue = parseInt(tempScores[playerId] || '0');
-        if (isNaN(scoreValue)) return;
+
+        if (isNaN(scoreValue)) {
+            setScoreErrors(prev => ({
+                ...prev,
+                [playerId]: 'Please enter a valid number'
+            }));
+            return;
+        }
+
+        if (scoreValue % 5 !== 0) {
+            setScoreErrors(prev => ({
+                ...prev,
+                [playerId]: 'Score must be divisible by 5'
+            }));
+            return;
+        }
 
         try {
             await submitScoreMutation.mutateAsync({
@@ -98,8 +145,17 @@ export function GamePage() {
                 delete newScores[playerId];
                 return newScores;
             });
+            setScoreErrors(prev => {
+                const newErrors = { ...prev };
+                delete newErrors[playerId];
+                return newErrors;
+            });
         } catch (error) {
             console.error('Failed to submit score:', error);
+            setScoreErrors(prev => ({
+                ...prev,
+                [playerId]: 'Failed to submit score'
+            }));
         }
     };
 
@@ -118,6 +174,7 @@ export function GamePage() {
                 userId: currentUser.id,
             });
             setTempScores({});
+            setScoreErrors({});
         } catch (error) {
             console.error('Failed to reset round:', error);
         }
@@ -285,6 +342,7 @@ export function GamePage() {
                                 {game.players.map((player: Player, index: number) => {
                                     const isCurrentUser = player.userId === currentUser.id;
                                     const isDealer = player.userId === game.currentDealer;
+                                    const hasError = scoreErrors[player.userId];
 
                                     return (
                                         <div
@@ -310,7 +368,7 @@ export function GamePage() {
                                                 animationDelay: `${index * 100}ms`,
                                             }}
                                         >
-                                            <div className="flex items-center justify-between gap-4">
+                                            <div className="flex items-center justify-between gap-4 flex-wrap">
                                                 {/* Player Info */}
                                                 <div className="flex items-center gap-4">
                                                     <div className={`flex items-center justify-center w-12 h-12 rounded-full border font-bold text-lg text-white ${
@@ -339,23 +397,35 @@ export function GamePage() {
 
                                                 {/* Score Input - Only for current user */}
                                                 {!showReorderMode && !player.hasSubmitted && isCurrentUser && !game.isFinished && (
-                                                    <div className="flex items-center gap-3">
-                                                        <Input
-                                                            type="number"
-                                                            value={tempScores[player.userId] || ''}
-                                                            onChange={(e) => handleScoreInput(player.userId, e.target.value)}
-                                                            className="w-24 text-center text-white bg-white/5 border-white/30 focus:border-purple-400 placeholder-gray-400"
-                                                        />
-                                                        <Button
-                                                            size="sm"
-                                                            colorscheme="greenToBlue"
-                                                            variant="solid"
-                                                            onClick={() => handleSubmitScore(player.userId)}
-                                                            disabled={!tempScores[player.userId] || submitScoreMutation.isPending}
-                                                            className="hover:scale-110 transition-transform disabled:opacity-50"
-                                                        >
-                                                            Submit
-                                                        </Button>
+                                                    <div className="flex flex-col gap-2 w-full sm:w-auto">
+                                                        <div className="flex items-center gap-3">
+                                                            <Input
+                                                                type="text"
+                                                                value={tempScores[player.userId] || ''}
+                                                                onChange={(e) => handleScoreInput(player.userId, e.target.value)}
+                                                                placeholder="0"
+                                                                className={`w-24 text-center text-white bg-white/5 border focus:border-purple-400 placeholder-gray-400 ${
+                                                                    hasError ? 'border-red-500/50' : 'border-white/30'
+                                                                }`}
+                                                            />
+                                                            <Button
+                                                                size="sm"
+                                                                colorscheme="greenToBlue"
+                                                                variant="solid"
+                                                                onClick={() => handleSubmitScore(player.userId)}
+                                                                disabled={!tempScores[player.userId] || !!hasError || submitScoreMutation.isPending}
+                                                                className="hover:scale-110 transition-transform disabled:opacity-50"
+                                                            >
+                                                                Submit
+                                                            </Button>
+                                                        </div>
+
+                                                        {/* Error message */}
+                                                        {hasError && (
+                                                            <Text size="sm" className="text-red-400">
+                                                                {hasError}
+                                                            </Text>
+                                                        )}
                                                     </div>
                                                 )}
 
@@ -389,28 +459,28 @@ export function GamePage() {
                         {/* Game Stats */}
                         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6">
                             <div className="text-center p-4 rounded-xl bg-white/5 backdrop-blur-xl border border-white/10">
-                                <Text size="sm" className="text-gray-400">Current Round</Text>
+                                <Text size="sm" className="text-gray-400">Current Round </Text>
                                 <Text size="xl" weight="bold" className="text-purple-300">
                                     {game.currentRound}
                                 </Text>
                             </div>
 
                             <div className="text-center p-4 rounded-xl bg-white/5 backdrop-blur-xl border border-white/10">
-                                <Text size="sm" className="text-gray-400">Submitted</Text>
+                                <Text size="sm" className="text-gray-400">Submitted </Text>
                                 <Text size="xl" weight="bold" className="text-blue-300">
                                     {submittedCount}/{game.players.length}
                                 </Text>
                             </div>
 
                             <div className="text-center p-4 rounded-xl bg-white/5 backdrop-blur-xl border border-white/10">
-                                <Text size="sm" className="text-gray-400">Current Dealer</Text>
+                                <Text size="sm" className="text-gray-400">Current Dealer </Text>
                                 <Text size="xl" weight="bold" className="text-yellow-300">
                                     {currentDealer?.name?.split(' ')[0] || 'N/A'}
                                 </Text>
                             </div>
 
                             <div className="text-center p-4 rounded-xl bg-white/5 backdrop-blur-xl border border-white/10">
-                                <Text size="sm" className="text-gray-400">Highest Total</Text>
+                                <Text size="sm" className="text-gray-400">Highest Total </Text>
                                 <Text size="xl" weight="bold" className="text-green-300">
                                     {highestTotalScore}
                                 </Text>
@@ -428,7 +498,7 @@ export function GamePage() {
                                             ? "🎯 All scores submitted! Click 'Next Round' to continue and advance the dealer."
                                             : hasCurrentUserSubmitted
                                                 ? "✅ You've submitted your score! Waiting for other players to finish."
-                                                : "🎲 Enter your round score and click Submit. Only you can edit your own score."
+                                                : "🎲 Enter your round score (must be divisible by 5). Only you can edit your own score."
                                 }
                             </Text>
                         </div>

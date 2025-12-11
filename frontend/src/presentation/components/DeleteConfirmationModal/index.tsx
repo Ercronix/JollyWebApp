@@ -27,11 +27,13 @@ export function DeleteConfirmationModal({
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 animate-in fade-in duration-300">
             <div className="bg-gradient-to-br from-gray-900 to-gray-800 rounded-3xl border border-red-500/30 p-8 max-w-md w-full mx-4 shadow-2xl shadow-red-500/20 animate-in zoom-in-95 duration-300">
                 <div className="space-y-6">
-                    <div className="text-center">
+                    <div className="text-center space-y-3">
+                        <div>
                         <div className="text-5xl mb-4">⚠️</div>
-                        <Text size="xl" weight="bold" className="text-white mb-2">
-                            {title}
-                        </Text>
+                            <Text size="xl" weight="bold" className="text-white mb-2">
+                                {title}
+                            </Text>
+                        </div>
                         <Text size="sm" className="text-gray-300">
                             {message}{" "}
                             {itemName && (
@@ -40,9 +42,6 @@ export function DeleteConfirmationModal({
                                 </span>
                             )}
                             ?
-                        </Text>
-                        <Text size="sm" className="text-gray-400 mt-2">
-                            This action cannot be undone.
                         </Text>
                     </div>
 

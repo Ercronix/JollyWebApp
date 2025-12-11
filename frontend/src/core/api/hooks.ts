@@ -1,7 +1,8 @@
 // src/core/api/hooks.ts
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import {ApiClient, type GameEvent} from './client';
+import {ApiClient} from './client';
 import {useEffect} from 'react';
+import type { GameEvent } from '@/types';
 
 // Query keys
 export const queryKeys = {
