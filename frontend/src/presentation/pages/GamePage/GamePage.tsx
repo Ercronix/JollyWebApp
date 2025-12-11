@@ -6,7 +6,7 @@ import { Text } from "@/presentation/components/Text";
 import { useNavigate, useSearch } from "@tanstack/react-router";
 import { MainLayout } from "@/presentation/layout/MainLayout";
 import { UserModel } from "@/core/models/UserModel";
-import type { Player } from "@/core/api/client";
+import type { Player } from "@/types";
 import {
     useGameState,
     useGameEvents,

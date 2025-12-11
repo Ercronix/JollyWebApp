@@ -7,7 +7,7 @@ import { DeleteConfirmationModal } from "@/presentation/components/DeleteConfirm
 import { ArchiveConfirmationModal } from "@/presentation/components/ArchiveConfirmationModal";
 import { useNavigate } from "@tanstack/react-router";
 import { UserModel } from "@/core/models/UserModel";
-import type { Lobby } from "@/core/api/client";
+import type { Lobby } from "@/types";
 import {
     useLobbies,
     useCreateLobby,
