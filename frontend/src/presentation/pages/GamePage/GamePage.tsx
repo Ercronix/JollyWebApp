@@ -3,6 +3,7 @@ import React, { useState, useEffect } from "react";
 import { Button } from "@/presentation/components/Button";
 import { Input } from "@/presentation/components/input";
 import { Text } from "@/presentation/components/Text";
+import { ScoreCalculator } from "@/presentation/components/ScoreCalculator";
 import { useNavigate, useSearch } from "@tanstack/react-router";
 import { MainLayout } from "@/presentation/layout/MainLayout";
 import { UserModel } from "@/core/models/UserModel";
@@ -30,6 +31,7 @@ export function GamePage() {
     const [tempScores, setTempScores] = useState<Record<string, string>>({});
     const [scoreErrors, setScoreErrors] = useState<Record<string, string>>({});
     const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
+    const [calculatorOpen, setCalculatorOpen] = useState<string | null>(null);
 
     // React Query hooks
     const { data: game, isLoading } = useGameState(searchParams.gameId);
@@ -410,6 +412,15 @@ export function GamePage() {
                                                             />
                                                             <Button
                                                                 size="sm"
+                                                                colorscheme="cyanToBlue"
+                                                                variant="outline"
+                                                                onClick={() => setCalculatorOpen(player.userId)}
+                                                                className="hover:scale-110 transition-transform"
+                                                            >
+                                                                🧮
+                                                            </Button>
+                                                            <Button
+                                                                size="sm"
                                                                 colorscheme="greenToBlue"
                                                                 variant="solid"
                                                                 onClick={() => handleSubmitScore(player.userId)}
@@ -420,7 +431,6 @@ export function GamePage() {
                                                             </Button>
                                                         </div>
 
-                                                        {/* Error message */}
                                                         {hasError && (
                                                             <Text size="sm" className="text-red-400">
                                                                 {hasError}
@@ -502,6 +512,22 @@ export function GamePage() {
                                 }
                             </Text>
                         </div>
+
+                        <ScoreCalculator
+                            isOpen={calculatorOpen === currentUserPlayer?.userId}
+                            onClose={() => setCalculatorOpen(null)}
+                            onSubmit={(score) => {
+                                if (currentUserPlayer) {
+                                    setTempScores(prev => ({ ...prev, [currentUserPlayer.userId]: score.toString() }));
+                                    setScoreErrors(prev => {
+                                        const newErrors = { ...prev };
+                                        delete newErrors[currentUserPlayer.userId];
+                                        return newErrors;
+                                    });
+                                }
+                            }}
+                            playerName={currentUserPlayer?.name || "Player"}
+                        />
                     </div>
                 </div>
             </MainLayout>
