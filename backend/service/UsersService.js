@@ -1,48 +1,87 @@
 'use strict';
 
+const User = require('../models/User');
+const Session = require('../models/Session');
 const { v4: uuidv4 } = require('uuid');
+const config = require('../config');
 
 class UsersService {
     constructor() {
-        this.users = new Map();
-        this.sessions = new Map();
+        this.SESSION_DURATION = config.session.durationMs;
     }
 
-    createUser(username) {
-        const user = {
-            id: uuidv4(),
-            username,
-            createdAt: new Date().toISOString()
-        };
-        this.users.set(user.id, user);
-        return user;
+    async createUser(username) {
+        const user = new User({ username });
+        await user.save();
+        return this.formatUser(user);
     }
 
-    getUserById(userId) {
-        return this.users.get(userId);
+    async getUserById(userId) {
+        const user = await User.findById(userId);
+        return user ? this.formatUser(user) : null;
     }
 
-    getUserByUsername(username) {
-        return Array.from(this.users.values()).find(u => u.username === username);
+    async getUserByUsername(username) {
+        const user = await User.findOne({ username });
+        return user ? this.formatUser(user) : null;
     }
 
-    loginUser(username) {
-        let user = this.getUserByUsername(username);
+    async loginUser(username) {
+        let user = await this.getUserByUsername(username);
         if (!user) {
-            user = this.createUser(username);
+            user = await this.createUser(username);
         }
+
         const sessionId = uuidv4();
-        this.sessions.set(sessionId, user.id);
+        const expiresAt = new Date(Date.now() + this.SESSION_DURATION);
+
+        const session = new Session({
+            sessionId,
+            userId: user.id, // MongoDB ObjectId
+            expiresAt
+        });
+
+        await session.save();
+
         return { user, sessionId };
     }
 
-    getUserBySession(sessionId) {
-        const userId = this.sessions.get(sessionId);
-        return userId ? this.users.get(userId) : null;
+    async getUserBySession(sessionId) {
+        const session = await Session.findOne({
+            sessionId,
+            expiresAt: { $gt: new Date() }
+        }).populate('userId');
+
+        if (!session) {
+            return null;
+        }
+
+        // Refresh session (sliding expiration)
+        session.expiresAt = new Date(Date.now() + this.SESSION_DURATION);
+        await session.save();
+
+        return this.formatUser(session.userId);
     }
 
-    logoutUser(sessionId) {
-        this.sessions.delete(sessionId);
+    async logoutUser(sessionId) {
+        await Session.deleteOne({ sessionId });
+    }
+
+    async cleanupExpiredSessions() {
+        const result = await Session.deleteMany({
+            expiresAt: { $lt: new Date() }
+        });
+        console.log(`[UsersService] Cleaned up ${result.deletedCount} expired sessions`);
+    }
+
+    // Format user for consistent API responses
+    formatUser(user) {
+        if (!user) return null;
+        return {
+            id: user._id.toString(), // Convert ObjectId to string
+            username: user.username,
+            createdAt: user.createdAt
+        };
     }
 }
 

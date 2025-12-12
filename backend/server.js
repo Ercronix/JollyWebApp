@@ -5,6 +5,7 @@ const cors = require('cors');
 const cookieParser = require('cookie-parser');
 const http = require('http');
 const routes = require('./routes');
+const connectDB = require("./config/database");
 
 const serverPort = 8080;
 const app = express();
@@ -29,6 +30,8 @@ app.use((req, res, next) => {
     console.log(`${req.method} ${req.url}`, 'Body:', req.body);
     next();
 });
+
+connectDB();
 
 // Mount all routes
 app.use(routes);
