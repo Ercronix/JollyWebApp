@@ -20,6 +20,12 @@ module.exports = {
             .catch(e => utils.writeJson(res, e, e.status || 500));
     },
 
+    archiveLobbyPOST(req, res) {
+        Default.archiveLobbyPOST(req.body, req.params.lobbyId)
+            .then(() => res.sendStatus(204))
+            .catch(e => utils.writeJson(res, e, e.status || 500));
+    },
+
     forceNextRoundPOST(req, res) {
         Default.forceNextRoundPOST(req.params.gameId)
             .then(r => utils.writeJson(res, r))

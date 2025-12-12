@@ -50,6 +50,15 @@ module.exports.deleteLobbyDELETE = async function(body, lobbyId) {
     }
 }
 
+module.exports.archiveLobbyPOST = async function(body, lobbyId) {
+    try {
+        await LobbiesService.archiveLobby(lobbyId);
+    }catch(error) {
+        console.error('[ArchiveLobby] Error:', error);
+        throw { status: error.status || 500, message: error.message };
+    }
+}
+
 /**
  * Force next round (Admin)
  */

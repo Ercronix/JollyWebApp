@@ -9,7 +9,8 @@ class LobbiesService {
             name,
             playerCount: 0,
             players: [],
-            createdBy: userId
+            createdBy: userId,
+            archived: false
         });
 
         if (userId && username) {
@@ -30,13 +31,17 @@ class LobbiesService {
 
     async listLobbies() {
         const lobbies = await Lobby.find();
-        return lobbies.map(lobby => ({
-            id: lobby._id,
-            name: lobby.name,
-            playerCount: lobby.playerCount,
-            createdAt: lobby.createdAt,
-            gameId: lobby.gameId
-        }));
+
+        return lobbies
+            .filter(lobby => !lobby.archived)       // ✔ remove archived lobbies
+            .map(lobby => ({
+                id: lobby._id,
+                name: lobby.name,
+                playerCount: lobby.playerCount,
+                createdAt: lobby.createdAt,
+                gameId: lobby.gameId,
+                archived: lobby.archived
+            }));
     }
 
     async joinLobby(lobbyId, userId, username) {
@@ -76,6 +81,16 @@ class LobbiesService {
         }
 
         await Lobby.findByIdAndDelete(lobbyId);
+    }
+
+    async archiveLobby(lobbyId) {
+        const lobby = await Lobby.findById(lobbyId);
+        if (!lobby) {
+            throw new Error('Lobby not found');
+        }
+        lobby.archived = true;
+        await lobby.save();
+        await this.listLobbies();
     }
 
     getLobbyResponse(lobby) {

@@ -503,7 +503,7 @@ export function GamePage() {
                                 {game.isFinished
                                     ? "🎉 Game has ended! Check out the final scores above."
                                     : showReorderMode
-                                        ? "🔧 Drag and drop players to change turn order. The dealer position will adjust automatically."
+                                        ? "🔧 Drag and drop players to change turn order. The first player in the List will be the Dealer after changing the order."
                                         : allPlayersSubmitted
                                             ? "🎯 All scores submitted! Click 'Next Round' to continue and advance the dealer."
                                             : hasCurrentUserSubmitted

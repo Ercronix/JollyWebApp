@@ -29,7 +29,8 @@ const lobbySchema = new mongoose.Schema({
     createdAt: {
         type: Date,
         default: Date.now
-    }
+    },
+    archived: Boolean,
 });
 
 module.exports = mongoose.model('Lobby', lobbySchema);

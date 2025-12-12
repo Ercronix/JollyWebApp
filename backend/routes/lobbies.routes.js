@@ -6,5 +6,6 @@ router.get('/', Default.listLobbiesGET);
 router.post('/', Default.createLobbyPOST);
 router.post('/:lobbyId/join', Default.joinLobbyPOST);
 router.delete('/:lobbyId', Default.deleteLobbyDELETE);
+router.post('/:lobbyId/archive', Default.archiveLobbyPOST);
 
 module.exports = router;
