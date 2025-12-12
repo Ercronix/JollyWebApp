@@ -55,8 +55,7 @@ module.exports.deleteLobbyDELETE = async function(body, lobbyId) {
  */
 module.exports.forceNextRoundPOST = async function(gameId) {
     try {
-        const result = await GamesService.nextRound(gameId, true);
-        return result;
+        return await GamesService.nextRound(gameId, true);
     } catch (error) {
         throw { status: 400, message: error.message };
     }
@@ -103,8 +102,7 @@ module.exports.joinLobbyPOST = async function (body, lobbyId) {
         if (!user) {
             throw { status: 401, message: 'User not found' };
         }
-        const result = await LobbiesService.joinLobby(lobbyId, userId, user.username);
-        return result;
+        return await LobbiesService.joinLobby(lobbyId, userId, user.username);
     } catch (error) {
         throw { status: 400, message: error.message };
     }
@@ -115,8 +113,7 @@ module.exports.joinLobbyPOST = async function (body, lobbyId) {
  */
 module.exports.listLobbiesGET = async function () {
     try {
-        const lobbies = await LobbiesService.listLobbies();
-        return lobbies;
+        return await LobbiesService.listLobbies();
     } catch (error) {
         throw { status: 500, message: error.message };
     }
@@ -156,8 +153,7 @@ module.exports.logoutUserPOST = async function (sessionId) {
  */
 module.exports.nextRoundPOST = async function (gameId) {
     try {
-        const result = await GamesService.nextRound(gameId, false);
-        return result;
+        return await GamesService.nextRound(gameId, false);
     } catch (error) {
         throw { status: 400, message: error.message };
     }
@@ -196,8 +192,7 @@ module.exports.resetRoundPOST = async function (body, gameId) {
             }
         }
 
-        const result = await GamesService.resetRound(gameId);
-        return result;
+        return await GamesService.resetRound(gameId);
     } catch (error) {
         throw { status: 400, message: error.message };
     }
@@ -214,8 +209,7 @@ module.exports.submitScorePOST = async function (body, gameId) {
             throw { status: 400, message: 'Score must be a number' };
         }
 
-        const result = await GamesService.submitScore(gameId, playerId, score);
-        return result;
+        return await GamesService.submitScore(gameId, playerId, score);
     } catch (error) {
         throw { status: 400, message: error.message };
     }

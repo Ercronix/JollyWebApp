@@ -210,13 +210,21 @@ class GamesService {
                 throw new Error('Game not found');
             }
 
-            if (fromIndex < 0 || fromIndex >= game.players.length ||
-                toIndex < 0 || toIndex >= game.players.length) {
+            if (
+                fromIndex < 0 || fromIndex >= game.players.length ||
+                toIndex < 0 || toIndex >= game.players.length
+            ) {
                 throw new Error('Invalid player indices');
             }
 
+            // Move the player
             const [movedPlayer] = game.players.splice(fromIndex, 1);
             game.players.splice(toIndex, 0, movedPlayer);
+
+            // 🔥 Ensure first player in list becomes the dealer
+            if (game.players.length > 0) {
+                game.currentDealer = game.players[0].userId;
+            }
 
             await game.save();
 
