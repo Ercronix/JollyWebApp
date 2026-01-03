@@ -27,9 +27,11 @@ export function PlayerHistoryModal({isOpen, onClose, player}: PlayerHistoryModal
                     <Text size="xl" weight="bold" className="text-white text-center">
                         📊 {player.name}'s History
                     </Text>
-                    <Text size="xl" className="text-gray-300 text-right mt-2">
-                        Total Score: {player.totalScore}
-                    </Text>
+                    <div>
+                        <Text size="xl" className="text-gray-300 text-right mt-2">
+                            Total Score: {player.totalScore}
+                        </Text>
+                    </div>
                 </div>
 
                 {/* Content */}

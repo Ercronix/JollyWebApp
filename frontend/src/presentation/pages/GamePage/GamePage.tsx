@@ -425,11 +425,6 @@ export function GamePage() {
                                                             <Text className="text-gray-400">
                                                                 Total: <span className="text-white font-semibold">{player.totalScore}</span>
                                                             </Text>
-                                                            {player.pointsHistory && player.pointsHistory.length > 0 && (
-                                                                <Text className="text-gray-400">
-                                                                    History: <span className="text-blue-300 font-semibold">{player.pointsHistory.length} rounds</span>
-                                                                </Text>
-                                                            )}
                                                         </div>
                                                     </div>
                                                 </div>
