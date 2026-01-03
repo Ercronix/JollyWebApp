@@ -69,6 +69,16 @@ export class ApiClient {
         return response;
     }
 
+    static async leaveLobby(lobbyId: string, userId: string): Promise<void> {
+        return this.request<void>(
+            `/api/lobbies/${lobbyId}/leave`,
+            {
+                method: 'POST',
+                body: JSON.stringify({ userId }),
+            }
+        );
+    }
+
     static async logout(): Promise<void> {
         await this.request<void>('/users/logout', { method: 'POST' });
         this.setSessionId('');

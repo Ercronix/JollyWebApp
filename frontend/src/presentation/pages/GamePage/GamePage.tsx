@@ -4,6 +4,7 @@ import { Button } from "@/presentation/components/Button";
 import { Input } from "@/presentation/components/input";
 import { Text } from "@/presentation/components/Text";
 import { ScoreCalculator } from "@/presentation/components/ScoreCalculator";
+import { PlayerHistoryModal } from "@/presentation/components/PlayerHistoryModal";
 import { useNavigate, useSearch } from "@tanstack/react-router";
 import { MainLayout } from "@/presentation/layout/MainLayout";
 import { UserModel } from "@/core/models/UserModel";
@@ -15,11 +16,13 @@ import {
     useNextRound,
     useResetRound,
     useReorderPlayers,
+    useLeaveLobby,
 } from "@/core/api/hooks";
 
 export type GameSearchParams = {
     gameId?: string;
     lobbyName?: string;
+    lobbyId?: string;
 };
 
 export function GamePage() {
@@ -32,6 +35,7 @@ export function GamePage() {
     const [scoreErrors, setScoreErrors] = useState<Record<string, string>>({});
     const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
     const [calculatorOpen, setCalculatorOpen] = useState<string | null>(null);
+    const [historyPlayer, setHistoryPlayer] = useState<Player | null>(null);
 
     // React Query hooks
     const { data: game, isLoading } = useGameState(searchParams.gameId);
@@ -39,6 +43,7 @@ export function GamePage() {
     const nextRoundMutation = useNextRound();
     const resetRoundMutation = useResetRound();
     const reorderPlayersMutation = useReorderPlayers();
+    const leaveLobbyMutation = useLeaveLobby();
 
     // Subscribe to SSE events
     useGameEvents(searchParams.gameId);
@@ -74,8 +79,22 @@ export function GamePage() {
         );
     }
 
-    const handleLeaveLobby = () => {
+    const handleBackToLobby = () => {
         navigate({ to: "/lobby" });
+    };
+
+    const handleLeaveLobby = async () => {
+        if (!searchParams.lobbyId || !currentUser) return;
+
+        try {
+            await leaveLobbyMutation.mutateAsync({
+                lobbyId: searchParams.lobbyId,
+                userId: currentUser.id,
+            });
+            navigate({ to: "/lobby" });
+        } catch (error) {
+            console.error('Failed to leave lobby:', error);
+        }
     };
 
     const handleScoreInput = (playerId: string, value: string) => {
@@ -328,9 +347,20 @@ export function GamePage() {
                                 variant="solid"
                                 size="md"
                                 onClick={handleLeaveLobby}
+                                disabled={leaveLobbyMutation.isPending}
                                 className="hover:scale-105 transition-transform duration-300"
                             >
-                                🚪 Leave Game
+                                🚪 Leave Lobby
+                            </Button>
+
+                            <Button
+                                colorscheme="purpleToBlue"
+                                variant="outline"
+                                size="md"
+                                onClick={handleBackToLobby}
+                                className="hover:scale-105 transition-transform duration-300"
+                            >
+                                ⬅️ Back to Lobbies
                             </Button>
                         </div>
 
@@ -353,6 +383,7 @@ export function GamePage() {
                                             onDragStart={(e) => handleDragStart(e, index)}
                                             onDragOver={handleDragOver}
                                             onDrop={(e) => handleDrop(e, index)}
+                                            onClick={() => !showReorderMode && setHistoryPlayer(player)}
                                             className={`group relative overflow-hidden rounded-2xl backdrop-blur-xl border p-4 shadow-lg transition-all duration-300 animate-in slide-in-from-left-6 ${
                                                 player.hasSubmitted
                                                     ? 'bg-green-500/10 border-green-500/30 shadow-green-500/25'
@@ -364,7 +395,7 @@ export function GamePage() {
                                                     ? 'ring-2 ring-yellow-400 bg-yellow-500/5'
                                                     : ''
                                             } ${
-                                                showReorderMode ? 'cursor-move hover:scale-102' : ''
+                                                showReorderMode ? 'cursor-move hover:scale-102' : 'cursor-pointer hover:scale-102'
                                             }`}
                                             style={{
                                                 animationDelay: `${index * 100}ms`,
@@ -388,18 +419,24 @@ export function GamePage() {
                                                             {isDealer && <span className="text-yellow-400">🃏</span>}
                                                             {player.hasSubmitted && <span className="text-green-400">✅</span>}
                                                             {showReorderMode && <span className="text-gray-400 text-sm">🔗</span>}
+                                                            {!showReorderMode && <span className="text-blue-400 text-sm">📊</span>}
                                                         </Text>
                                                         <div className="flex items-center gap-4 text-sm">
                                                             <Text className="text-gray-400">
                                                                 Total: <span className="text-white font-semibold">{player.totalScore}</span>
                                                             </Text>
+                                                            {player.pointsHistory && player.pointsHistory.length > 0 && (
+                                                                <Text className="text-gray-400">
+                                                                    History: <span className="text-blue-300 font-semibold">{player.pointsHistory.length} rounds</span>
+                                                                </Text>
+                                                            )}
                                                         </div>
                                                     </div>
                                                 </div>
 
                                                 {/* Score Input - Only for current user */}
                                                 {!showReorderMode && !player.hasSubmitted && isCurrentUser && !game.isFinished && (
-                                                    <div className="flex flex-col gap-2 w-full sm:w-auto">
+                                                    <div className="flex flex-col gap-2 w-full sm:w-auto" onClick={(e) => e.stopPropagation()}>
                                                         <div className="flex items-center gap-3">
                                                             <Input
                                                                 type="text"
@@ -504,11 +541,7 @@ export function GamePage() {
                                     ? "🎉 Game has ended! Check out the final scores above."
                                     : showReorderMode
                                         ? "🔧 Drag and drop players to change turn order. The first player in the List will be the Dealer after changing the order."
-                                        : allPlayersSubmitted
-                                            ? "🎯 All scores submitted! Click 'Next Round' to continue and advance the dealer."
-                                            : hasCurrentUserSubmitted
-                                                ? "✅ You've submitted your score! Waiting for other players to finish."
-                                                : "🎲 Enter your round score (must be divisible by 5). Only you can edit your own score."
+                                        : "📊 Click on any player to view their points history. Enter your round score (must be divisible by 5)."
                                 }
                             </Text>
                         </div>
@@ -527,6 +560,12 @@ export function GamePage() {
                                 }
                             }}
                             playerName={currentUserPlayer?.name || "Player"}
+                        />
+
+                        <PlayerHistoryModal
+                            isOpen={!!historyPlayer}
+                            onClose={() => setHistoryPlayer(null)}
+                            player={historyPlayer}
                         />
                     </div>
                 </div>

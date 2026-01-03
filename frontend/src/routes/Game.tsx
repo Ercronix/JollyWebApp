@@ -4,6 +4,7 @@ import { GamePage } from '../presentation/pages/GamePage/GamePage';
 type GameSearch = {
     gameId?: string;
     lobbyName?: string;
+    lobbyId?: string;
 };
 
 export const Route = createFileRoute('/Game')({
@@ -11,6 +12,7 @@ export const Route = createFileRoute('/Game')({
         return {
             gameId: (search.gameId as string) || undefined,
             lobbyName: (search.lobbyName as string) || undefined,
+            lobbyId: (search.lobbyId as string) || undefined,
         };
     },
     component: GamePage,

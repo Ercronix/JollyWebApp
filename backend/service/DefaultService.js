@@ -50,11 +50,37 @@ module.exports.deleteLobbyDELETE = async function(body, lobbyId) {
     }
 }
 
+/**
+ * Archive a lobby
+ */
 module.exports.archiveLobbyPOST = async function(body, lobbyId) {
     try {
         await LobbiesService.archiveLobby(lobbyId);
-    }catch(error) {
+    } catch(error) {
         console.error('[ArchiveLobby] Error:', error);
+        throw { status: error.status || 500, message: error.message };
+    }
+}
+
+/**
+ * Leave a lobby
+ */
+module.exports.leaveLobbyPOST = async function(body, lobbyId) {
+    try {
+        const { userId } = body;
+
+        if (!userId) {
+            throw { status: 400, message: 'User ID is required' };
+        }
+
+        const user = await UsersService.getUserById(userId);
+        if (!user) {
+            throw { status: 401, message: 'User not found' };
+        }
+
+        await LobbiesService.leaveLobby(lobbyId, userId);
+    } catch (error) {
+        console.error('[LeaveLobby] Error:', error);
         throw { status: error.status || 500, message: error.message };
     }
 }

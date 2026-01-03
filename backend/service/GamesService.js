@@ -35,7 +35,8 @@ class GamesService {
                 userId: p.userId,
                 totalScore: 0,
                 currentRoundScore: 0,
-                hasSubmitted: false
+                hasSubmitted: false,
+                pointsHistory: [] // Initialize empty points history
             })),
             currentDealer: players[0]?.userId || null,
             currentRound: 1,
@@ -44,6 +45,7 @@ class GamesService {
         });
 
         await game.save();
+        console.log(`[GamesService] Game created: ${game._id}`);
         return game;
     }
 
@@ -74,7 +76,8 @@ class GamesService {
                 userId,
                 totalScore: 0,
                 currentRoundScore: 0,
-                hasSubmitted: false
+                hasSubmitted: false,
+                pointsHistory: [] // Initialize empty points history for new players
             });
 
             await game.save();
@@ -85,6 +88,47 @@ class GamesService {
                 player: { userId, name: username, score: 0 }
             });
 
+            console.log(`[GamesService] Player ${username} added to game ${gameId}`);
+            return game;
+        });
+    }
+
+    // ADD THIS METHOD - it's the missing one
+    async removePlayerFromGame(gameId, userId) {
+        return this.queueOperation(gameId, async () => {
+            console.log(`[GamesService] Removing player ${userId} from game ${gameId}`);
+
+            const game = await Game.findById(gameId);
+            if (!game) {
+                console.error(`[GamesService] Game not found: ${gameId}`);
+                throw new Error('Game not found');
+            }
+
+            const playerIndex = game.players.findIndex(p => p.userId.toString() === userId.toString());
+            if (playerIndex === -1) {
+                console.log(`[GamesService] Player ${userId} not in game ${gameId}`);
+                return game; // Player not in game
+            }
+
+            // Remove player
+            game.players.splice(playerIndex, 1);
+            console.log(`[GamesService] Player removed. Remaining players: ${game.players.length}`);
+
+            // Update dealer if necessary
+            if (game.players.length > 0 && game.currentDealer.toString() === userId.toString()) {
+                game.currentDealer = game.players[0].userId;
+                console.log(`[GamesService] Dealer updated to ${game.players[0].name}`);
+            }
+
+            await game.save();
+
+            EventService.sendEvent(gameId.toString(), {
+                type: 'PLAYER_LEFT',
+                game: this.getGameResponse(game),
+                userId
+            });
+
+            console.log(`[GamesService] Player ${userId} successfully removed from game ${gameId}`);
             return game;
         });
     }
@@ -150,7 +194,15 @@ class GamesService {
                 throw new Error('Not all players have submitted their scores');
             }
 
+            // Add current round scores to points history and update total scores
             game.players.forEach(player => {
+                // Add to points history
+                if (!player.pointsHistory) {
+                    player.pointsHistory = [];
+                }
+                player.pointsHistory.push(player.currentRoundScore);
+
+                // Update total score
                 player.totalScore += player.currentRoundScore;
             });
 
@@ -221,7 +273,7 @@ class GamesService {
             const [movedPlayer] = game.players.splice(fromIndex, 1);
             game.players.splice(toIndex, 0, movedPlayer);
 
-            // 🔥 Ensure first player in list becomes the dealer
+            // Ensure first player in list becomes the dealer
             if (game.players.length > 0) {
                 game.currentDealer = game.players[0].userId;
             }
@@ -267,7 +319,14 @@ class GamesService {
     getGameResponse(game) {
         return {
             id: game._id,
-            players: game.players,
+            players: game.players.map(p => ({
+                name: p.name,
+                userId: p.userId,
+                totalScore: p.totalScore,
+                currentRoundScore: p.currentRoundScore,
+                hasSubmitted: p.hasSubmitted,
+                pointsHistory: p.pointsHistory || []
+            })),
             currentDealer: game.currentDealer,
             currentRound: game.currentRound,
             createdAt: game.createdAt,

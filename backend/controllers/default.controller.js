@@ -26,6 +26,12 @@ module.exports = {
             .catch(e => utils.writeJson(res, e, e.status || 500));
     },
 
+    leaveLobbyPOST(req, res) {
+        Default.leaveLobbyPOST(req.body, req.params.lobbyId)
+            .then(() => res.sendStatus(204))
+            .catch(e => utils.writeJson(res, e, e.status || 500));
+    },
+
     forceNextRoundPOST(req, res) {
         Default.forceNextRoundPOST(req.params.gameId)
             .then(r => utils.writeJson(res, r))

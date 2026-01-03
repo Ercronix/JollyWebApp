@@ -30,10 +30,10 @@ class LobbiesService {
     }
 
     async listLobbies() {
-        const lobbies = await Lobby.find();
+        const lobbies = await Lobby.find(undefined, undefined, undefined);
 
         return lobbies
-            .filter(lobby => !lobby.archived)       // ✔ remove archived lobbies
+            .filter(lobby => !lobby.archived)
             .map(lobby => ({
                 id: lobby._id,
                 name: lobby.name,
@@ -68,6 +68,47 @@ class LobbiesService {
         await lobby.save();
 
         return { lobby: this.getLobbyResponse(lobby), playerId: userId };
+    }
+
+    // ADD THIS METHOD - it's the missing one
+    async leaveLobby(lobbyId, userId) {
+        console.log(`[LobbiesService] Attempting to leave lobby ${lobbyId} for user ${userId}`);
+
+        const lobby = await Lobby.findById(lobbyId);
+        if (!lobby) {
+            console.error(`[LobbiesService] Lobby not found: ${lobbyId}`);
+            throw new Error('Lobby not found');
+        }
+
+        const playerIndex = lobby.players.findIndex(p => p.userId.toString() === userId.toString());
+        if (playerIndex === -1) {
+            console.log(`[LobbiesService] Player ${userId} not in lobby ${lobbyId}`);
+            return; // Player not in lobby
+        }
+
+        // Remove player from lobby
+        lobby.players.splice(playerIndex, 1);
+        lobby.playerCount = lobby.players.length;
+        console.log(`[LobbiesService] Player removed. New player count: ${lobby.playerCount}`);
+
+        // Remove player from game if game exists
+        if (lobby.gameId) {
+            console.log(`[LobbiesService] Removing player from game ${lobby.gameId}`);
+            await GamesService.removePlayerFromGame(lobby.gameId, userId);
+        }
+
+        // If lobby is empty, delete it
+        if (lobby.playerCount === 0) {
+            console.log(`[LobbiesService] Lobby ${lobbyId} is empty, deleting...`);
+            if (lobby.gameId) {
+                await GamesService.deleteGame(lobby.gameId);
+            }
+            await Lobby.findByIdAndDelete(lobbyId);
+            console.log(`[LobbiesService] Lobby ${lobbyId} deleted`);
+        } else {
+            await lobby.save();
+            console.log(`[LobbiesService] Lobby ${lobbyId} updated`);
+        }
     }
 
     async deleteLobby(lobbyId, userId) {

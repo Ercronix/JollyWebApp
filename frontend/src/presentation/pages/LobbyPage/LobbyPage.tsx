@@ -53,13 +53,14 @@ export function LobbyPage() {
                 userId: currentUser.id,
             });
 
-            // Navigate to game with the gameId from the lobby
+            // Navigate to game with the gameId and lobbyId from the lobby
             if (lobby.gameId) {
                 await navigate({
                     to: "/Game",
                     search: {
                         gameId: lobby.gameId,
                         lobbyName: lobby.name,
+                        lobbyId: lobby.id,
                     },
                 });
             }
@@ -86,6 +87,7 @@ export function LobbyPage() {
                     search: {
                         gameId: gameId,
                         lobbyName: lobby.name,
+                        lobbyId: lobby.id,
                     },
                 });
             }
@@ -133,7 +135,7 @@ export function LobbyPage() {
     };
 
     const cancelArchiveLobby = () => {
-      setArchiveConfirmation({ show: false, lobby: null });
+        setArchiveConfirmation({ show: false, lobby: null });
     }
 
     const handleLogout = async () => {
@@ -245,7 +247,7 @@ export function LobbyPage() {
                         {lobbies.map((lobby: Lobby, index: number) => (
                             <div
                                 key={lobby.id}
-                                className="group relative overflow-hidden rounded-2xl bg-white/10 backdrop-blur-xl border border-white/20 p-6 shadow-lg hover:shadow-2xl hover:shadow-purple-500/25 transition-all duration-500 hover:-translate-y-2 hover:scale-105 animate-in slide-in-from-bottom-8 duration-700"
+                                className="group relative overflow-hidden rounded-2xl bg-white/10 backdrop-blur-xl border border-white/20 p-6 shadow-lg hover:shadow-2xl hover:shadow-purple-500/25 transition-all hover:-translate-y-2 hover:scale-105 animate-in slide-in-from-bottom-8 duration-700"
                                 style={{
                                     animationDelay: `${index * 150}ms`,
                                 }}
@@ -261,7 +263,7 @@ export function LobbyPage() {
                                     className="absolute top-3 right-15 z-20 bg-red-200/80 hover:bg-brown-300 text-white rounded-full w-8 h-8 flex items-center justify-center transition-all duration-300 hover:scale-110 opacity-0 group-hover:opacity-100"
                                     disabled={archiveLobbyMutation.isPending}
                                     aria-label="Archive Lobby"
-                                    >
+                                >
                                     🗄️
                                 </button>
 

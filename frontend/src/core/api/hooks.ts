@@ -1,4 +1,5 @@
-// src/core/api/hooks.ts
+// src/core/api/hooks.ts - Add useLeaveLobby hook
+
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {ApiClient} from './client';
 import {useEffect} from 'react';
@@ -68,6 +69,18 @@ export function useJoinLobby() {
     return useMutation({
         mutationFn: ({ lobbyId, userId }: { lobbyId: string; userId: string }) =>
             ApiClient.joinLobby(lobbyId, userId),
+    });
+}
+
+export function useLeaveLobby() {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: ({ lobbyId, userId }: { lobbyId: string; userId: string }) =>
+            ApiClient.leaveLobby(lobbyId, userId),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: queryKeys.lobbies });
+        },
     });
 }
 
@@ -201,6 +214,7 @@ export function useGameEvents(gameId: string | undefined) {
                 case 'SCORE_SUBMITTED':
                 case 'PLAYER_JOINED':
                 case 'PLAYERS_REORDERED':
+                case  'PLAYER_LEFT':
                     // Update game state in cache
                     if (eventData.game) {
                         console.log('Updating game state from SSE event:', eventData.type);

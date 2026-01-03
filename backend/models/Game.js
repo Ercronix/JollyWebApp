@@ -1,9 +1,16 @@
+// models/Game.js - Updated Game Model with pointsHistory
+'use strict';
+
 const mongoose = require('mongoose');
 
 const playerSchema = new mongoose.Schema({
-    name: String,
+    name: {
+        type: String,
+        required: true
+    },
     userId: {
         type: mongoose.Schema.Types.ObjectId,
+        required: true,
         ref: 'User'
     },
     totalScore: {
@@ -18,21 +25,22 @@ const playerSchema = new mongoose.Schema({
         type: Boolean,
         default: false
     },
-    createdAt: {
-        type: Date,
-        default: Date.now
+    pointsHistory: {
+        type: [Number],
+        default: []
     }
 }, { _id: false });
 
 const gameSchema = new mongoose.Schema({
     lobbyId: {
         type: mongoose.Schema.Types.ObjectId,
-        ref: 'Lobby',
-        required: true
+        required: true,
+        ref: 'Lobby'
     },
     players: [playerSchema],
     currentDealer: {
         type: mongoose.Schema.Types.ObjectId,
+        required: true,
         ref: 'User'
     },
     currentRound: {
@@ -45,7 +53,8 @@ const gameSchema = new mongoose.Schema({
     },
     winner: {
         type: mongoose.Schema.Types.ObjectId,
-        ref: 'User'
+        ref: 'User',
+        default: null
     },
     createdAt: {
         type: Date,

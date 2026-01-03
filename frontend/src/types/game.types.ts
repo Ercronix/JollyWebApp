@@ -4,6 +4,7 @@ export interface Player {
     totalScore: number;
     currentRoundScore: number;
     hasSubmitted: boolean;
+    pointsHistory?: number[];
     createdAt: string;
 }
 
@@ -34,6 +35,7 @@ export type GameEventType =
     | 'SCORE_SUBMITTED'
     | 'PLAYER_JOINED'
     | 'PLAYERS_REORDERED'
+    | 'PLAYER_LEFT'
     | 'GAME_ENDED';
 
 export interface GameEvent {
