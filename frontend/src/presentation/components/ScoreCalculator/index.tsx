@@ -49,7 +49,7 @@ export function ScoreCalculator({ isOpen, onClose, onSubmit}: ScoreCalculatorPro
             />
 
             {/* Modal */}
-            <div className="fixed inset-0 flex items-center justify-center z-50 p-4 pointer-events-none">
+            <div className="fixed inset-0 flex items-center justify-center z-50 p-4 pointer-events-none overflow-y-auto">
                 <div
                     className="bg-gradient-to-br from-purple-900/95 via-pink-900/95 to-blue-900/95 backdrop-blur-xl border border-white/20 rounded-3xl shadow-2xl max-w-md w-full p-6 space-y-6 pointer-events-auto animate-in zoom-in-95 duration-300"
                     onClick={(e) => e.stopPropagation()}
@@ -63,7 +63,7 @@ export function ScoreCalculator({ isOpen, onClose, onSubmit}: ScoreCalculatorPro
                     </div>
 
                     {/* Current Score Display */}
-                    <div className="bg-white/10 rounded-2xl p-6 text-center space-y-2 border border-white/20">
+                    <div className="bg-white/10 rounded-2xl p-4 sm:p-6 text-center space-y-2 border border-white/20">
                         <Text size="3xl" weight="bold" className="text-white">
                             {totalScore}
                         </Text>
@@ -199,7 +199,7 @@ export function ScoreCalculator({ isOpen, onClose, onSubmit}: ScoreCalculatorPro
                     </div>
 
                     {/* Action Buttons */}
-                    <div className="flex gap-2">
+                    <div className="flex gap-2 flex-col sm:flex-row">
                         <Button
                             onClick={handleReset}
                             colorscheme="cyanToBlue"
