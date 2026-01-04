@@ -8,6 +8,7 @@ import { PlayerHistoryModal } from "@/presentation/components/PlayerHistoryModal
 import { useNavigate, useSearch } from "@tanstack/react-router";
 import { MainLayout } from "@/presentation/layout/MainLayout";
 import { UserModel } from "@/core/models/UserModel";
+import { PlayerPointsChart } from "@/presentation/components/PlayerPointsChart";
 import type { Player } from "@/types";
 import {
     useGameState,
@@ -494,6 +495,13 @@ export function GamePage() {
                                 })}
                             </div>
                         </div>
+
+                        {game.players.length > 0 && (
+                            <PlayerPointsChart
+                                players={game.players}
+                                currentRound={game.currentRound}
+                            />
+                        )}
 
                         {/* Game Stats */}
                         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6">

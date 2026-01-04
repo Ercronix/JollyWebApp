@@ -70,14 +70,16 @@ class GamesService {
             if (existingPlayer) {
                 return game;
             }
-
+            if (game.currentRound >= 0) {
+                const pointsHistory = new Array(game.currentRound - 1).fill(0);
+            }
             game.players.push({
                 name: username,
                 userId,
                 totalScore: 0,
                 currentRoundScore: 0,
                 hasSubmitted: false,
-                pointsHistory: [] // Initialize empty points history for new players
+                pointsHistory: pointsHistory // Initialize empty points history for new players
             });
 
             await game.save();
