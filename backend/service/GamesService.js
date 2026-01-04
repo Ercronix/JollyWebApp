@@ -70,9 +70,11 @@ class GamesService {
             if (existingPlayer) {
                 return game;
             }
+            let pointsHistory = [];
             if (game.currentRound >= 0) {
-                const pointsHistory = new Array(game.currentRound - 1).fill(0);
+                pointsHistory = Array(game.currentRound - 1).fill(0);
             }
+
             game.players.push({
                 name: username,
                 userId,
