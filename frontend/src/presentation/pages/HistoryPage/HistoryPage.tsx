@@ -1,21 +1,84 @@
 import { useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
-import { useLobbyHistory, useGameState } from "@/core/api/hooks";
+import { useLobbyHistory, useGameState, useDeleteLobby } from "@/core/api/hooks";
+import { DeleteConfirmationModal } from "@/presentation/components/DeleteConfirmationModal";
+import { UserModel } from "@/core/models/UserModel";
 import type { Lobby } from "@/types";
-import type { Player} from "@/types/game.types";
+import type { Player } from "@/types/game.types";
+
+// Extend Lobby type to handle MongoDB _id
+interface LobbyWithId extends Lobby {
+    _id?: string;
+}
 
 export function HistoryPage() {
     const navigate = useNavigate();
-    const { data: lobbies = [], isLoading } = useLobbyHistory();
+    const { data: rawLobbies = [], isLoading } = useLobbyHistory();
+    const deleteLobbyMutation = useDeleteLobby();
+    const [currentUser] = useState(() => UserModel.getInstance().getCurrentUser());
+    const [deleteConfirmation, setDeleteConfirmation] = useState<{ show: boolean; lobby: LobbyWithId | null }>({
+        show: false,
+        lobby: null,
+    });
+
+    // Normalize lobbies to ensure they have an id field
+    const lobbies = (rawLobbies as LobbyWithId[]).map(lobby => ({
+        ...lobby,
+        id: lobby.id || lobby._id || ''
+    }));
+
+    const handleDeleteLobby = (lobby: LobbyWithId) => {
+        setDeleteConfirmation({ show: true, lobby });
+    };
+
+    const confirmDeleteLobby = async () => {
+        if (!deleteConfirmation.lobby || !currentUser) return;
+
+        const lobbyId = deleteConfirmation.lobby.id || deleteConfirmation.lobby._id;
+
+        console.log('Attempting to delete lobby with ID:', lobbyId);
+        console.log('Full lobby object:', deleteConfirmation.lobby);
+
+        if (!lobbyId || lobbyId === 'undefined') {
+            console.error('Invalid lobby ID:', lobbyId);
+            alert('Cannot delete lobby: Invalid ID');
+            return;
+        }
+
+        try {
+            await deleteLobbyMutation.mutateAsync({
+                lobbyId: lobbyId,
+                userId: currentUser.id,
+            });
+            setDeleteConfirmation({ show: false, lobby: null });
+        } catch (error) {
+            console.error('Failed to delete lobby:', error);
+        }
+    };
+
+    const cancelDeleteLobby = () => {
+        setDeleteConfirmation({ show: false, lobby: null });
+    };
 
     return (
         <div>
+            {/* Delete Confirmation Modal */}
+            <DeleteConfirmationModal
+                isOpen={deleteConfirmation.show}
+                title="Delete Lobby?"
+                message="Are you sure you want to delete"
+                itemName={deleteConfirmation.lobby?.name}
+                onConfirm={confirmDeleteLobby}
+                onCancel={cancelDeleteLobby}
+                isDeleting={deleteLobbyMutation.isPending}
+            />
+
             {/* Header */}
             <div>
                 <div className="max-w-2xl mx-auto relative">
                     {/* Back Button */}
                     <button
-                        onClick={() => navigate({to: "/lobby"})}
+                        onClick={() => navigate({ to: "/lobby" })}
                         className="absolute left-0 top-1/2 -translate-y-1/2 flex items-center gap-2 text-purple-200 hover:text-white transition-colors focus:outline-none focus:ring-2 focus:ring-purple-400 rounded-lg p-2"
                     >
                         <svg
@@ -55,7 +118,11 @@ export function HistoryPage() {
                 ) : (
                     <div className="space-y-3">
                         {lobbies.map(lobby => (
-                            <LobbyCard key={lobby.id} lobby={lobby} />
+                            <LobbyCard
+                                key={lobby.id || lobby._id}
+                                lobby={lobby}
+                                onDelete={handleDeleteLobby}
+                            />
                         ))}
                     </div>
                 )}
@@ -65,12 +132,15 @@ export function HistoryPage() {
 }
 
 interface LobbyCardProps {
-    lobby: Lobby;
+    lobby: LobbyWithId;
+    onDelete: (lobby: LobbyWithId) => void;
 }
 
-function LobbyCard({ lobby }: LobbyCardProps) {
+function LobbyCard({ lobby, onDelete }: LobbyCardProps) {
     const [isExpanded, setIsExpanded] = useState(false);
     const [expandedPlayer, setExpandedPlayer] = useState<string | null>(null);
+
+    // Ensure lobby has a valid ID
     const { data: game, isLoading } = useGameState(isExpanded ? lobby.gameId : undefined);
 
     const date = new Date(lobby.createdAt);
@@ -82,7 +152,21 @@ function LobbyCard({ lobby }: LobbyCardProps) {
     const isFinished = game?.isFinished ?? false;
 
     return (
-        <div className="bg-white/10 backdrop-blur-sm rounded-2xl border border-white/20 overflow-hidden shadow-xl transition-all hover:shadow-2xl hover:border-white/30">
+        <div className="bg-white/10 backdrop-blur-sm rounded-2xl border border-white/20 overflow-hidden shadow-xl transition-all hover:shadow-2xl hover:border-white/30 relative">
+            {/* Delete Button - Shows when expanded */}
+            {isExpanded && (
+                <button
+                    onClick={(e) => {
+                        e.stopPropagation();
+                        onDelete(lobby);
+                    }}
+                    className="absolute top-3 right-3 z-20 bg-red-500/80 hover:bg-red-600 text-white rounded-full w-8 h-8 flex items-center justify-center transition-all duration-300 hover:scale-110"
+                    aria-label="Delete lobby"
+                >
+                    🗑️
+                </button>
+            )}
+
             {/* Card Header */}
             <button
                 onClick={() => setIsExpanded(prev => !prev)}
