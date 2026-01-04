@@ -1,13 +1,13 @@
 // src/presentation/pages/LobbyPage.tsx
-import React, { useState, useEffect } from "react";
-import { Button } from "@/presentation/components/Button";
-import { Input } from "@/presentation/components/input";
-import { Text } from "@/presentation/components/Text";
-import { DeleteConfirmationModal } from "@/presentation/components/DeleteConfirmationModal";
-import { ArchiveConfirmationModal } from "@/presentation/components/ArchiveConfirmationModal";
-import { useNavigate } from "@tanstack/react-router";
-import { UserModel } from "@/core/models/UserModel";
-import type { Lobby } from "@/types";
+import React, {useState, useEffect} from "react";
+import {Button} from "@/presentation/components/Button";
+import {Input} from "@/presentation/components/input";
+import {Text} from "@/presentation/components/Text";
+import {DeleteConfirmationModal} from "@/presentation/components/DeleteConfirmationModal";
+import {ArchiveConfirmationModal} from "@/presentation/components/ArchiveConfirmationModal";
+import {useNavigate} from "@tanstack/react-router";
+import {UserModel} from "@/core/models/UserModel";
+import type {Lobby} from "@/types";
 import {
     useLobbies,
     useCreateLobby,
@@ -25,12 +25,12 @@ export function LobbyPage() {
         show: false,
         lobby: null,
     });
-    const [archiveConfirmation, setArchiveConfirmation] = useState<{ show: boolean; lobby: Lobby | null}>({
+    const [archiveConfirmation, setArchiveConfirmation] = useState<{ show: boolean; lobby: Lobby | null }>({
         show: false,
         lobby: null,
     })
 
-    const { data: lobbies = [], isLoading, refetch } = useLobbies();
+    const {data: lobbies = [], isLoading, refetch} = useLobbies();
     const createLobbyMutation = useCreateLobby();
     const joinLobbyMutation = useJoinLobby();
     const logoutMutation = useLogout();
@@ -40,7 +40,7 @@ export function LobbyPage() {
     // Check if user is logged in
     useEffect(() => {
         if (!currentUser) {
-            navigate({ to: "/" });
+            navigate({to: "/"});
         }
     }, [currentUser, navigate]);
 
@@ -68,6 +68,12 @@ export function LobbyPage() {
             console.error('Failed to create lobby:', error);
         }
     };
+
+    const handleHistorypage = async () => {
+        await navigate({
+            to: "/history"
+        });
+    }
 
     const handleJoinLobby = async (lobby: Lobby) => {
         if (!currentUser) return;
@@ -97,21 +103,21 @@ export function LobbyPage() {
     };
 
     const handleDeleteLobby = (lobby: Lobby) => {
-        setDeleteConfirmation({ show: true, lobby });
+        setDeleteConfirmation({show: true, lobby});
     };
 
     const handleArchiveLobby = (lobby: Lobby) => {
-        setArchiveConfirmation({ show: true, lobby });
+        setArchiveConfirmation({show: true, lobby});
     }
 
-    const confirmArchiveLobby = async() => {
+    const confirmArchiveLobby = async () => {
         if (!archiveConfirmation.lobby) return;
         try {
             await archiveLobbyMutation.mutateAsync({
                 lobbyId: archiveConfirmation.lobby.id
             });
             setArchiveConfirmation({show: false, lobby: null});
-        }catch (error) {
+        } catch (error) {
             console.error('Failed to archive lobby:', error);
         }
     };
@@ -124,18 +130,18 @@ export function LobbyPage() {
                 lobbyId: deleteConfirmation.lobby.id,
                 userId: currentUser.id,
             });
-            setDeleteConfirmation({ show: false, lobby: null });
+            setDeleteConfirmation({show: false, lobby: null});
         } catch (error) {
             console.error('Failed to delete lobby:', error);
         }
     };
 
     const cancelDeleteLobby = () => {
-        setDeleteConfirmation({ show: false, lobby: null });
+        setDeleteConfirmation({show: false, lobby: null});
     };
 
     const cancelArchiveLobby = () => {
-        setArchiveConfirmation({ show: false, lobby: null });
+        setArchiveConfirmation({show: false, lobby: null});
     }
 
     const handleLogout = async () => {
@@ -143,7 +149,7 @@ export function LobbyPage() {
             await logoutMutation.mutateAsync();
             UserModel.getInstance().clearUser();
             setCurrentUser(null);
-            navigate({ to: "/" });
+            navigate({to: "/"});
         } catch (error) {
             console.error('Logout failed:', error);
         }
@@ -160,7 +166,7 @@ export function LobbyPage() {
     }
 
     return (
-        <div className="flex flex-col items-center gap-12 py-8">
+        <div className="flex flex-col items-center gap-8 py-8">
             {/* Delete Confirmation Modal */}
             <DeleteConfirmationModal
                 isOpen={deleteConfirmation.show}
@@ -193,7 +199,8 @@ export function LobbyPage() {
                     >
                         Game Lobbies
                     </Text>
-                    <div className="absolute inset-0 bg-gradient-to-r from-purple-300 via-pink-300 to-blue-300 opacity-20 blur-xl"></div>
+                    <div
+                        className="absolute inset-0 bg-gradient-to-r from-purple-300 via-pink-300 to-blue-300 opacity-20 blur-xl"></div>
                 </div>
 
                 <div className="space-y-2">
@@ -214,21 +221,15 @@ export function LobbyPage() {
                     </div>
                 </div>
             </div>
-
-            {/* User Controls */}
-            <div className="flex gap-4 items-center">
-                <Button
-                    colorscheme="pinkToOrange"
-                    variant="ghost"
-                    size="sm"
-                    onClick={handleLogout}
-                    className="hover:scale-110 transition-transform"
-                    disabled={logoutMutation.isPending}
-                >
-                    🚪 Switch User
-                </Button>
+            <div>
+            <Button
+                colorscheme="purpleToBlue"
+                variant="solid"
+                size="md"
+                onClick={handleHistorypage}
+                className="hover:scale-110 transition-transform"
+            >View Game History</Button>
             </div>
-
             {/* Lobby List */}
             <div className="w-full max-w-4xl space-y-4">
                 <div className="text-center mb-6">
@@ -252,11 +253,12 @@ export function LobbyPage() {
                                     animationDelay: `${index * 150}ms`,
                                 }}
                             >
-                                <div className="absolute inset-0 bg-gradient-to-r from-purple-500/50 via-pink-500/50 to-blue-500/50 opacity-0 group-hover:opacity-100 transition-opacity duration-500 rounded-2xl blur-sm"></div>
+                                <div
+                                    className="absolute inset-0 bg-gradient-to-r from-purple-500/50 via-pink-500/50 to-blue-500/50 opacity-0 group-hover:opacity-100 transition-opacity duration-500 rounded-2xl blur-sm"></div>
 
                                 {/* Archive Button */}
                                 <button
-                                    onClick={(event )=>{
+                                    onClick={(event) => {
                                         event.stopPropagation();
                                         handleArchiveLobby(lobby);
                                     }}
@@ -281,7 +283,8 @@ export function LobbyPage() {
                                 </button>
 
                                 <div className="relative z-10 space-y-4">
-                                    <Text size="lg" weight="semibold" className="text-white group-hover:text-purple-300 transition-colors">
+                                    <Text size="lg" weight="semibold"
+                                          className="text-white group-hover:text-purple-300 transition-colors">
                                         {lobby.name}
                                     </Text>
 
@@ -311,15 +314,18 @@ export function LobbyPage() {
 
             {/* Create Lobby */}
             <div className="w-full max-w-2xl relative">
-                <div className="rounded-3xl bg-white/10 backdrop-blur-xl border border-white/20 p-8 shadow-2xl hover:shadow-purple-500/25 transition-all duration-500 hover:scale-105 relative overflow-hidden">
-                    <div className="absolute inset-0 bg-gradient-to-br from-purple-500/10 via-pink-500/10 to-blue-500/10 animate-pulse"></div>
+                <div
+                    className="rounded-3xl bg-white/10 backdrop-blur-xl border border-white/20 p-8 shadow-2xl hover:shadow-purple-500/25 transition-all duration-500 hover:scale-105 relative overflow-hidden">
+                    <div
+                        className="absolute inset-0 bg-gradient-to-br from-purple-500/10 via-pink-500/10 to-blue-500/10 animate-pulse"></div>
 
                     <div className="relative z-10 space-y-6">
                         <div className="text-center space-y-2">
                             <Text size="xl" weight="semibold" className="text-white">
                                 Create a Lobby
                             </Text>
-                            <div className="w-35 h-1 bg-gradient-to-r from-green-400 to-blue-400 mx-auto rounded-full"></div>
+                            <div
+                                className="w-35 h-1 bg-gradient-to-r from-green-400 to-blue-400 mx-auto rounded-full"></div>
                             <Text size="sm" className="text-purple-300">
                                 You'll be the host as <span className="font-semibold">{currentUser.username}</span>
                             </Text>
@@ -334,7 +340,8 @@ export function LobbyPage() {
                                     className="text-white bg-white/5 border-white/30 focus:border-purple-400 focus:ring-purple-400/50 placeholder-gray-400 transition-all duration-300 hover:bg-white/10"
                                     disabled={createLobbyMutation.isPending}
                                 />
-                                <div className="absolute inset-0 bg-gradient-to-r from-purple-500/20 to-blue-500/20 rounded-lg opacity-0 hover:opacity-100 transition-opacity duration-300 pointer-events-none"></div>
+                                <div
+                                    className="absolute inset-0 bg-gradient-to-r from-purple-500/20 to-blue-500/20 rounded-lg opacity-0 hover:opacity-100 transition-opacity duration-300 pointer-events-none"></div>
                             </div>
 
                             <Button
@@ -349,6 +356,19 @@ export function LobbyPage() {
                         </div>
                     </div>
                 </div>
+            </div>
+            {/* User Controls */}
+            <div className="flex gap-4 items-center">
+                <Button
+                    colorscheme="pinkToOrange"
+                    variant="ghost"
+                    size="sm"
+                    onClick={handleLogout}
+                    className="hover:scale-110 transition-transform"
+                    disabled={logoutMutation.isPending}
+                >
+                    🚪 Switch User
+                </Button>
             </div>
 
             {/* Footer */}

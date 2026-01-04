@@ -252,9 +252,6 @@ export function GamePage() {
                                 {searchParams.lobbyName || "Card Game"}
                             </Text>
                             <div className="flex justify-center items-center gap-4 flex-wrap">
-                                <Text size="lg" className="text-gray-300">
-                                    Round {game.currentRound}
-                                </Text>
                                 <Text size="lg" className="text-yellow-300 flex items-center gap-2">
                                     🃏 Dealer: {currentDealer?.name}
                                 </Text>
