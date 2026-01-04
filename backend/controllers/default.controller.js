@@ -62,6 +62,12 @@ module.exports = {
             .catch(e => utils.writeJson(res, e, e.status || 500));
     },
 
+    listAllLobbiesGET(req, res) {
+        Default.listAllLobbiesGET()
+            .then(r => utils.writeJson(res, r))
+            .catch(e => utils.writeJson(res, e, e.status || 500));
+    },
+
     loginUserPOST(req, res) {
         Default.loginUserPOST(req.body)
             .then(r => {

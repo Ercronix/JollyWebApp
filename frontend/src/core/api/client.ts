@@ -93,6 +93,14 @@ export class ApiClient {
         return this.request<Lobby[]>('/api/lobbies', { method: 'GET' });
     }
 
+    // src/core/api/client.ts
+    static async listAllLobbies(): Promise<Lobby[]> {
+        return this.request<Lobby[]>('/api/lobbies/history', {
+            method: 'GET',
+        });
+    }
+
+
     static async createLobby(name: string, userId: string): Promise<Lobby> {
         return this.request<Lobby>('/api/lobbies', {
             method: 'POST',

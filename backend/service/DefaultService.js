@@ -144,11 +144,22 @@ module.exports.joinLobbyPOST = async function (body, lobbyId) {
 };
 
 /**
- * List all lobbies
+ * List uncarchived lobbies
  */
 module.exports.listLobbiesGET = async function () {
     try {
         return await LobbiesService.listLobbies();
+    } catch (error) {
+        throw { status: 500, message: error.message };
+    }
+};
+
+/**
+ * List all lobbies
+ */
+module.exports.listAllLobbiesGET = async function () {
+    try {
+        return await LobbiesService.listAllLobbies();
     } catch (error) {
         throw { status: 500, message: error.message };
     }

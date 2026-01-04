@@ -44,6 +44,10 @@ class LobbiesService {
             }));
     }
 
+    async listAllLobbies() {
+        return Lobby.find(undefined, undefined, undefined);
+    }
+
     async joinLobby(lobbyId, userId, username) {
         const lobby = await Lobby.findById(lobbyId);
         if (!lobby) {

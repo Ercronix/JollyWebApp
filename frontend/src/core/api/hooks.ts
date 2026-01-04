@@ -53,6 +53,16 @@ export function useLobbies() {
     });
 }
 
+// src/core/api/hooks.ts
+export function useLobbyHistory() {
+    return useQuery({
+        queryKey: ['lobbies', 'history'],
+        queryFn: () => ApiClient.listAllLobbies(),
+        refetchOnWindowFocus: false,
+    });
+}
+
+
 export function useCreateLobby() {
     const queryClient = useQueryClient();
 
