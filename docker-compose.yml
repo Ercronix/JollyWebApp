@@ -2,11 +2,7 @@ services:
   frontend:
     build: ./frontend
     ports:
-      - "5173:5173"
-    volumes:
-      - ./frontend:/app
-      - /app/node_modules
-    command: npm run dev -- --host
+      - "3500:3500"
     depends_on:
       - backend
     networks:
@@ -15,10 +11,7 @@ services:
   backend:
     build: ./backend
     ports:
-      - "8080:8080"
-    volumes:
-      - ./backend:/app
-      - /app/node_modules
+      - "3501:3501"
     environment:
       - MONGODB_URI=mongodb://${MONGODB_USERNAME}:${MONGODB_PASSWORD}@mongodb:27017/${MONGODB_DATABASE}?authSource=admin
       - SESSION_SECRET=${SESSION_SECRET}

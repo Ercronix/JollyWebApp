@@ -194,10 +194,10 @@ export class ApiClient {
 
     // SSE endpoint
     static subscribeToGameEvents(gameId: string, onEvent: (data: GameEvent) => void): () => void {
-        const eventSource = new EventSource(
-            `${API_BASE_URL}/api/games/${gameId}/events`,
-            { withCredentials: true }
-        );
+        const url = new URL(`${API_BASE_URL}/api/games/${gameId}/events`);
+        if (this.sessionId) url.searchParams.append('sessionId', this.sessionId);
+
+        const eventSource = new EventSource(url.toString(), { withCredentials: true });
 
         eventSource.onmessage = (event) => {
             try {
@@ -212,8 +212,7 @@ export class ApiClient {
             console.error('SSE connection error:', error);
         };
 
-        return () => {
-            eventSource.close();
-        };
+        return () => eventSource.close();
     }
+
 }

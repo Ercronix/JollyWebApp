@@ -7,12 +7,12 @@ const http = require('http');
 const routes = require('./routes');
 const connectDB = require("./config/database");
 
-const serverPort = 8080;
+const serverPort = 3501;
 const app = express();
 
 // CORS
 app.use(cors({
-    origin: 'http://localhost:5173',
+    origin: ['http://localhost:3500', 'http://127.0.0.1:3500'],
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
     allowedHeaders: ['Content-Type', 'Authorization', 'x-session-id', 'Accept'],

@@ -56,10 +56,6 @@ class EventService {
             'Content-Type': 'text/event-stream',
             'Cache-Control': 'no-cache',
             'Connection': 'keep-alive',
-            'Access-Control-Allow-Origin': 'http://localhost:5173',
-            'Access-Control-Allow-Credentials': 'true',
-            'Access-Control-Allow-Methods': 'GET, OPTIONS',
-            'Access-Control-Allow-Headers': 'Content-Type, Authorization, x-session-id, Accept',
             'X-Accel-Buffering': 'no'
         });
 
