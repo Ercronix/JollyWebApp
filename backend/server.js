@@ -10,12 +10,23 @@ const connectDB = require("./config/database");
 const serverPort = 3501;
 const app = express();
 
-// CORS
+const allowedOrigins = [
+    'http://localhost:3500', // dev frontend
+    'http://127.0.0.1:3500',
+    'http://jolly.timmornhinweg.de',
+    'https://jolly.timmornhinweg.de', // production frontend
+];
+
 app.use(cors({
-    origin: ['http://localhost:3500', 'http://127.0.0.1:3500'],
+    origin: function(origin, callback) {
+        if (!origin) return callback(null, true); // allow curl/server-to-server
+        if (allowedOrigins.includes(origin)) return callback(null, true);
+	console.log('REJECTED origin:', origin);
+        return callback(new Error('Not allowed by CORS'));
+    },
     credentials: true,
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'x-session-id', 'Accept'],
+    methods: ['GET','POST','PUT','DELETE','OPTIONS','PATCH'],
+    allowedHeaders: ['Content-Type','Authorization','x-session-id','Accept'],
     exposedHeaders: ['Set-Cookie'],
     maxAge: 86400
 }));

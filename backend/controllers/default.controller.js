@@ -74,7 +74,8 @@ module.exports = {
                 res.cookie('sessionId', r.sessionId, {
                     httpOnly: true,
                     maxAge: 24 * 60 * 60 * 1000,
-                    sameSite: 'lax'
+                    sameSite: 'none',
+		    secure: true,
                 });
                 utils.writeJson(res, r);
             })

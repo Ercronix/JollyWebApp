@@ -10,7 +10,12 @@ import type {
     GameEvent
 } from '@/types';
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080';
+const DEFAULT_DEV_API = 'http://localhost:3501';
+const DEFAULT_PROD_API = 'https://jolly-api.timmornhinweg.de';
+
+export const API_BASE_URL =
+    import.meta.env.VITE_API_BASE_URL ||
+    (window.location.hostname === 'localhost' ? DEFAULT_DEV_API : DEFAULT_PROD_API);
 
 export class ApiClient {
     private static sessionId: string | null = null;
