@@ -1,15 +1,15 @@
 // src/presentation/pages/GamePage.tsx
-import React, { useState, useEffect } from "react";
-import { Button } from "@/presentation/components/Button";
-import { Input } from "@/presentation/components/input";
-import { Text } from "@/presentation/components/Text";
-import { ScoreCalculator } from "@/presentation/components/ScoreCalculator";
-import { PlayerHistoryModal } from "@/presentation/components/PlayerHistoryModal";
-import { useNavigate, useSearch } from "@tanstack/react-router";
-import { MainLayout } from "@/presentation/layout/MainLayout";
-import { UserModel } from "@/core/models/UserModel";
-import { PlayerPointsChart } from "@/presentation/components/PlayerPointsChart";
-import type { Player } from "@/types";
+import React, {useState, useEffect} from "react";
+import {Button} from "@/presentation/components/Button";
+import {Input} from "@/presentation/components/input";
+import {Text} from "@/presentation/components/Text";
+import {ScoreCalculator} from "@/presentation/components/ScoreCalculator";
+import {PlayerHistoryModal} from "@/presentation/components/PlayerHistoryModal";
+import {useNavigate, useSearch} from "@tanstack/react-router";
+import {MainLayout} from "@/presentation/layout/MainLayout";
+import {UserModel} from "@/core/models/UserModel";
+import {PlayerPointsChart} from "@/presentation/components/PlayerPointsChart";
+import type {Player} from "@/types";
 import {
     useGameState,
     useGameEvents,
@@ -28,7 +28,7 @@ export type GameSearchParams = {
 
 export function GamePage() {
     const navigate = useNavigate();
-    const searchParams = useSearch({ from: '/Game' }) as GameSearchParams;
+    const searchParams = useSearch({from: '/Game'}) as GameSearchParams;
     const currentUser = UserModel.getInstance().getCurrentUser();
 
     const [showReorderMode, setShowReorderMode] = useState(false);
@@ -37,9 +37,10 @@ export function GamePage() {
     const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
     const [calculatorOpen, setCalculatorOpen] = useState<string | null>(null);
     const [historyPlayer, setHistoryPlayer] = useState<Player | null>(null);
+    const [autoAdvance, setAutoAdvance] = useState(false);
 
     // React Query hooks
-    const { data: game, isLoading } = useGameState(searchParams.gameId);
+    const {data: game, isLoading} = useGameState(searchParams.gameId);
     const submitScoreMutation = useSubmitScore();
     const nextRoundMutation = useNextRound();
     const resetRoundMutation = useResetRound();
@@ -49,10 +50,23 @@ export function GamePage() {
     // Subscribe to SSE events
     useGameEvents(searchParams.gameId);
 
+    // Computed values
+    const allPlayersSubmitted = game?.players.every((p: Player) => p.hasSubmitted) || false;
+
+    // Auto-advance to next round when all players have submitted
+    useEffect(() => {
+        if (autoAdvance && game && !game.isFinished && allPlayersSubmitted) {
+            const timer = setTimeout(() => {
+                handleNextRound();
+            }, 1500);
+            return () => clearTimeout(timer);
+        }
+    }, [autoAdvance, game?.isFinished, allPlayersSubmitted]);
+
     // Check if user is logged in
     useEffect(() => {
         if (!currentUser) {
-            navigate({ to: "/" });
+            navigate({to: "/"});
         }
     }, [currentUser, navigate]);
 
@@ -80,10 +94,6 @@ export function GamePage() {
         );
     }
 
-    const handleBackToLobby = () => {
-        navigate({ to: "/lobby" });
-    };
-
     const handleLeaveLobby = async () => {
         if (!searchParams.lobbyId || !currentUser) return;
 
@@ -92,7 +102,7 @@ export function GamePage() {
                 lobbyId: searchParams.lobbyId,
                 userId: currentUser.id,
             });
-            navigate({ to: "/lobby" });
+            navigate({to: "/lobby"});
         } catch (error) {
             console.error('Failed to leave lobby:', error);
         }
@@ -106,9 +116,9 @@ export function GamePage() {
 
         // Allow empty string
         if (value === '') {
-            setTempScores(prev => ({ ...prev, [playerId]: value }));
+            setTempScores(prev => ({...prev, [playerId]: value}));
             setScoreErrors(prev => {
-                const newErrors = { ...prev };
+                const newErrors = {...prev};
                 delete newErrors[playerId];
                 return newErrors;
             });
@@ -128,13 +138,13 @@ export function GamePage() {
             }));
         } else {
             setScoreErrors(prev => {
-                const newErrors = { ...prev };
+                const newErrors = {...prev};
                 delete newErrors[playerId];
                 return newErrors;
             });
         }
 
-        setTempScores(prev => ({ ...prev, [playerId]: value }));
+        setTempScores(prev => ({...prev, [playerId]: value}));
     };
 
     const handleSubmitScore = async (playerId: string) => {
@@ -163,12 +173,12 @@ export function GamePage() {
                 score: scoreValue,
             });
             setTempScores(prev => {
-                const newScores = { ...prev };
+                const newScores = {...prev};
                 delete newScores[playerId];
                 return newScores;
             });
             setScoreErrors(prev => {
-                const newErrors = { ...prev };
+                const newErrors = {...prev};
                 delete newErrors[playerId];
                 return newErrors;
             });
@@ -231,7 +241,6 @@ export function GamePage() {
     // Computed values
     const currentUserPlayer = game.players.find((p: Player) => p.userId === currentUser.id);
     const hasCurrentUserSubmitted = currentUserPlayer?.hasSubmitted || false;
-    const allPlayersSubmitted = game.players.every((p: Player) => p.hasSubmitted);
     const submittedCount = game.players.filter((p: Player) => p.hasSubmitted).length;
     const currentDealer = game.players.find((p: Player) => p.userId === game.currentDealer);
     const highestTotalScore = Math.max(...game.players.map((p: Player) => p.totalScore));
@@ -241,39 +250,62 @@ export function GamePage() {
             <MainLayout>
                 <div className="relative z-10 container mx-auto px-4 py-6">
                     <div className="flex flex-col gap-6 max-w-4xl mx-auto">
-
                         {/* Header */}
-                        <div className="text-center space-y-4 animate-in fade-in duration-1000">
+                        <div className="relative flex items-center justify-between w-full max-w-4xl mx-auto">
+                            {/* Back button */}
+                            <button
+                                onClick={() => navigate({to: "/lobby"})}
+                                className="flex items-center gap-2 text-purple-200 hover:text-white transition-colors
+                                focus:outline-none focus:ring-2 focus:ring-purple-400 rounded-lg p-2 z-10"
+                            >
+                                <svg
+                                    className="w-6 h-6"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    viewBox="0 0 24 24"
+                                >
+                                    <path
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        strokeWidth={2}
+                                        d="M15 19l-7-7 7-7"
+                                    />
+                                </svg>
+                                <span className="font-medium">Back</span>
+                            </button>
+
+                            {/* Centered lobby name */}
                             <Text
                                 as="h1"
                                 size="3xl"
                                 weight="bold"
-                                className="bg-gradient-to-r from-purple-300 via-pink-300 to-blue-300 bg-clip-text text-transparent text-3xl md:text-4xl lg:text-5xl"
+                                className="absolute left-1/2 -translate-x-1/2
+                                bg-gradient-to-r from-purple-300 via-pink-300 to-blue-300
+                                bg-clip-text text-transparent
+                                text-2xl sm:text-3xl md:text-4xl lg:text-5xl
+                                text-center whitespace-nowrap"
                             >
                                 {searchParams.lobbyName || "Card Game"}
                             </Text>
-                            <div className="flex justify-center items-center gap-4 flex-wrap">
-                                <Text size="lg" className="text-yellow-300 flex items-center gap-2">
-                                    🃏 Dealer: {currentDealer?.name}
-                                </Text>
-                            </div>
-                            {currentUserPlayer && (
-                                <Text className="text-purple-300">
-                                    Playing as: <span className="font-semibold">{currentUserPlayer.name}</span>
-                                </Text>
-                            )}
-                            {game.isFinished && (
-                                <Text size="xl" className="text-green-300 font-bold animate-pulse">
-                                    🎉 Game Over! Winner: {game.players.find((p: Player) => p.userId === game.winner)?.name} 🎉
-                                </Text>
-                            )}
+
+                            {/* Right spacer (same width as back button) */}
+                            <div className="w-[88px]"/>
                         </div>
+
+                        {game.isFinished && (
+                            <Text size="xl" className="text-green-300 font-bold animate-pulse text-center">
+                                🎉 Game Over!
+                                Winner: {game.players.find((p: Player) => p.userId === game.winner)?.name} 🎉
+                            </Text>
+                        )}
 
                         {/* Round Status */}
                         {!game.isFinished && (
                             <div className="text-center">
-                                <div className="inline-flex items-center gap-3 px-6 py-3 rounded-full bg-white/10 backdrop-blur-xl border border-white/20">
-                                    <div className={`w-3 h-3 rounded-full ${allPlayersSubmitted ? 'bg-green-400' : 'bg-orange-400'} animate-pulse`}></div>
+                                <div
+                                    className="inline-flex items-center gap-3 px-6 py-3 rounded-full bg-white/10 backdrop-blur-xl border border-white/20">
+                                    <div
+                                        className={`w-3 h-3 rounded-full ${allPlayersSubmitted ? 'bg-green-400' : 'bg-orange-400'} animate-pulse`}></div>
                                     <Text className="text-white font-medium">
                                         {allPlayersSubmitted
                                             ? "✅ All players submitted - Ready for next round!"
@@ -304,6 +336,20 @@ export function GamePage() {
                         <div className="flex flex-wrap justify-center gap-3">
                             {!game.isFinished && (
                                 <>
+                                    {/* Auto-advance toggle */}
+                                    <label
+                                        className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white/10 backdrop-blur-xl border border-white/20 cursor-pointer hover:bg-white/15 transition-all duration-300 hover:scale-105">
+                                        <input
+                                            type="checkbox"
+                                            checked={autoAdvance}
+                                            onChange={(e) => setAutoAdvance(e.target.checked)}
+                                            className="w-4 h-4 rounded border-white/30 bg-white/5 text-purple-500 focus:ring-2 focus:ring-purple-400 cursor-pointer"
+                                        />
+                                        <Text className="text-white text-sm font-medium">
+                                            Auto-advance rounds
+                                        </Text>
+                                    </label>
+
                                     <Button
                                         colorscheme="purpleToBlue"
                                         variant="solid"
@@ -311,10 +357,10 @@ export function GamePage() {
                                         onClick={() => setShowReorderMode(!showReorderMode)}
                                         className="hover:scale-105 transition-transform duration-300"
                                     >
-                                        {showReorderMode ? "👁️ View Mode" : "🔧 Reorder Players"}
+                                        {showReorderMode ? "👁️ View Mode" : "Reorder Players"}
                                     </Button>
 
-                                    {allPlayersSubmitted && (
+                                    {allPlayersSubmitted && !autoAdvance && (
                                         <Button
                                             colorscheme="greenToBlue"
                                             variant="solid"
@@ -335,7 +381,7 @@ export function GamePage() {
                                         disabled={resetRoundMutation.isPending}
                                         className="hover:scale-105 transition-transform duration-300"
                                     >
-                                        🔄 Reset Round
+                                        🔄 Reset Round Scores
                                     </Button>
                                 </>
                             )}
@@ -348,24 +394,15 @@ export function GamePage() {
                                 disabled={leaveLobbyMutation.isPending}
                                 className="hover:scale-105 transition-transform duration-300"
                             >
-                                🚪 Leave Lobby
-                            </Button>
-
-                            <Button
-                                colorscheme="purpleToBlue"
-                                variant="outline"
-                                size="md"
-                                onClick={handleBackToLobby}
-                                className="hover:scale-105 transition-transform duration-300"
-                            >
-                                ⬅️ Back to Lobbies
+                                🚪 Quit Game
                             </Button>
                         </div>
 
                         {/* Players List */}
                         <div className="space-y-4">
                             <div className="text-center mb-6">
-                                <div className="w-32 h-1 bg-gradient-to-r from-purple-400 to-blue-400 mx-auto rounded-full"></div>
+                                <div
+                                    className="w-32 h-1 bg-gradient-to-r from-purple-400 to-blue-400 mx-auto rounded-full"></div>
                             </div>
 
                             <div className="space-y-3">
@@ -402,34 +439,40 @@ export function GamePage() {
                                             <div className="flex items-center justify-between gap-4 flex-wrap">
                                                 {/* Player Info */}
                                                 <div className="flex items-center gap-4">
-                                                    <div className={`flex items-center justify-center w-12 h-12 rounded-full border font-bold text-lg text-white ${
-                                                        isCurrentUser
-                                                            ? 'bg-purple-500/30 border-purple-300/50'
-                                                            : 'bg-gray-500/20 border-gray-300/30'
-                                                    }`}>
+                                                    <div
+                                                        className={`flex items-center justify-center w-12 h-12 rounded-full border font-bold text-lg text-white ${
+                                                            isCurrentUser
+                                                                ? 'bg-purple-500/30 border-purple-300/50'
+                                                                : 'bg-gray-500/20 border-gray-300/30'
+                                                        }`}>
                                                         {isCurrentUser ? '👤' : index + 1}
                                                     </div>
 
                                                     <div>
-                                                        <Text size="lg" weight="semibold" className="text-white flex items-center gap-2">
+                                                        <Text size="lg" weight="semibold"
+                                                              className="text-white flex items-center gap-2">
                                                             {player.name}
-                                                            {isCurrentUser && <span className="text-purple-400 text-sm">(You)</span>}
+                                                            {isCurrentUser &&
+                                                                <span className="text-purple-400 text-sm">(You)</span>}
                                                             {isDealer && <span className="text-yellow-400">🃏</span>}
-                                                            {player.hasSubmitted && <span className="text-green-400">✅</span>}
-                                                            {showReorderMode && <span className="text-gray-400 text-sm">🔗</span>}
-                                                            {!showReorderMode && <span className="text-blue-400 text-sm">📊</span>}
+                                                            {player.hasSubmitted &&
+                                                                <span className="text-green-400">✅</span>}
+                                                            {showReorderMode &&
+                                                                <span className="text-gray-400 text-sm">🔗</span>}
                                                         </Text>
                                                         <div className="flex items-center gap-4 text-sm">
                                                             <Text className="text-gray-400">
-                                                                Total: <span className="text-white font-semibold">{player.totalScore}</span>
+                                                                Total: <span
+                                                                className="text-white font-semibold">{player.totalScore}</span>
                                                             </Text>
                                                         </div>
                                                     </div>
                                                 </div>
 
-                                                {/* Score Input - Only for current user */}
+                                                {/* Score Input - Only for current user who hasn't submitted */}
                                                 {!showReorderMode && !player.hasSubmitted && isCurrentUser && !game.isFinished && (
-                                                    <div className="flex flex-col gap-2 w-full sm:w-auto" onClick={(e) => e.stopPropagation()}>
+                                                    <div className="flex flex-col gap-2 w-full sm:w-auto"
+                                                         onClick={(e) => e.stopPropagation()}>
                                                         <div className="flex items-center gap-3">
                                                             <Input
                                                                 type="text"
@@ -478,15 +521,18 @@ export function GamePage() {
                                                     </div>
                                                 )}
 
-                                                {/* Submitted score display */}
+                                                {/* Submitted score display - with edit option for current user */}
                                                 {!showReorderMode && player.hasSubmitted && (
-                                                    <div className="text-right">
-                                                        <Text size="xl" weight="bold" className="text-green-300">
-                                                            {player.currentRoundScore}
-                                                        </Text>
-                                                        <Text size="sm" className="text-green-400">
-                                                            {isCurrentUser ? 'points' : 'submitted'}
-                                                        </Text>
+                                                    <div className="flex items-center gap-3"
+                                                         onClick={(e) => e.stopPropagation()}>
+                                                        <div className="text-right">
+                                                            <Text size="xl" weight="bold" className="text-green-300">
+                                                                {player.currentRoundScore}
+                                                            </Text>
+                                                            <Text size="sm" className="text-green-400">
+                                                                {isCurrentUser ? 'points' : 'submitted'}
+                                                            </Text>
+                                                        </div>
                                                     </div>
                                                 )}
                                             </div>
@@ -505,28 +551,32 @@ export function GamePage() {
 
                         {/* Game Stats */}
                         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6">
-                            <div className="text-center p-4 rounded-xl bg-white/5 backdrop-blur-xl border border-white/10">
+                            <div
+                                className="text-center p-4 rounded-xl bg-white/5 backdrop-blur-xl border border-white/10">
                                 <Text size="sm" className="text-gray-400">Current Round </Text>
                                 <Text size="xl" weight="bold" className="text-purple-300">
                                     {game.currentRound}
                                 </Text>
                             </div>
 
-                            <div className="text-center p-4 rounded-xl bg-white/5 backdrop-blur-xl border border-white/10">
+                            <div
+                                className="text-center p-4 rounded-xl bg-white/5 backdrop-blur-xl border border-white/10">
                                 <Text size="sm" className="text-gray-400">Submitted </Text>
                                 <Text size="xl" weight="bold" className="text-blue-300">
                                     {submittedCount}/{game.players.length}
                                 </Text>
                             </div>
 
-                            <div className="text-center p-4 rounded-xl bg-white/5 backdrop-blur-xl border border-white/10">
+                            <div
+                                className="text-center p-4 rounded-xl bg-white/5 backdrop-blur-xl border border-white/10">
                                 <Text size="sm" className="text-gray-400">Current Dealer </Text>
                                 <Text size="xl" weight="bold" className="text-yellow-300">
                                     {currentDealer?.name?.split(' ')[0] || 'N/A'}
                                 </Text>
                             </div>
 
-                            <div className="text-center p-4 rounded-xl bg-white/5 backdrop-blur-xl border border-white/10">
+                            <div
+                                className="text-center p-4 rounded-xl bg-white/5 backdrop-blur-xl border border-white/10">
                                 <Text size="sm" className="text-gray-400">Highest Total </Text>
                                 <Text size="xl" weight="bold" className="text-green-300">
                                     {highestTotalScore}
@@ -535,7 +585,8 @@ export function GamePage() {
                         </div>
 
                         {/* Instructions */}
-                        <div className="text-center mt-6 p-4 rounded-xl bg-white/5 backdrop-blur-xl border border-white/10">
+                        <div
+                            className="text-center mt-6 p-4 rounded-xl bg-white/5 backdrop-blur-xl border border-white/10">
                             <Text className="text-gray-300 text-sm">
                                 {game.isFinished
                                     ? "🎉 Game has ended! Check out the final scores above."
@@ -551,12 +602,14 @@ export function GamePage() {
                             onClose={() => setCalculatorOpen(null)}
                             onSubmit={(score) => {
                                 if (currentUserPlayer) {
-                                    setTempScores(prev => ({ ...prev, [currentUserPlayer.userId]: score.toString() }));
+                                    setTempScores(prev => ({...prev, [currentUserPlayer.userId]: score.toString()}));
                                     setScoreErrors(prev => {
-                                        const newErrors = { ...prev };
+                                        const newErrors = {...prev};
                                         delete newErrors[currentUserPlayer.userId];
                                         return newErrors;
                                     });
+                                    // Auto-submit the score
+                                    handleSubmitScore(currentUserPlayer.userId);
                                 }
                             }}
                             playerName={currentUserPlayer?.name || "Player"}
