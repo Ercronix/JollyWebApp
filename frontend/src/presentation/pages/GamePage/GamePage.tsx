@@ -147,13 +147,16 @@ export function GamePage() {
         setTempScores(prev => ({...prev, [playerId]: value}));
     };
 
-    const handleSubmitScore = async (playerId: string) => {
-        const scoreValue = parseInt(tempScores[playerId] || '0');
+    const handleSubmitScore = async (playerId: string, directScore?: number) => {
+        const scoreValue =
+            typeof directScore === 'number'
+                ? directScore
+                : parseInt(tempScores[playerId] || '0');
 
         if (isNaN(scoreValue)) {
             setScoreErrors(prev => ({
                 ...prev,
-                [playerId]: 'Please enter a valid number'
+                [playerId]: 'Please enter a valid number',
             }));
             return;
         }
@@ -161,7 +164,7 @@ export function GamePage() {
         if (scoreValue % 5 !== 0) {
             setScoreErrors(prev => ({
                 ...prev,
-                [playerId]: 'Score must be divisible by 5'
+                [playerId]: 'Score must be divisible by 5',
             }));
             return;
         }
@@ -172,24 +175,27 @@ export function GamePage() {
                 playerId,
                 score: scoreValue,
             });
+
             setTempScores(prev => {
-                const newScores = {...prev};
-                delete newScores[playerId];
-                return newScores;
+                const next = {...prev};
+                delete next[playerId];
+                return next;
             });
+
             setScoreErrors(prev => {
-                const newErrors = {...prev};
-                delete newErrors[playerId];
-                return newErrors;
+                const next = {...prev};
+                delete next[playerId];
+                return next;
             });
         } catch (error) {
             console.error('Failed to submit score:', error);
             setScoreErrors(prev => ({
                 ...prev,
-                [playerId]: 'Failed to submit score'
+                [playerId]: 'Failed to submit score',
             }));
         }
     };
+
 
     const handleNextRound = async () => {
         try {
@@ -602,14 +608,7 @@ export function GamePage() {
                             onClose={() => setCalculatorOpen(null)}
                             onSubmit={(score) => {
                                 if (currentUserPlayer) {
-                                    setTempScores(prev => ({...prev, [currentUserPlayer.userId]: score.toString()}));
-                                    setScoreErrors(prev => {
-                                        const newErrors = {...prev};
-                                        delete newErrors[currentUserPlayer.userId];
-                                        return newErrors;
-                                    });
-                                    // Auto-submit the score
-                                    handleSubmitScore(currentUserPlayer.userId);
+                                    handleSubmitScore(currentUserPlayer.userId, score);
                                 }
                             }}
                             playerName={currentUserPlayer?.name || "Player"}
