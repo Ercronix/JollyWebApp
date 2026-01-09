@@ -11,25 +11,42 @@ const serverPort = 3501;
 const app = express();
 
 const allowedOrigins = [
+    'http://localhost:3500', // dev frontend (Docker)
+    'http://localhost:5173', // dev frontend (Vite)
     'http://localhost:3500', // dev frontend
     'http://127.0.0.1:3500',
     'http://jolly.timmornhinweg.de',
     'https://jolly.timmornhinweg.de', // production frontend
 ];
 
-app.use(cors({
-    origin: function(origin, callback) {
-        if (!origin) return callback(null, true); // allow curl/server-to-server
-        if (allowedOrigins.includes(origin)) return callback(null, true);
-	console.log('REJECTED origin:', origin);
-        return callback(new Error('Not allowed by CORS'));
-    },
-    credentials: true,
-    methods: ['GET','POST','PUT','DELETE','OPTIONS','PATCH'],
-    allowedHeaders: ['Content-Type','Authorization','x-session-id','Accept'],
-    exposedHeaders: ['Set-Cookie'],
-    maxAge: 86400
-}));
+// Simpler CORS for development
+if (process.env.NODE_ENV === 'development') {
+    app.use(cors({
+        origin: true, // Allow all origins in development
+        credentials: true,
+        methods: ['GET','POST','PUT','DELETE','OPTIONS','PATCH'],
+        allowedHeaders: ['Content-Type','Authorization','x-session-id','Accept'],
+        exposedHeaders: ['Set-Cookie'],
+        maxAge: 86400
+    }));
+} else {
+    // Strict CORS for production
+    app.use(cors({
+        origin: function(origin, callback) {
+            if (!origin) return callback(null, true);
+            if (allowedOrigins.includes(origin)) {
+                return callback(null, true);
+            }
+            console.log('REJECTED origin:', origin);
+            return callback(null, false);
+        },
+        credentials: true,
+        methods: ['GET','POST','PUT','DELETE','OPTIONS','PATCH'],
+        allowedHeaders: ['Content-Type','Authorization','x-session-id','Accept'],
+        exposedHeaders: ['Set-Cookie'],
+        maxAge: 86400
+    }));
+}
 
 // Body + cookies
 app.use(express.json());
