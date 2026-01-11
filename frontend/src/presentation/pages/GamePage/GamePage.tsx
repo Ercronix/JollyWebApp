@@ -1,5 +1,5 @@
 // src/presentation/pages/GamePage.tsx
-import React, {useState, useEffect} from "react";
+import React, {useState, useEffect, useCallback} from "react";
 import {Button} from "@/presentation/components/Button";
 import {Input} from "@/presentation/components/input";
 import {Text} from "@/presentation/components/Text";
@@ -53,6 +53,14 @@ export function GamePage() {
     // Computed values
     const allPlayersSubmitted = game?.players.every((p: Player) => p.hasSubmitted) || false;
 
+    const handleNextRound = useCallback(async () => {
+        try {
+            await nextRoundMutation.mutateAsync(searchParams.gameId!);
+        } catch (error) {
+            console.error('Failed to advance round:', error);
+        }
+    }, [nextRoundMutation, searchParams.gameId]);
+
     // Auto-advance to next round when all players have submitted
     useEffect(() => {
         if (autoAdvance && game && !game.isFinished && allPlayersSubmitted) {
@@ -61,7 +69,7 @@ export function GamePage() {
             }, 1500);
             return () => clearTimeout(timer);
         }
-    }, [autoAdvance, game?.isFinished, allPlayersSubmitted]);
+    }, [autoAdvance, game?.isFinished, allPlayersSubmitted, game, handleNextRound]);
 
     // Check if user is logged in
     useEffect(() => {
@@ -102,7 +110,7 @@ export function GamePage() {
                 lobbyId: searchParams.lobbyId,
                 userId: currentUser.id,
             });
-            navigate({to: "/lobby"});
+            await navigate({to: "/lobby"});
         } catch (error) {
             console.error('Failed to leave lobby:', error);
         }
@@ -196,14 +204,6 @@ export function GamePage() {
         }
     };
 
-
-    const handleNextRound = async () => {
-        try {
-            await nextRoundMutation.mutateAsync(searchParams.gameId!);
-        } catch (error) {
-            console.error('Failed to advance round:', error);
-        }
-    };
 
     const handleResetRound = async () => {
         try {
