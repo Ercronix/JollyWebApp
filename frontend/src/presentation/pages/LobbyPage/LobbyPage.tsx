@@ -203,7 +203,7 @@ export function LobbyPage() {
                         className="absolute inset-0 bg-gradient-to-r from-purple-300 via-pink-300 to-blue-300 opacity-20 blur-xl"></div>
                 </div>
 
-                <div className="space-y-2">
+                <div className="space-y-2 space-x-2">
                     <Text size="lg" className="text-gray-300 animate-in slide-in-from-bottom-4 duration-1000 delay-300">
                         Welcome, <span className="text-purple-300 font-semibold">{currentUser.username}</span>!
                     </Text>

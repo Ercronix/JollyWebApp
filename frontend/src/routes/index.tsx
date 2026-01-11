@@ -1,12 +1,12 @@
 import {createFileRoute} from '@tanstack/react-router'
-import {LandingLayout} from "../presentation/layout/LandingLayout/LandingLayout";
 import {LandingPage} from "../presentation/pages/LandingPage";
+import {MainLayout} from "../presentation/layout/MainLayout";
 
 export const Route = createFileRoute('/')({
     component: () => (
-        <LandingLayout colorscheme={"purpleToBlue"}>
+        <MainLayout>
             <LandingPage></LandingPage>
-        </LandingLayout>
+        </MainLayout>
     ),
 })
 

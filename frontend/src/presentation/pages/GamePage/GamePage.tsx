@@ -286,7 +286,7 @@ export function GamePage() {
                                 size="3xl"
                                 weight="bold"
                                 className="absolute left-1/2 -translate-x-1/2
-                                bg-gradient-to-r from-purple-300 via-pink-300 to-blue-300
+                                bg-gradient-to-r from-purple-400 via-white-300 to-blue-400
                                 bg-clip-text text-transparent
                                 text-2xl sm:text-3xl md:text-4xl lg:text-5xl
                                 text-center whitespace-nowrap"
@@ -394,7 +394,7 @@ export function GamePage() {
 
                             <Button
                                 colorscheme="pinkToOrange"
-                                variant="solid"
+                                variant="outline"
                                 size="md"
                                 onClick={handleLeaveLobby}
                                 disabled={leaveLobbyMutation.isPending}

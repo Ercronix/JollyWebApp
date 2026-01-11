@@ -19,7 +19,7 @@ export function PlayerHistoryModal({isOpen, onClose, player}: PlayerHistoryModal
         <div
             className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-in fade-in duration-300">
             <div
-                className="relative w-full max-w-md bg-gradient-to-br from-purple-900/95 via-pink-900/95 to-blue-900/95 backdrop-blur-xl border border-white/20 rounded-3xl shadow-2xl animate-in zoom-in-95 duration-300"
+                className="relative w-full max-w-md bg-gradient-to-br from-purple-900/50 via-blue-700/50 to-blue-900/50 backdrop-blur-xl border border-white/20 rounded-3xl shadow-2xl animate-in zoom-in-95 duration-300"
                 onClick={(e) => e.stopPropagation()}
             >
                 {/* Header */}
