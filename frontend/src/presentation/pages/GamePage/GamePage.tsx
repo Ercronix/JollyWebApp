@@ -357,7 +357,7 @@ export function GamePage() {
                                                     {game.winCondition || 1000} points
                                                 </Text>
                                             </div>
-                                            {game.currentRound === 1 && !allPlayersSubmitted && (
+                                            {!allPlayersSubmitted && (
                                                 <button
                                                     onClick={handleWinConditionEdit}
                                                     className="ml-2 px-3 py-1 rounded-lg bg-yellow-500/20 hover:bg-yellow-500/30 border border-yellow-500/30 text-yellow-300 text-sm transition-all duration-300 hover:scale-105"
