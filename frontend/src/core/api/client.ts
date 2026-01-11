@@ -7,7 +7,8 @@ import type {
     JoinLobbyResponse,
     SubmitScoreResponse,
     NextRoundResponse,
-    GameEvent
+    GameEvent,
+    SubmitWinConditionResponse,
 } from '@/types';
 
 const DEFAULT_DEV_API = 'http://localhost:3501';
@@ -193,6 +194,16 @@ export class ApiClient {
             `/admin/games/${gameId}/forceNextRound`,
             {
                 method: 'POST',
+            }
+        );
+    }
+
+    static async submitWinCondition(gameId: string, winCondition: number): Promise<SubmitWinConditionResponse> {
+        return this.request<SubmitWinConditionResponse>(
+                `/api/games/${gameId}/submitWinCondition`,
+            {
+                method: 'POST',
+                body: JSON.stringify({ winCondition }),
             }
         );
     }

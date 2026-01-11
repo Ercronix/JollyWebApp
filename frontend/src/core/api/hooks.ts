@@ -1,4 +1,4 @@
-// src/core/api/hooks.ts - Add useLeaveLobby hook
+// src/core/api/hooks.ts - Fixed hook naming
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {ApiClient} from './client';
@@ -49,11 +49,10 @@ export function useLobbies() {
     return useQuery({
         queryKey: queryKeys.lobbies,
         queryFn: () => ApiClient.listLobbies(),
-        refetchInterval: 5000, // Auto-refresh every 5 seconds
+        refetchInterval: 5000,
     });
 }
 
-// src/core/api/hooks.ts
 export function useLobbyHistory() {
     return useQuery({
         queryKey: ['lobbies', 'history'],
@@ -61,7 +60,6 @@ export function useLobbyHistory() {
         refetchOnWindowFocus: false,
     });
 }
-
 
 export function useCreateLobby() {
     const queryClient = useQueryClient();
@@ -202,6 +200,18 @@ export function useForceNextRound() {
     });
 }
 
+export function useSubmitWinCondition() {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: ({ gameId, winCondition }: { gameId: string; winCondition: number }) =>
+            ApiClient.submitWinCondition(gameId, winCondition),
+        onSuccess: (_, variables) => {
+            queryClient.invalidateQueries({queryKey: queryKeys.game(variables.gameId)});
+        },
+    });
+}
+
 // SSE hook for game events
 export function useGameEvents(gameId: string | undefined) {
     const queryClient = useQueryClient();
@@ -225,12 +235,11 @@ export function useGameEvents(gameId: string | undefined) {
                 case 'PLAYER_JOINED':
                 case 'PLAYERS_REORDERED':
                 case  'PLAYER_LEFT':
-                    // Update game state in cache
+                case 'WIN_CONDITION_SET':
                     if (eventData.game) {
                         console.log('Updating game state from SSE event:', eventData.type);
                         console.log('New game state:', eventData.game);
                         queryClient.setQueryData(queryKeys.game(gameId), eventData.game);
-                        // Force refetch to ensure UI updates
                         queryClient.invalidateQueries({ queryKey: queryKeys.game(gameId) });
                     }
                     break;
@@ -240,7 +249,6 @@ export function useGameEvents(gameId: string | undefined) {
                         queryClient.setQueryData(queryKeys.game(gameId), eventData.game);
                         queryClient.invalidateQueries({ queryKey: queryKeys.game(gameId) });
                     }
-                    // Show winner notification
                     if (eventData.winner) {
                         console.log(`Game ended! Winner: ${eventData.winner.name}`);
                     }

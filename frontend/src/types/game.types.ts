@@ -9,6 +9,7 @@ export interface Player {
 }
 
 export interface Game {
+    winCondition: number;
     id: string;
     players: Player[];
     currentDealer: string;
@@ -28,6 +29,11 @@ export interface NextRoundResponse {
     message: string;
 }
 
+export interface SubmitWinConditionResponse {
+    game: Game;
+    message: string;
+}
+
 export type GameEventType =
     | 'CONNECTED'
     | 'ROUND_STARTED'
@@ -36,7 +42,8 @@ export type GameEventType =
     | 'PLAYER_JOINED'
     | 'PLAYERS_REORDERED'
     | 'PLAYER_LEFT'
-    | 'GAME_ENDED';
+    | 'GAME_ENDED'
+    | 'WIN_CONDITION_SET';
 
 export interface GameEvent {
     type: GameEventType;

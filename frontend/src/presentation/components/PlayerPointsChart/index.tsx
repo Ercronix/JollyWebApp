@@ -47,10 +47,13 @@ export function PlayerPointsChart({ players, currentRound }: PlayerPointsGraphPr
 
     players.forEach(player => {
         let cumulative = 0;
+        // Use pointsHistory length to determine actual rounds played
         player.pointsHistory?.forEach(p => {
             cumulative += p;
             allScores.push(cumulative);
         });
+
+        // Always include the player's total score to ensure it's in range
         allScores.push(player.totalScore);
     });
 
@@ -58,30 +61,39 @@ export function PlayerPointsChart({ players, currentRound }: PlayerPointsGraphPr
     const maxScore = Math.max(...allScores, 100);
     const scoreRange = maxScore - minScore || 100;
 
+    // Add 10% padding to the top of the chart so max values aren't cut off
+    const paddedMaxScore = maxScore + (scoreRange * 0.1);
+    const paddedScoreRange = paddedMaxScore - minScore;
+
     /* ---------- Scales ---------- */
-    const maxRounds = Math.max(currentRound-1, 1);
+    // Use the actual maximum rounds from player histories
+    const maxHistoryRounds = Math.max(
+        ...players.map(p => p.pointsHistory?.length || 0),
+        1
+    );
+
     const scaleX = (round: number) =>
-        padding.left + (round / maxRounds) * chartWidth;
+        padding.left + (round / maxHistoryRounds) * chartWidth;
 
     const scaleY = (score: number) =>
         padding.top +
         chartHeight -
-        ((score - minScore) / scoreRange) * chartHeight;
+        ((score - minScore) / paddedScoreRange) * chartHeight;
 
     /* ---------- Grid ---------- */
     const gridLines = Array.from({ length: 6 }, (_, i) => {
-        const score = minScore + (scoreRange / 5) * i;
+        const score = minScore + (paddedScoreRange / 5) * i;
         return {
             score: Math.round(score),
             y: scaleY(score),
         };
     });
 
-    // Generate x-axis labels - show fewer labels on mobile
+    // Generate x-axis labels
     const maxLabels = isMobile ? 4 : 6;
-    const numLabels = Math.min(currentRound + 1, maxLabels);
+    const numLabels = Math.min(maxHistoryRounds + 1, maxLabels);
     const xLabels = Array.from({ length: numLabels }, (_, i) => {
-        const round = i === numLabels - 1 ? currentRound : Math.round((currentRound / (numLabels - 1)) * i);
+        const round = i === numLabels - 1 ? maxHistoryRounds : Math.round((maxHistoryRounds / (numLabels - 1)) * i);
         return { round, x: scaleX(round) };
     });
 
@@ -93,7 +105,6 @@ export function PlayerPointsChart({ players, currentRound }: PlayerPointsGraphPr
                 </h2>
             </div>
 
-            {/* ✅ Fully responsive without scrolling */}
             <svg viewBox={`0 0 ${width} ${height}`}
                  preserveAspectRatio="xMidYMid meet"
                  className="w-full h-auto max-h-[350px] sm:max-h-[450px]">
@@ -105,7 +116,7 @@ export function PlayerPointsChart({ players, currentRound }: PlayerPointsGraphPr
                             y1={line.y}
                             x2={width - padding.right}
                             y2={line.y}
-                            stroke="#ffffff90"
+                            stroke="#ffffff20"
                             strokeDasharray="3 3"
                         />
                         <text
@@ -250,7 +261,7 @@ export function PlayerPointsChart({ players, currentRound }: PlayerPointsGraphPr
             </svg>
 
             {/* Legend */}
-            <div className="flex flex-wrap gap-4 justify-center">
+            <div className="flex flex-wrap gap-4 justify-center mt-4">
                 {players.map((player, i) => (
                     <div key={player.userId} className="flex items-center gap-2">
                         <span
@@ -260,7 +271,7 @@ export function PlayerPointsChart({ players, currentRound }: PlayerPointsGraphPr
                                     PLAYER_COLORS[i % PLAYER_COLORS.length],
                             }}
                         />
-                        <span className="text-base text-gray-300 font-small">
+                        <span className="text-sm text-gray-300 font-medium">
                             {player.name}
                         </span>
                     </div>

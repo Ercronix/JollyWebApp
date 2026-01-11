@@ -82,6 +82,7 @@ module.exports = {
             .catch(e => utils.writeJson(res, e, e.status || 500));
     },
 
+
     logoutUserPOST(req, res) {
         Default.logoutUserPOST(getSessionId(req))
             .then(() => {
@@ -105,6 +106,13 @@ module.exports = {
 
     resetRoundPOST(req, res) {
         Default.resetRoundPOST(req.body, req.params.gameId)
+            .then(r => utils.writeJson(res, r))
+            .catch(e => utils.writeJson(res, e, e.status || 500));
+    },
+
+
+    submitWinConditionPOST(req, res) {
+        Default.submitWinConditionPOST(req.body, req.params.gameId)
             .then(r => utils.writeJson(res, r))
             .catch(e => utils.writeJson(res, e, e.status || 500));
     },

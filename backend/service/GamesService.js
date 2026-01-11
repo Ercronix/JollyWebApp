@@ -36,12 +36,13 @@ class GamesService {
                 totalScore: 0,
                 currentRoundScore: 0,
                 hasSubmitted: false,
-                pointsHistory: [] // Initialize empty points history
+                pointsHistory: []
             })),
             currentDealer: players[0]?.userId || null,
             currentRound: 1,
             isFinished: false,
-            winner: null
+            winner: null,
+            winCondition: this.POINTS_GOAL // Initialize with default from config
         });
 
         await game.save();
@@ -81,7 +82,7 @@ class GamesService {
                 totalScore: 0,
                 currentRoundScore: 0,
                 hasSubmitted: false,
-                pointsHistory: pointsHistory // Initialize empty points history for new players
+                pointsHistory: pointsHistory
             });
 
             await game.save();
@@ -97,7 +98,6 @@ class GamesService {
         });
     }
 
-    // ADD THIS METHOD - it's the missing one
     async removePlayerFromGame(gameId, userId) {
         return this.queueOperation(gameId, async () => {
             console.log(`[GamesService] Removing player ${userId} from game ${gameId}`);
@@ -111,14 +111,12 @@ class GamesService {
             const playerIndex = game.players.findIndex(p => p.userId.toString() === userId.toString());
             if (playerIndex === -1) {
                 console.log(`[GamesService] Player ${userId} not in game ${gameId}`);
-                return game; // Player not in game
+                return game;
             }
 
-            // Remove player
             game.players.splice(playerIndex, 1);
             console.log(`[GamesService] Player removed. Remaining players: ${game.players.length}`);
 
-            // Update dealer if necessary
             if (game.players.length > 0 && game.currentDealer.toString() === userId.toString()) {
                 game.currentDealer = game.players[0].userId;
                 console.log(`[GamesService] Dealer updated to ${game.players[0].name}`);
@@ -179,6 +177,34 @@ class GamesService {
         });
     }
 
+    async submitWinCondition(gameId, winCondition) {
+        return this.queueOperation(gameId, async () => {
+            const game = await Game.findById(gameId);
+            if (!game) {
+                throw new Error('Game not found');
+            }
+
+            if (game.isFinished) {
+                throw new Error('Game has already ended');
+            }
+
+            // Validate win condition
+            if (winCondition < 100 || winCondition > 10000) {
+                throw new Error('Win condition must be between 100 and 10000');
+            }
+
+            game.winCondition = winCondition;
+            await game.save();
+
+            EventService.sendEvent(gameId.toString(), {
+                type: 'WIN_CONDITION_SET',
+                game: this.getGameResponse(game),
+            });
+
+            return { game, winCondition };
+        });
+    }
+
     allPlayersSubmitted(game) {
         return game.players.every(p => p.hasSubmitted);
     }
@@ -200,17 +226,17 @@ class GamesService {
 
             // Add current round scores to points history and update total scores
             game.players.forEach(player => {
-                // Add to points history
                 if (!player.pointsHistory) {
                     player.pointsHistory = [];
                 }
                 player.pointsHistory.push(player.currentRoundScore);
-
-                // Update total score
                 player.totalScore += player.currentRoundScore;
             });
 
-            const winner = game.players.find(p => p.totalScore >= this.POINTS_GOAL);
+            // Use game.winCondition instead of hardcoded POINTS_GOAL
+            const winCondition = game.winCondition || this.POINTS_GOAL;
+            const winner = game.players.find(p => p.totalScore >= winCondition);
+
             if (winner) {
                 game.isFinished = true;
                 game.winner = winner.userId;
@@ -273,11 +299,9 @@ class GamesService {
                 throw new Error('Invalid player indices');
             }
 
-            // Move the player
             const [movedPlayer] = game.players.splice(fromIndex, 1);
             game.players.splice(toIndex, 0, movedPlayer);
 
-            // Ensure first player in list becomes the dealer
             if (game.players.length > 0) {
                 game.currentDealer = game.players[0].userId;
             }
@@ -335,7 +359,8 @@ class GamesService {
             currentRound: game.currentRound,
             createdAt: game.createdAt,
             isFinished: game.isFinished,
-            winner: game.winner
+            winner: game.winner,
+            winCondition: game.winCondition || this.POINTS_GOAL // Include winCondition in response
         };
     }
 

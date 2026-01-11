@@ -261,6 +261,20 @@ module.exports.submitScorePOST = async function (body, gameId) {
     }
 };
 
+module.exports.submitWinConditionPOST = async function (body, gameId) {
+    try {
+        const { winCondition } = body;
+
+        if (typeof winCondition !== 'number') {
+            throw { status: 400, message: 'Score must be a number' };
+        }
+
+        return await GamesService.submitWinCondition(gameId, winCondition);
+    } catch (error) {
+        throw { status: 400, message: error.message };
+    }
+}
+
 /**
  * Subscribe to game events (SSE)
  */

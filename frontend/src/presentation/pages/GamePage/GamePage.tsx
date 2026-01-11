@@ -18,6 +18,7 @@ import {
     useResetRound,
     useReorderPlayers,
     useLeaveLobby,
+    useSubmitWinCondition,
 } from "@/core/api/hooks";
 
 export type GameSearchParams = {
@@ -38,6 +39,8 @@ export function GamePage() {
     const [calculatorOpen, setCalculatorOpen] = useState<string | null>(null);
     const [historyPlayer, setHistoryPlayer] = useState<Player | null>(null);
     const [autoAdvance, setAutoAdvance] = useState(false);
+    const [editingWinCondition, setEditingWinCondition] = useState(false);
+    const [tempWinCondition, setTempWinCondition] = useState<string>('');
 
     // React Query hooks
     const {data: game, isLoading} = useGameState(searchParams.gameId);
@@ -46,6 +49,7 @@ export function GamePage() {
     const resetRoundMutation = useResetRound();
     const reorderPlayersMutation = useReorderPlayers();
     const leaveLobbyMutation = useLeaveLobby();
+    const submitWinConditionMutation = useSubmitWinCondition();
 
     // Subscribe to SSE events
     useGameEvents(searchParams.gameId);
@@ -103,17 +107,64 @@ export function GamePage() {
     }
 
     const handleLeaveLobby = async () => {
-        if (!searchParams.lobbyId || !currentUser) return;
+        console.log('[handleLeaveLobby] Called');
+        console.log('[handleLeaveLobby] lobbyId:', searchParams.lobbyId);
+        console.log('[handleLeaveLobby] currentUser:', currentUser);
+
+        if (!currentUser) {
+            console.error('[handleLeaveLobby] No current user');
+            return;
+        }
+
+        if (!searchParams.lobbyId) {
+            console.warn('[handleLeaveLobby] No lobbyId, navigating anyway');
+            await navigate({to: "/lobby"});
+            return;
+        }
 
         try {
+            console.log('[handleLeaveLobby] Calling leaveLobby mutation');
             await leaveLobbyMutation.mutateAsync({
                 lobbyId: searchParams.lobbyId,
                 userId: currentUser.id,
             });
+            console.log('[handleLeaveLobby] Successfully left lobby, navigating...');
             await navigate({to: "/lobby"});
         } catch (error) {
-            console.error('Failed to leave lobby:', error);
+            console.error('[handleLeaveLobby] Error:', error);
+            // Navigate anyway even if the API call fails
+            await navigate({to: "/lobby"});
         }
+    };
+
+    const handleWinConditionEdit = () => {
+        setTempWinCondition(game.winCondition?.toString() || '1000');
+        setEditingWinCondition(true);
+    };
+
+    const handleWinConditionSubmit = async () => {
+        const value = parseInt(tempWinCondition, 10);
+
+        if (isNaN(value) || value < 100 || value > 10000) {
+            alert('Win condition must be between 100 and 10000');
+            return;
+        }
+
+        try {
+            await submitWinConditionMutation.mutateAsync({
+                gameId: searchParams.gameId!,
+                winCondition: value,
+            });
+            setEditingWinCondition(false);
+        } catch (error) {
+            console.error('Failed to update win condition:', error);
+            alert('Failed to update win condition');
+        }
+    };
+
+    const handleWinConditionCancel = () => {
+        setEditingWinCondition(false);
+        setTempWinCondition('');
     };
 
     const handleScoreInput = (playerId: string, value: string) => {
@@ -122,7 +173,6 @@ export function GamePage() {
             return;
         }
 
-        // Allow empty string
         if (value === '') {
             setTempScores(prev => ({...prev, [playerId]: value}));
             setScoreErrors(prev => {
@@ -138,7 +188,6 @@ export function GamePage() {
 
         const numericValue = parseInt(value, 10);
 
-        // Check if divisible by 5
         if (numericValue % 5 !== 0) {
             setScoreErrors(prev => ({
                 ...prev,
@@ -203,7 +252,6 @@ export function GamePage() {
             }));
         }
     };
-
 
     const handleResetRound = async () => {
         try {
@@ -294,9 +342,64 @@ export function GamePage() {
                                 {searchParams.lobbyName || "Card Game"}
                             </Text>
 
-                            {/* Right spacer (same width as back button) */}
                             <div className="w-[88px]"/>
                         </div>
+
+                        {/* Win Condition Display/Edit */}
+                        {!game.isFinished && (
+                            <div className="flex justify-center">
+                                <div className="inline-flex items-center gap-3 px-6 py-3 rounded-xl bg-gradient-to-r from-white-500/10 to-orange-500/10 backdrop-blur-xl border border-gray-600">
+                                    {!editingWinCondition ? (
+                                        <>
+                                            <div>
+                                                <Text size="sm" className="text-yellow-200/70">Win Condition </Text>
+                                                <Text size="lg" weight="bold" className="text-yellow-300">
+                                                    {game.winCondition || 1000} points
+                                                </Text>
+                                            </div>
+                                            {game.currentRound === 1 && !allPlayersSubmitted && (
+                                                <button
+                                                    onClick={handleWinConditionEdit}
+                                                    className="ml-2 px-3 py-1 rounded-lg bg-yellow-500/20 hover:bg-yellow-500/30 border border-yellow-500/30 text-yellow-300 text-sm transition-all duration-300 hover:scale-105"
+                                                >
+                                                    ✏️ Edit
+                                                </button>
+                                            )}
+                                        </>
+                                    ) : (
+                                        <div className="flex items-center gap-2">
+                                            <Input
+                                                type="number"
+                                                value={tempWinCondition}
+                                                onChange={(e) => setTempWinCondition(e.target.value)}
+                                                placeholder="1000"
+                                                min="100"
+                                                max="10000"
+                                                step="50"
+                                                className="w-32 text-center text-white bg-white/10 border border-yellow-500/30 focus:border-yellow-400 placeholder-gray-400"
+                                            />
+                                            <Button
+                                                size="sm"
+                                                colorscheme="greenToBlue"
+                                                variant="solid"
+                                                onClick={handleWinConditionSubmit}
+                                                disabled={submitWinConditionMutation.isPending}
+                                            >
+                                                ✓
+                                            </Button>
+                                            <Button
+                                                size="sm"
+                                                colorscheme="pinkToOrange"
+                                                variant="outline"
+                                                onClick={handleWinConditionCancel}
+                                            >
+                                                ✕
+                                            </Button>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        )}
 
                         {game.isFinished && (
                             <Text size="xl" className="text-green-300 font-bold animate-pulse text-center">
@@ -342,7 +445,6 @@ export function GamePage() {
                         <div className="flex flex-wrap justify-center gap-3">
                             {!game.isFinished && (
                                 <>
-                                    {/* Auto-advance toggle */}
                                     <label
                                         className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white/10 backdrop-blur-xl border border-white/20 cursor-pointer hover:bg-white/15 transition-all duration-300 hover:scale-105">
                                         <input
@@ -443,7 +545,6 @@ export function GamePage() {
                                             }}
                                         >
                                             <div className="flex items-center justify-between gap-4 flex-wrap">
-                                                {/* Player Info */}
                                                 <div className="flex items-center gap-4">
                                                     <div
                                                         className={`flex items-center justify-center w-12 h-12 rounded-full border font-bold text-lg text-white ${
@@ -475,7 +576,6 @@ export function GamePage() {
                                                     </div>
                                                 </div>
 
-                                                {/* Score Input - Only for current user who hasn't submitted */}
                                                 {!showReorderMode && !player.hasSubmitted && isCurrentUser && !game.isFinished && (
                                                     <div className="flex flex-col gap-2 w-full sm:w-auto"
                                                          onClick={(e) => e.stopPropagation()}>
@@ -518,7 +618,6 @@ export function GamePage() {
                                                     </div>
                                                 )}
 
-                                                {/* Non-editable player display */}
                                                 {!showReorderMode && !isCurrentUser && !player.hasSubmitted && !game.isFinished && (
                                                     <div className="text-right">
                                                         <Text size="sm" className="text-gray-400">
@@ -527,7 +626,6 @@ export function GamePage() {
                                                     </div>
                                                 )}
 
-                                                {/* Submitted score display - with edit option for current user */}
                                                 {!showReorderMode && player.hasSubmitted && (
                                                     <div className="flex items-center gap-3"
                                                          onClick={(e) => e.stopPropagation()}>
@@ -559,7 +657,7 @@ export function GamePage() {
                         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6">
                             <div
                                 className="text-center p-4 rounded-xl bg-white/5 backdrop-blur-xl border border-white/10">
-                                <Text size="sm" className="text-gray-400">Current Round </Text>
+                                <Text size="sm" className="text-gray-400">Current Round</Text>
                                 <Text size="xl" weight="bold" className="text-purple-300">
                                     {game.currentRound}
                                 </Text>
@@ -567,7 +665,7 @@ export function GamePage() {
 
                             <div
                                 className="text-center p-4 rounded-xl bg-white/5 backdrop-blur-xl border border-white/10">
-                                <Text size="sm" className="text-gray-400">Submitted </Text>
+                                <Text size="sm" className="text-gray-400">Submitted</Text>
                                 <Text size="xl" weight="bold" className="text-blue-300">
                                     {submittedCount}/{game.players.length}
                                 </Text>
@@ -575,7 +673,7 @@ export function GamePage() {
 
                             <div
                                 className="text-center p-4 rounded-xl bg-white/5 backdrop-blur-xl border border-white/10">
-                                <Text size="sm" className="text-gray-400">Current Dealer </Text>
+                                <Text size="sm" className="text-gray-400">Current Dealer</Text>
                                 <Text size="xl" weight="bold" className="text-yellow-300">
                                     {currentDealer?.name?.split(' ')[0] || 'N/A'}
                                 </Text>
@@ -583,7 +681,7 @@ export function GamePage() {
 
                             <div
                                 className="text-center p-4 rounded-xl bg-white/5 backdrop-blur-xl border border-white/10">
-                                <Text size="sm" className="text-gray-400">Highest Total </Text>
+                                <Text size="sm" className="text-gray-400">Highest Total</Text>
                                 <Text size="xl" weight="bold" className="text-green-300">
                                     {highestTotalScore}
                                 </Text>
