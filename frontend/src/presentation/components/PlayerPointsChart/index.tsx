@@ -59,7 +59,7 @@ export function PlayerPointsChart({ players, currentRound }: PlayerPointsGraphPr
     const scoreRange = maxScore - minScore || 100;
 
     /* ---------- Scales ---------- */
-    const maxRounds = Math.max(currentRound, 1);
+    const maxRounds = Math.max(currentRound-1, 1);
     const scaleX = (round: number) =>
         padding.left + (round / maxRounds) * chartWidth;
 
