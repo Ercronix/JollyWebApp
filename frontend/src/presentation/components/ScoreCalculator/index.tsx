@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Button } from "@/presentation/components/Button";
 import { Text } from "@/presentation/components/Text";
 
@@ -9,17 +9,171 @@ interface ScoreCalculatorProps {
     playerName: string;
 }
 
+interface ConfettiPiece {
+    id: number;
+    x: number;
+    y: number;
+    color: string;
+    rotation: number;
+    velocityX: number;
+    velocityY: number;
+    size: number;
+}
+
+interface Particle {
+    id: number;
+    x: number;
+    y: number;
+    color: string;
+    velocityX: number;
+    velocityY: number;
+    opacity: number;
+    size: number;
+}
+
 export function ScoreCalculator({ isOpen, onClose, onSubmit}: ScoreCalculatorProps) {
     const [currentScore, setCurrentScore] = useState(0);
     const [roundWon, setRoundWon] = useState(false);
+    const [confetti, setConfetti] = useState<ConfettiPiece[]>([]);
+    const [particles, setParticles] = useState<Particle[]>([]);
+    const animationFrameRef = useRef<number | undefined>(undefined);
+    const fireworksIntervalRef = useRef<number | undefined>(undefined);
 
     // Reset when modal opens
     useEffect(() => {
         if (isOpen) {
             setCurrentScore(0);
             setRoundWon(false);
+            setConfetti([]);
+            setParticles([]);
+        } else {
+            // Clear everything when modal closes
+            setConfetti([]);
+            setParticles([]);
+            stopFireworks();
         }
     }, [isOpen]);
+
+    // Combined animation loop for confetti and fireworks
+    useEffect(() => {
+        if (confetti.length === 0 && particles.length === 0) return;
+
+        const animate = () => {
+            // Update confetti
+            setConfetti(prev =>
+                prev
+                    .map(piece => ({
+                        ...piece,
+                        x: piece.x + piece.velocityX,
+                        y: piece.y + piece.velocityY,
+                        velocityY: piece.velocityY + 0.6, // gravity
+                        velocityX: piece.velocityX * 0.99, // air resistance
+                        rotation: piece.rotation + 8
+                    }))
+                    .filter(piece => piece.y < window.innerHeight + 50)
+            );
+
+            // Update firework particles
+            setParticles(prev =>
+                prev
+                    .map(particle => ({
+                        ...particle,
+                        x: particle.x + particle.velocityX,
+                        y: particle.y + particle.velocityY,
+                        velocityY: particle.velocityY + 0.3, // gravity
+                        velocityX: particle.velocityX * 0.98,
+                        opacity: particle.opacity - 0.015
+                    }))
+                    .filter(particle => particle.opacity > 0)
+            );
+
+            animationFrameRef.current = requestAnimationFrame(animate);
+        };
+
+        animationFrameRef.current = requestAnimationFrame(animate);
+        return () => {
+            if (animationFrameRef.current) {
+                cancelAnimationFrame(animationFrameRef.current);
+            }
+        };
+    }, [confetti.length, particles.length]);
+
+    // Trigger confetti and fireworks when round won is checked
+    const handleRoundWonChange = (checked: boolean) => {
+        setRoundWon(checked);
+        if (checked) {
+            triggerConfetti();
+            startFireworks();
+        } else {
+            stopFireworks();
+            setParticles([]);
+        }
+    };
+
+    const triggerConfetti = () => {
+        const colors = ['#FFD700', '#FF6B6B', '#4ECDC4', '#45B7D1', '#FFA07A', '#98D8C8', '#F7DC6F', '#BB8FCE', '#FF1493', '#00CED1'];
+        const newConfetti = Array.from({ length: 80 }, (_, i) => ({
+            id: Date.now() + i,
+            x: window.innerWidth / 2,
+            y: window.innerHeight / 2,
+            color: colors[Math.floor(Math.random() * colors.length)],
+            rotation: Math.random() * 360,
+            velocityX: (Math.random() - 0.5) * 20,
+            velocityY: (Math.random() * -20) - 8,
+            size: Math.random() * 8 + 4
+        }));
+        setConfetti(newConfetti);
+    };
+
+    const createFirework = () => {
+        const colors = ['#FF1493', '#00CED1', '#FFD700', '#FF6B6B', '#4ECDC4', '#FF69B4', '#7B68EE', '#00FA9A'];
+        const x = Math.random() * window.innerWidth;
+        const y = Math.random() * (window.innerHeight * 0.6) + window.innerHeight * 0.1;
+        const color = colors[Math.floor(Math.random() * colors.length)];
+        const particleCount = 40;
+
+        const newParticles: Particle[] = Array.from({ length: particleCount }, (_, i) => {
+            const angle = (Math.PI * 2 * i) / particleCount;
+            const velocity = Math.random() * 4 + 3;
+            return {
+                id: Date.now() + Math.random(),
+                x,
+                y,
+                color,
+                velocityX: Math.cos(angle) * velocity,
+                velocityY: Math.sin(angle) * velocity,
+                opacity: 1,
+                size: Math.random() * 4 + 2
+            };
+        });
+
+        setParticles(prev => [...prev, ...newParticles]);
+    };
+
+    const startFireworks = () => {
+        // Initial burst
+        createFirework();
+        setTimeout(() => createFirework(), 200);
+        setTimeout(() => createFirework(), 400);
+
+        // Continue fireworks every 800ms
+        fireworksIntervalRef.current = window.setInterval(() => {
+            createFirework();
+        }, 800);
+    };
+
+    const stopFireworks = () => {
+        if (fireworksIntervalRef.current) {
+            clearInterval(fireworksIntervalRef.current);
+        }
+    };
+
+    // Cleanup on unmount
+    useEffect(() => {
+        return () => {
+            stopFireworks();
+        };
+    }, []);
 
     // Calculate total with round won bonus
     const totalScore = currentScore + (roundWon ? 50 : 0);
@@ -29,6 +183,9 @@ export function ScoreCalculator({ isOpen, onClose, onSubmit}: ScoreCalculatorPro
     };
 
     const handleSubmit = () => {
+        stopFireworks();
+        setConfetti([]);
+        setParticles([]);
         onSubmit(totalScore);
         onClose();
     };
@@ -36,12 +193,49 @@ export function ScoreCalculator({ isOpen, onClose, onSubmit}: ScoreCalculatorPro
     const handleReset = () => {
         setCurrentScore(0);
         setRoundWon(false);
+        setConfetti([]);
+        setParticles([]);
+        stopFireworks();
     };
 
     if (!isOpen) return null;
 
     return (
         <>
+            {/* Confetti */}
+            {confetti.map(piece => (
+                <div
+                    key={piece.id}
+                    className="fixed pointer-events-none z-[60] rounded-sm"
+                    style={{
+                        left: `${piece.x}px`,
+                        top: `${piece.y}px`,
+                        width: `${piece.size}px`,
+                        height: `${piece.size}px`,
+                        backgroundColor: piece.color,
+                        transform: `rotate(${piece.rotation}deg)`,
+                        boxShadow: `0 0 ${piece.size}px ${piece.color}40`
+                    }}
+                />
+            ))}
+
+            {/* Firework Particles */}
+            {particles.map(particle => (
+                <div
+                    key={particle.id}
+                    className="fixed pointer-events-none z-[60] rounded-full"
+                    style={{
+                        left: `${particle.x}px`,
+                        top: `${particle.y}px`,
+                        width: `${particle.size}px`,
+                        height: `${particle.size}px`,
+                        backgroundColor: particle.color,
+                        opacity: particle.opacity,
+                        boxShadow: `0 0 ${particle.size * 2}px ${particle.color}`
+                    }}
+                />
+            ))}
+
             {/* Backdrop */}
             <div
                 className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40 animate-in fade-in duration-200"
@@ -51,7 +245,7 @@ export function ScoreCalculator({ isOpen, onClose, onSubmit}: ScoreCalculatorPro
             {/* Modal */}
             <div className="fixed inset-0 flex items-center justify-center z-50 p-4 pointer-events-none overflow-y-auto">
                 <div
-                    className="bg-gradient-to-br from-purple-900/95 via-pink-900/95 to-blue-900/95 backdrop-blur-xl border border-white/20 rounded-3xl shadow-2xl max-w-md w-full p-6 space-y-6 pointer-events-auto animate-in zoom-in-95 duration-300"
+                    className="bg-gradient-to-br from-purple-900/95 to-blue-900/95 backdrop-blur-xl border border-white/20 rounded-3xl shadow-2xl max-w-md w-full p-6 space-y-6 pointer-events-auto animate-in zoom-in-95 duration-300"
                     onClick={(e) => e.stopPropagation()}
                 >
                     {/* Header */}
@@ -137,7 +331,7 @@ export function ScoreCalculator({ isOpen, onClose, onSubmit}: ScoreCalculatorPro
                         <div className="grid grid-cols-3 gap-3">
                             <Button
                                 onClick={() => addPoints(-5)}
-                                colorscheme="pinkToOrange"
+                                colorscheme="purpleToBlue"
                                 variant="solid"
                                 size="md"
                                 className="hover:scale-110 transition-transform"
@@ -146,7 +340,7 @@ export function ScoreCalculator({ isOpen, onClose, onSubmit}: ScoreCalculatorPro
                             </Button>
                             <Button
                                 onClick={() => addPoints(-10)}
-                                colorscheme="pinkToOrange"
+                                colorscheme="purpleToBlue"
                                 variant="solid"
                                 size="md"
                                 className="hover:scale-110 transition-transform"
@@ -155,7 +349,7 @@ export function ScoreCalculator({ isOpen, onClose, onSubmit}: ScoreCalculatorPro
                             </Button>
                             <Button
                                 onClick={() => addPoints(-25)}
-                                colorscheme="pinkToOrange"
+                                colorscheme="purpleToBlue"
                                 variant="solid"
                                 size="md"
                                 className="hover:scale-110 transition-transform"
@@ -172,7 +366,7 @@ export function ScoreCalculator({ isOpen, onClose, onSubmit}: ScoreCalculatorPro
                                 <input
                                     type="checkbox"
                                     checked={roundWon}
-                                    onChange={(e) => setRoundWon(e.target.checked)}
+                                    onChange={(e) => handleRoundWonChange(e.target.checked)}
                                     className="sr-only"
                                 />
                                 <div className={`w-6 h-6 rounded-md border-2 transition-all duration-200 flex items-center justify-center ${
