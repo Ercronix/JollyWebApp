@@ -351,7 +351,7 @@ export function LobbyPage() {
                                 onClick={handleCreateLobby}
                                 disabled={!lobbyName.trim() || createLobbyMutation.isPending}
                             >
-                                {createLobbyMutation.isPending ? 'Creating...' : 'Create Lobby 🚀'}
+                                {createLobbyMutation.isPending ? 'Creating...' : 'Create Lobby'}
                             </Button>
                         </div>
                     </div>
@@ -377,7 +377,7 @@ export function LobbyPage() {
                     colorscheme="purpleToBlue"
                     variant="ghost"
                     size="md"
-                    className="group hover:scale-110 transition-transform duration-300"
+                    className="group hover:scale-110 transition-transform duration-300 hover:text-white"
                     onClick={() => refetch()}
                     disabled={isLoading}
                 >

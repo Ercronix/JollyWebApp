@@ -63,7 +63,7 @@ export function PlayerHistoryModal({isOpen, onClose, player}: PlayerHistoryModal
                                     <Text
                                         size="lg"
                                         weight="bold"
-                                        className={points >= 0 ? "text-green-300" : "text-red-300"}
+                                        className={points >= 0 ? "text-green-300 text-right" : "text-red-300 text-right"}
                                     >
                                         {points >= 0 ? "+" : ""}{points}
                                     </Text>

@@ -364,7 +364,7 @@ export function GamePage() {
                                                     onClick={handleWinConditionEdit}
                                                     className="ml-2 px-3 py-1 rounded-lg bg-yellow-500/20 hover:bg-yellow-500/30 border border-yellow-500/30 text-yellow-300 text-sm transition-all duration-300 hover:scale-105"
                                                 >
-                                                    ✏️ Edit
+                                                    Edit
                                                 </button>
                                             )}
                                         </>
@@ -410,55 +410,11 @@ export function GamePage() {
                             </Text>
                         )}
 
-                        {/* Round Status */}
-                        {!game.isFinished && (
-                            <div className="text-center">
-                                <div
-                                    className="inline-flex items-center gap-3 px-6 py-3 rounded-full bg-white/10 backdrop-blur-xl border border-white/20">
-                                    <div
-                                        className={`w-3 h-3 rounded-full ${allPlayersSubmitted ? 'bg-green-400' : 'bg-orange-400'} animate-pulse`}></div>
-                                    <Text className="text-white font-medium">
-                                        {allPlayersSubmitted
-                                            ? "✅ All players submitted - Ready for next round!"
-                                            : `⏳ Waiting for scores (${submittedCount}/${game.players.length})`
-                                        }
-                                    </Text>
-                                </div>
-
-                                {!hasCurrentUserSubmitted && (
-                                    <div className="mt-2">
-                                        <Text size="sm" className="text-yellow-300">
-                                            💭 Your turn to submit a score!
-                                        </Text>
-                                    </div>
-                                )}
-
-                                {hasCurrentUserSubmitted && !allPlayersSubmitted && (
-                                    <div className="mt-2">
-                                        <Text size="sm" className="text-green-300">
-                                            ✅ You've submitted! Waiting for other players...
-                                        </Text>
-                                    </div>
-                                )}
-                            </div>
-                        )}
-
                         {/* Controls */}
                         <div className="flex flex-wrap justify-center gap-3">
                             {!game.isFinished && (
                                 <>
-                                    <label
-                                        className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white/10 backdrop-blur-xl border border-white/20 cursor-pointer hover:bg-white/15 transition-all duration-300 hover:scale-105">
-                                        <input
-                                            type="checkbox"
-                                            checked={autoAdvance}
-                                            onChange={(e) => setAutoAdvance(e.target.checked)}
-                                            className="w-4 h-4 rounded border-white/30 bg-white/5 text-purple-500 focus:ring-2 focus:ring-purple-400 cursor-pointer"
-                                        />
-                                        <Text className="text-white text-sm font-medium">
-                                            Auto-advance rounds
-                                        </Text>
-                                    </label>
+
 
                                     <Button
                                         colorscheme="purpleToBlue"
@@ -479,7 +435,7 @@ export function GamePage() {
                                             disabled={nextRoundMutation.isPending}
                                             className="hover:scale-105 transition-transform duration-300 animate-pulse"
                                         >
-                                            🎯 Next Round
+                                            Next Round
                                         </Button>
                                     )}
 
@@ -491,7 +447,7 @@ export function GamePage() {
                                         disabled={resetRoundMutation.isPending}
                                         className="hover:scale-105 transition-transform duration-300"
                                     >
-                                        🔄 Reset Round Scores
+                                        Reset Round Scores
                                     </Button>
                                 </>
                             )}
@@ -504,9 +460,46 @@ export function GamePage() {
                                 disabled={leaveLobbyMutation.isPending}
                                 className="hover:scale-105 transition-transform duration-300"
                             >
-                                🚪 Quit Game
+                                Quit Game
                             </Button>
+
+                            <label
+                                className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white/10 backdrop-blur-xl border border-white/20 cursor-pointer hover:bg-white/15 transition-all duration-300 hover:scale-105">
+                                <input
+                                    type="checkbox"
+                                    checked={autoAdvance}
+                                    onChange={(e) => setAutoAdvance(e.target.checked)}
+                                    className="w-4 h-4 rounded border-white/30 bg-white/5 text-purple-500 focus:ring-2 focus:ring-purple-400 cursor-pointer"
+                                />
+                                <Text className="text-white text-sm font-medium">
+                                    Auto-advance rounds
+                                </Text>
+                            </label>
                         </div>
+
+                        {/* Round Status */}
+                        {!game.isFinished && (
+                            <div className="text-center">
+                                <div
+                                    className="inline-flex items-center gap-3 px-6 py-3 rounded-full bg-white/10 backdrop-blur-xl border border-white/20">
+                                    <div
+                                        className={`w-3 h-3 rounded-full ${allPlayersSubmitted ? 'bg-green-400' : 'bg-orange-400'} animate-pulse`}></div>
+                                    <Text className="text-white font-medium">
+                                        {allPlayersSubmitted
+                                            ? "✅ All players submitted - Ready for next round!"
+                                            : `⏳ Waiting for scores (${submittedCount}/${game.players.length})`
+                                        }
+                                    </Text>
+                                </div>
+                                {hasCurrentUserSubmitted && !allPlayersSubmitted && (
+                                    <div className="mt-2">
+                                        <Text size="sm" className="text-green-300">
+                                            ✅ You've submitted! Waiting for other players...
+                                        </Text>
+                                    </div>
+                                )}
+                            </div>
+                        )}
 
                         {/* Players List */}
                         <div className="space-y-4">
@@ -659,7 +652,7 @@ export function GamePage() {
                         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6">
                             <div
                                 className="text-center p-4 rounded-xl bg-white/5 backdrop-blur-xl border border-white/10">
-                                <Text size="sm" className="text-gray-400">Current Round</Text>
+                                <Text size="sm" className="text-gray-400">Current Round </Text>
                                 <Text size="xl" weight="bold" className="text-purple-300">
                                     {game.currentRound}
                                 </Text>
@@ -667,7 +660,7 @@ export function GamePage() {
 
                             <div
                                 className="text-center p-4 rounded-xl bg-white/5 backdrop-blur-xl border border-white/10">
-                                <Text size="sm" className="text-gray-400">Submitted</Text>
+                                <Text size="sm" className="text-gray-400">Submitted </Text>
                                 <Text size="xl" weight="bold" className="text-blue-300">
                                     {submittedCount}/{game.players.length}
                                 </Text>
@@ -675,7 +668,7 @@ export function GamePage() {
 
                             <div
                                 className="text-center p-4 rounded-xl bg-white/5 backdrop-blur-xl border border-white/10">
-                                <Text size="sm" className="text-gray-400">Current Dealer</Text>
+                                <Text size="sm" className="text-gray-400">Current Dealer </Text>
                                 <Text size="xl" weight="bold" className="text-yellow-300">
                                     {currentDealer?.name?.split(' ')[0] || 'N/A'}
                                 </Text>
@@ -683,7 +676,7 @@ export function GamePage() {
 
                             <div
                                 className="text-center p-4 rounded-xl bg-white/5 backdrop-blur-xl border border-white/10">
-                                <Text size="sm" className="text-gray-400">Highest Total</Text>
+                                <Text size="sm" className="text-gray-400">Highest Total </Text>
                                 <Text size="xl" weight="bold" className="text-green-300">
                                     {highestTotalScore}
                                 </Text>

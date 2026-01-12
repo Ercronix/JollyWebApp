@@ -42,6 +42,14 @@ export function PlayerPointsChart({ players, currentRound }: PlayerPointsGraphPr
     const chartWidth = width - padding.left - padding.right;
     const chartHeight = height - padding.top - padding.bottom;
 
+    function getScoreStep(maxScore: number) {
+        if (maxScore <= 300) return 50;
+        if (maxScore <= 800) return 100;
+        if (maxScore <= 1500) return 200;
+        return 500;
+    }
+
+
     /* ---------- Score domain ---------- */
     const allScores: number[] = [0];
 
@@ -57,14 +65,14 @@ export function PlayerPointsChart({ players, currentRound }: PlayerPointsGraphPr
         allScores.push(player.totalScore);
     });
 
-    const minScore = Math.min(...allScores, 0);
-    const maxScore = Math.max(...allScores, 100);
-    const scoreRange = maxScore - minScore || 100;
+    const rawMinScore = Math.min(...allScores, 0);
+    const rawMaxScore = Math.max(...allScores, 100);
 
-    // Add 10% padding to the top of the chart so max values aren't cut off
-    const paddedMaxScore = maxScore + (scoreRange * 0.1);
-    const paddedScoreRange = paddedMaxScore - minScore;
+    const paddedMax = rawMaxScore + 50;
+    const step = getScoreStep(paddedMax);
 
+    const minScore = Math.floor(rawMinScore / step) * step;
+    const maxScore = Math.ceil(paddedMax / step) * step;
     /* ---------- Scales ---------- */
     // Use the actual maximum rounds from player histories
     const maxHistoryRounds = Math.max(
@@ -78,18 +86,18 @@ export function PlayerPointsChart({ players, currentRound }: PlayerPointsGraphPr
     const scaleY = (score: number) =>
         padding.top +
         chartHeight -
-        ((score - minScore) / paddedScoreRange) * chartHeight;
+        ((score - minScore) / (maxScore - minScore)) * chartHeight;
+
 
     /* ---------- Grid ---------- */
-    const gridLines = Array.from({ length: 6 }, (_, i) => {
-        const score = minScore + (paddedScoreRange / 5) * i;
-        return {
-            score: Math.round(score),
+    const gridLines = [];
+    for (let score = minScore; score <= maxScore; score += step) {
+        gridLines.push({
+            score,
             y: scaleY(score),
-        };
-    });
+        });
+    }
 
-    // Generate x-axis labels
     const maxLabels = isMobile ? 4 : 6;
     const numLabels = Math.min(maxHistoryRounds + 1, maxLabels);
     const xLabels = Array.from({ length: numLabels }, (_, i) => {
