@@ -88,11 +88,13 @@ export function GamePage() {
 
     if (isLoading) {
         return (
+            <MainLayout>
             <div className="flex items-center justify-center h-screen">
                 <Text size="lg" className="text-gray-400">
                     Loading game...
                 </Text>
             </div>
+            </MainLayout>
         );
     }
 
