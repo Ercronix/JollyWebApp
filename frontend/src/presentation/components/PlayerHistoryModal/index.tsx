@@ -200,19 +200,19 @@ export function PlayerHistoryModal({
                         <div className="mt-6 p-4 rounded-xl bg-gradient-to-r from-purple-500/20 to-blue-500/20 border border-white/10">
                             <div className="grid grid-cols-3 gap-4 text-center">
                                 <div>
-                                    <Text size="sm" className="text-gray-400">Rounds</Text>
+                                    <Text size="sm" className="text-gray-400">Rounds </Text>
                                     <Text size="lg" weight="bold" className="text-white">
                                         {pointsHistory.length}
                                     </Text>
                                 </div>
                                 <div>
-                                    <Text size="sm" className="text-gray-400">Average</Text>
+                                    <Text size="sm" className="text-gray-400">Average </Text>
                                     <Text size="lg" weight="bold" className="text-white">
                                         {Math.round(pointsHistory.reduce((a, b) => a + b, 0) / pointsHistory.length)}
                                     </Text>
                                 </div>
                                 <div>
-                                    <Text size="sm" className="text-gray-400">Best</Text>
+                                    <Text size="sm" className="text-gray-400">Best </Text>
                                     <Text size="lg" weight="bold" className="text-green-300">
                                         {Math.max(...pointsHistory)}
                                     </Text>

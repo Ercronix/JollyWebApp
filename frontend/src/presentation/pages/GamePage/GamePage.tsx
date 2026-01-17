@@ -86,7 +86,7 @@ export function GamePage() {
                 setHistoryPlayer(updatedPlayer);
             }
         }
-    }, [game, historyPlayer?.userId]);
+    }, [game, historyPlayer, historyPlayer?.userId]);
 
     // Check if user is logged in
     useEffect(() => {
