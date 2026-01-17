@@ -276,6 +276,41 @@ module.exports.submitWinConditionPOST = async function (body, gameId) {
 }
 
 /**
+ * Update a player's historical score
+ */
+module.exports.updateHistoryScorePOST = async function(body, gameId) {
+    try {
+        const { playerId, roundIndex, newScore } = body;
+
+        if (!playerId) {
+            throw { status: 400, message: 'Player ID is required' };
+        }
+
+        if (typeof roundIndex !== 'number' || roundIndex < 0) {
+            throw { status: 400, message: 'Valid round index is required' };
+        }
+
+        if (typeof newScore !== 'number') {
+            throw { status: 400, message: 'Score must be a number' };
+        }
+
+        if (newScore % 5 !== 0) {
+            throw { status: 400, message: 'Score must be divisible by 5' };
+        }
+
+        const user = await UsersService.getUserById(playerId);
+        if (!user) {
+            throw { status: 401, message: 'User not found' };
+        }
+
+        const game = await GamesService.updateHistoryScore(gameId, playerId, roundIndex, newScore);
+        return GamesService.getGameResponse(game);
+    } catch (error) {
+        throw { status: error.status || 400, message: error.message };
+    }
+};
+
+/**
  * Subscribe to game events (SSE)
  */
 module.exports.subscribeToGameEventsGET = function subscribeToGameEventsGET(req, res) {

@@ -212,6 +212,27 @@ export function useSubmitWinCondition() {
     });
 }
 
+export function useUpdateHistoryScore() {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: ({
+                         gameId,
+                         playerId,
+                         roundIndex,
+                         newScore
+                     }: {
+            gameId: string;
+            playerId: string;
+            roundIndex: number;
+            newScore: number;
+        }) => ApiClient.updateHistoryScore(gameId, playerId, roundIndex, newScore),
+        onSuccess: (_, variables) => {
+            queryClient.invalidateQueries({ queryKey: queryKeys.game(variables.gameId) });
+        },
+    });
+}
+
 // SSE hook for game events
 export function useGameEvents(gameId: string | undefined) {
     const queryClient = useQueryClient();
@@ -236,6 +257,7 @@ export function useGameEvents(gameId: string | undefined) {
                 case 'PLAYERS_REORDERED':
                 case  'PLAYER_LEFT':
                 case 'WIN_CONDITION_SET':
+                case 'HISTORY_SCORE_UPDATED':
                     if (eventData.game) {
                         console.log('Updating game state from SSE event:', eventData.type);
                         console.log('New game state:', eventData.game);

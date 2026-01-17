@@ -8,6 +8,7 @@ router.post('/:gameId/nextRound', Default.nextRoundPOST);
 router.post('/:gameId/reorderPlayers', Default.reorderPlayersPOST);
 router.post('/:gameId/resetRound', Default.resetRoundPOST);
 router.post('/:gameId/submitWinCondition', Default.submitWinConditionPOST);
+router.post('/:gameId/updateHistoryScore', Default.updateHistoryScorePOST);
 
 // SSE
 router.options('/:gameId/events', (req, res) => res.sendStatus(204));

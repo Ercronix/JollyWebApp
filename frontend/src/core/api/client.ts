@@ -208,6 +208,21 @@ export class ApiClient {
         );
     }
 
+    static async updateHistoryScore(
+        gameId: string,
+        playerId: string,
+        roundIndex: number,
+        newScore: number
+    ): Promise<Game> {
+        return this.request<Game>(
+            `/api/games/${gameId}/updateHistoryScore`,
+            {
+                method: 'POST',
+                body: JSON.stringify({ playerId, roundIndex, newScore }),
+            }
+        );
+    }
+
     // SSE endpoint
     static subscribeToGameEvents(gameId: string, onEvent: (data: GameEvent) => void): () => void {
         const url = new URL(`${API_BASE_URL}/api/games/${gameId}/events`);

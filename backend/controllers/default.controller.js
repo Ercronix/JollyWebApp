@@ -125,5 +125,11 @@ module.exports = {
 
     subscribeToGameEventsGET(req, res) {
         Default.subscribeToGameEventsGET(req, res);
+    },
+
+    updateHistoryScorePOST(req, res) {
+        Default.updateHistoryScorePOST(req.body, req.params.gameId)
+            .then(r => utils.writeJson(res, r))
+            .catch(e => utils.writeJson(res, e, e.status || 500));
     }
 };

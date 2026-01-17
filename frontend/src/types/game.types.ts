@@ -43,7 +43,8 @@ export type GameEventType =
     | 'PLAYERS_REORDERED'
     | 'PLAYER_LEFT'
     | 'GAME_ENDED'
-    | 'WIN_CONDITION_SET';
+    | 'WIN_CONDITION_SET'
+    | 'HISTORY_SCORE_UPDATED';
 
 export interface GameEvent {
     type: GameEventType;

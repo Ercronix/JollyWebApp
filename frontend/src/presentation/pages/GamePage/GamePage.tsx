@@ -19,6 +19,7 @@ import {
     useReorderPlayers,
     useLeaveLobby,
     useSubmitWinCondition,
+    useUpdateHistoryScore,
 } from "@/core/api/hooks";
 
 export type GameSearchParams = {
@@ -50,6 +51,7 @@ export function GamePage() {
     const reorderPlayersMutation = useReorderPlayers();
     const leaveLobbyMutation = useLeaveLobby();
     const submitWinConditionMutation = useSubmitWinCondition();
+    const updateHistoryScoreMutation = useUpdateHistoryScore();
 
     // Subscribe to SSE events
     useGameEvents(searchParams.gameId);
@@ -74,6 +76,17 @@ export function GamePage() {
             return () => clearTimeout(timer);
         }
     }, [autoAdvance, game?.isFinished, allPlayersSubmitted, game, handleNextRound]);
+
+    useEffect(() => {
+        if (historyPlayer && game) {
+            const updatedPlayer = game.players.find(
+                (p: Player) => p.userId === historyPlayer.userId
+            );
+            if (updatedPlayer) {
+                setHistoryPlayer(updatedPlayer);
+            }
+        }
+    }, [game, historyPlayer?.userId]);
 
     // Check if user is logged in
     useEffect(() => {
@@ -136,6 +149,26 @@ export function GamePage() {
             console.error('[handleLeaveLobby] Error:', error);
             // Navigate anyway even if the API call fails
             await navigate({to: "/lobby"});
+        }
+    };
+
+    const handleUpdateHistoryScore = async (roundIndex: number, newScore: number) => {
+        if (!currentUser || !searchParams.gameId) {
+            console.error('[handleUpdateHistoryScore] Missing required data');
+            return;
+        }
+
+        try {
+            await updateHistoryScoreMutation.mutateAsync({
+                gameId: searchParams.gameId,
+                playerId: currentUser.id,
+                roundIndex,
+                newScore,
+            });
+            console.log(`[handleUpdateHistoryScore] Successfully updated round ${roundIndex + 1} to ${newScore}`);
+        } catch (error) {
+            console.error('[handleUpdateHistoryScore] Error:', error);
+            throw error;
         }
     };
 
@@ -711,6 +744,9 @@ export function GamePage() {
                             isOpen={!!historyPlayer}
                             onClose={() => setHistoryPlayer(null)}
                             player={historyPlayer}
+                            currentUserId={currentUser.id}
+                            gameId={searchParams.gameId}
+                            onUpdateScore={handleUpdateHistoryScore}
                         />
                     </div>
                 </div>

@@ -364,6 +364,49 @@ class GamesService {
         };
     }
 
+    async updateHistoryScore(gameId, playerId, roundIndex, newScore) {
+        return this.queueOperation(gameId, async () => {
+            const game = await Game.findById(gameId);
+            if (!game) {
+                throw new Error('Game not found');
+            }
+
+            const player = game.players.find(p => p.userId.toString() === playerId.toString());
+            if (!player) {
+                throw new Error('Player not found in game');
+            }
+
+            if (!player.pointsHistory || roundIndex >= player.pointsHistory.length) {
+                throw new Error('Invalid round index');
+            }
+
+            const oldScore = player.pointsHistory[roundIndex];
+
+            player.pointsHistory[roundIndex] = newScore;
+
+            const scoreDifference = newScore - oldScore;
+            player.totalScore += scoreDifference;
+
+            await game.save();
+
+            // Send SSE event
+            EventService.sendEvent(gameId.toString(), {
+                type: 'HISTORY_SCORE_UPDATED',
+                game: this.getGameResponse(game),
+                player: {
+                    userId: player.userId,
+                    name: player.name,
+                    roundIndex,
+                    oldScore,
+                    newScore
+                }
+            });
+
+            console.log(`[GamesService] Updated history score for player ${player.name} round ${roundIndex + 1}: ${oldScore} -> ${newScore}`);
+            return game;
+        });
+    }
+
     shutdown() {
         const allQueues = Array.from(this.operationQueues.values());
         return Promise.allSettled(allQueues);
