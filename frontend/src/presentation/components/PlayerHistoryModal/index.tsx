@@ -137,7 +137,7 @@ export function PlayerHistoryModal({
                                                     type="text"
                                                     value={editValue}
                                                     onChange={(e) => handleInputChange(e.target.value)}
-                                                    className="w-20 text-center text-white bg-white/10 border border-white/30 focus:border-blue-400"
+                                                    className="w-15 text-center text-white bg-white/10 border border-white/30 focus:border-blue-400"
                                                     autoFocus
                                                 />
                                                 <Button

@@ -220,6 +220,7 @@ export function ScoreCalculator({
 
                     {/* Actions */}
                     <div className="flex gap-2 flex-col sm:flex-row">
+                        <div className="flex gap-2">
                         <Button
                             onClick={handleReset}
                             colorscheme="cyanToBlue"
@@ -227,7 +228,7 @@ export function ScoreCalculator({
                             size="md"
                             className="flex-1 hover:scale-105 transition-transform"
                         >
-                            🔄 Reset
+                            Reset
                         </Button>
                         <Button
                             onClick={onClose}
@@ -238,9 +239,10 @@ export function ScoreCalculator({
                         >
                             Cancel
                         </Button>
+                        </div>
                         <Button
                             onClick={handleSubmit}
-                            colorscheme="purpleToBlue"
+                            colorscheme="greenToBlue"
                             variant="solid"
                             size="md"
                             className="flex-1 hover:scale-105"

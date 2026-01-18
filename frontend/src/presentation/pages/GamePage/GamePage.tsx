@@ -339,7 +339,7 @@ export function GamePage() {
         <div className="min-h-screen relative overflow-hidden">
             <MainLayout>
                 <div className="relative z-10 container mx-auto px-4 py-6">
-                    <div className="flex flex-col gap-2 max-w-4xl mx-auto">
+                    <div className="flex flex-col gap-3 max-w-4xl mx-auto">
                         {/* Header */}
                         <div className="relative flex items-center justify-between w-full max-w-4xl mx-auto">
                             <button
@@ -511,7 +511,7 @@ export function GamePage() {
                         {/* Score Input Box */}
                         {!game.isFinished && !hasCurrentUserSubmitted && (
                             <div className="flex justify-center">
-                                <div className="w-full max-w-md p-6 rounded-2xl bg-white/10 backdrop-blur-xl border border-white/20 shadow-2xl">
+                                <div className="p-3 rounded-2xl bg-white/10 backdrop-blur-xl border border-white/20 shadow-2xl">
                                     <Text className="text-center text-white font-semibold mb-4">Enter Your Score</Text>
                                     <div className="flex items-center justify-center gap-3">
                                         <Button size="md" colorscheme="cyanToBlue" variant="outline"
@@ -522,12 +522,12 @@ export function GamePage() {
                                             value={tempScores[currentUser.id] || ''}
                                             onChange={(e) => handleScoreInput(currentUser.id, e.target.value)}
                                             placeholder="0"
-                                            className="w-16 text-center text-white text-lg bg-white/5 border focus:border-purple-400 placeholder-gray-400"
+                                            className="w-16 text-center text-white text-lg bg-white/5 border focus:border-purple-400 placeholder-gray-400 h-11"
                                         />
                                         <Button size="md" colorscheme="greenToBlue" variant="solid"
                                                 onClick={() => handleSubmitScore(currentUser.id)}
                                                 disabled={!tempScores[currentUser.id] || submitScoreMutation.isPending}
-                                                className="hover:scale-110 transition-transform disabled:opacity-50">Submit</Button>
+                                                className="border-white/20 border hover:scale-110 transition-transform disabled:opacity-50 h-11">Submit</Button>
                                     </div>
                                     {scoreErrors[currentUser.id] && (
                                         <Text size="sm" className="text-red-400 text-center mt-2">{scoreErrors[currentUser.id]}</Text>
@@ -615,22 +615,22 @@ export function GamePage() {
                         {/* Game Stats */}
                         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6">
                             <div className="text-center p-4 rounded-xl bg-white/5 backdrop-blur-xl border border-white/10">
-                                <Text size="sm" className="text-gray-400">Current Round</Text>
+                                <Text size="sm" className="text-gray-400">Current Round </Text>
                                 <Text size="xl" weight="bold" className="text-purple-300">{game.currentRound}</Text>
                             </div>
 
                             <div className="text-center p-4 rounded-xl bg-white/5 backdrop-blur-xl border border-white/10">
-                                <Text size="sm" className="text-gray-400">Submitted</Text>
+                                <Text size="sm" className="text-gray-400">Submitted </Text>
                                 <Text size="xl" weight="bold" className="text-blue-300">{submittedCount}/{game.players.length}</Text>
                             </div>
 
                             <div className="text-center p-4 rounded-xl bg-white/5 backdrop-blur-xl border border-white/10">
-                                <Text size="sm" className="text-gray-400">Current Dealer</Text>
+                                <Text size="sm" className="text-gray-400">Current Dealer </Text>
                                 <Text size="xl" weight="bold" className="text-yellow-300">{currentDealer?.name?.split(' ')[0] || 'N/A'}</Text>
                             </div>
 
                             <div className="text-center p-4 rounded-xl bg-white/5 backdrop-blur-xl border border-white/10">
-                                <Text size="sm" className="text-gray-400">Highest Total</Text>
+                                <Text size="sm" className="text-gray-400">Highest Total </Text>
                                 <Text size="xl" weight="bold" className="text-green-300">{highestTotalScore}</Text>
                             </div>
                         </div>
