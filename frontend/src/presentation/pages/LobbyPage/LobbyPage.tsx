@@ -40,7 +40,7 @@ export function LobbyPage() {
     // Check if user is logged in
     useEffect(() => {
         if (!currentUser) {
-            navigate({to: "/"});
+            void navigate({to: "/"});
         }
     }, [currentUser, navigate]);
 
@@ -152,7 +152,7 @@ export function LobbyPage() {
             await logoutMutation.mutateAsync();
             UserModel.getInstance().clearUser();
             setCurrentUser(null);
-            navigate({to: "/"});
+            void navigate({to: "/"});
         } catch (error) {
             console.error('Logout failed:', error);
         }
