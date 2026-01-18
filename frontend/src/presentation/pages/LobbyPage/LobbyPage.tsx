@@ -45,11 +45,14 @@ export function LobbyPage() {
     }, [currentUser, navigate]);
 
     const handleCreateLobby = async () => {
-        if (!lobbyName.trim() || !currentUser) return;
+        if (!currentUser) return;
 
         try {
+            const trimmedName = lobbyName.trim();
+            const fallbackName = new Date().toLocaleDateString();
+
             const lobby = await createLobbyMutation.mutateAsync({
-                name: lobbyName.trim(),
+                name: trimmedName || fallbackName,
                 userId: currentUser.id,
             });
 
@@ -349,7 +352,7 @@ export function LobbyPage() {
                                 variant="solid"
                                 className="w-full text-lg py-3 hover:scale-105 transition-transform duration-300"
                                 onClick={handleCreateLobby}
-                                disabled={!lobbyName.trim() || createLobbyMutation.isPending}
+                                disabled={createLobbyMutation.isPending}
                             >
                                 {createLobbyMutation.isPending ? 'Creating...' : 'Create Lobby'}
                             </Button>

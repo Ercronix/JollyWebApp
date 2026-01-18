@@ -383,7 +383,7 @@ export function GamePage() {
 
                         {/* Settings Section */}
                         {!game.isFinished && (
-                            <div className="flex flex-col items-center gap-4">
+                            <div className="flex flex-col items-center gap-2">
                                 <button
                                     onClick={() => setShowSettings(!showSettings)}
                                     className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white/10 backdrop-blur-xl border border-white/20 hover:bg-white/15 transition-all duration-300 hover:scale-105"
