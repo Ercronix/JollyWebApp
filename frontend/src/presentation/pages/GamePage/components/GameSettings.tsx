@@ -104,7 +104,7 @@ export const GameSettings: React.FC<GameSettingsProps> = ({
 
                     <button
                         onClick={() => setShowReorderMode(!showReorderMode)}
-                        className="w-full flex items-center justify-between p-3 rounded-lg bg-white/5 hover:bg-white/10 transition-all"
+                        className={showReorderMode ? "w-full flex items-center justify-between p-3 rounded-lg border border-white bg-blue-500/10 hover:bg-white/10 transition-all" : "w-full flex items-center justify-between p-3 rounded-lg bg-white/5 hover:bg-white/10 transition-all\""}
                     >
                         <Text className="text-white text-sm font-medium">
                             {showReorderMode ? "Exit Reorder Mode" : "Reorder Players"}
