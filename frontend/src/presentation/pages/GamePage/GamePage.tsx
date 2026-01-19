@@ -312,6 +312,7 @@ export function GamePage() {
         }
     }, [game, historyPlayer]);
 
+    // Early returns AFTER all hooks
     if (!currentUser) {
         void navigate({to: "/"});
         return null;
@@ -381,7 +382,7 @@ export function GamePage() {
                             />
                         )}
 
-                        {!game.isFinished && !hasCurrentUserSubmitted && currentUserPlayer && (
+                        {!game.isFinished && !hasCurrentUserSubmitted && currentUserPlayer && !showReorderMode && (
                             <ScoreInput
                                 currentUserId={currentUser.id}
                                 tempScore={tempScores[currentUser.id] || ''}
