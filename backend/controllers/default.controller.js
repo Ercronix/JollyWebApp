@@ -8,6 +8,34 @@ function getSessionId(req) {
 }
 
 module.exports = {
+    loginUserPOST(req, res) {
+        Default.loginUserPOST(req.body)
+            .then(r => {
+                res.cookie('sessionId', r.sessionId, {
+                    httpOnly: true,
+                    maxAge: 24 * 60 * 60 * 1000,
+                    sameSite: 'none',
+                    secure: true,
+                });
+                utils.writeJson(res, r);
+            })
+            .catch(e => utils.writeJson(res, e, e.status || 500));
+    },
+
+    registerUserPOST(req, res) {
+        Default.registerUserPOST(req.body)
+            .then(r => {
+                res.cookie('sessionId', r.sessionId, {
+                    httpOnly: true,
+                    maxAge: 24 * 60 * 60 * 1000,
+                    sameSite: 'none',
+                    secure: true,
+                });
+                utils.writeJson(res, r);
+            })
+            .catch(e => utils.writeJson(res, e, e.status || 500));
+    },
+
     createLobbyPOST(req, res) {
         Default.createLobbyPOST(req.body)
             .then(r => utils.writeJson(res, r, 201))
@@ -68,21 +96,6 @@ module.exports = {
             .catch(e => utils.writeJson(res, e, e.status || 500));
     },
 
-    loginUserPOST(req, res) {
-        Default.loginUserPOST(req.body)
-            .then(r => {
-                res.cookie('sessionId', r.sessionId, {
-                    httpOnly: true,
-                    maxAge: 24 * 60 * 60 * 1000,
-                    sameSite: 'none',
-		    secure: true,
-                });
-                utils.writeJson(res, r);
-            })
-            .catch(e => utils.writeJson(res, e, e.status || 500));
-    },
-
-
     logoutUserPOST(req, res) {
         Default.logoutUserPOST(getSessionId(req))
             .then(() => {
@@ -109,7 +122,6 @@ module.exports = {
             .then(r => utils.writeJson(res, r))
             .catch(e => utils.writeJson(res, e, e.status || 500));
     },
-
 
     submitWinConditionPOST(req, res) {
         Default.submitWinConditionPOST(req.body, req.params.gameId)

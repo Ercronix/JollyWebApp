@@ -4,6 +4,7 @@ import type {
     Game,
     Lobby,
     LoginResponse,
+    RegisterResponse,
     JoinLobbyResponse,
     SubmitScoreResponse,
     NextRoundResponse,
@@ -63,12 +64,24 @@ export class ApiClient {
     }
 
     // User endpoints
-    static async login(username: string): Promise<LoginResponse> {
+    static async login(username: string, password?: string): Promise<LoginResponse> {
         const response = await this.request<LoginResponse>(
             '/users/login',
             {
                 method: 'POST',
-                body: JSON.stringify({ username }),
+                body: JSON.stringify({ username, password }),
+            }
+        );
+        this.setSessionId(response.sessionId);
+        return response;
+    }
+
+    static async register(username: string, password: string): Promise<RegisterResponse> {
+        const response = await this.request<RegisterResponse>(
+            '/users/register',
+            {
+                method: 'POST',
+                body: JSON.stringify({ username, password }),
             }
         );
         this.setSessionId(response.sessionId);
@@ -99,13 +112,11 @@ export class ApiClient {
         return this.request<Lobby[]>('/api/lobbies', { method: 'GET' });
     }
 
-    // src/core/api/client.ts
     static async listAllLobbies(): Promise<Lobby[]> {
         return this.request<Lobby[]>('/api/lobbies/history', {
             method: 'GET',
         });
     }
-
 
     static async createLobby(name: string, userId: string): Promise<Lobby> {
         return this.request<Lobby>('/api/lobbies', {
@@ -200,7 +211,7 @@ export class ApiClient {
 
     static async submitWinCondition(gameId: string, winCondition: number): Promise<SubmitWinConditionResponse> {
         return this.request<SubmitWinConditionResponse>(
-                `/api/games/${gameId}/submitWinCondition`,
+            `/api/games/${gameId}/submitWinCondition`,
             {
                 method: 'POST',
                 body: JSON.stringify({ winCondition }),
@@ -245,5 +256,4 @@ export class ApiClient {
 
         return () => eventSource.close();
     }
-
 }

@@ -5,6 +5,46 @@ const UsersService = require('./UsersService');
 const GamesService = require('./GamesService');
 
 /**
+ * Login user (hybrid mode)
+ */
+module.exports.loginUserPOST = async function (body) {
+    try {
+        const { username, password } = body;
+
+        if (!username) {
+            throw { status: 400, message: 'Username is required' };
+        }
+
+        const result = await UsersService.loginUser(username, password);
+        return result;
+    } catch (error) {
+        throw { status: error.status || 500, message: error.message };
+    }
+};
+
+/**
+ * Register user with password protection
+ */
+module.exports.registerUserPOST = async function (body) {
+    try {
+        const { username, password } = body;
+
+        if (!username) {
+            throw { status: 400, message: 'Username is required' };
+        }
+
+        if (!password) {
+            throw { status: 400, message: 'Password is required for registration' };
+        }
+
+        const result = await UsersService.registerUser(username, password);
+        return result;
+    } catch (error) {
+        throw { status: error.status || 500, message: error.message };
+    }
+};
+
+/**
  * Create a lobby
  */
 module.exports.createLobbyPOST = async function(body) {
@@ -144,7 +184,7 @@ module.exports.joinLobbyPOST = async function (body, lobbyId) {
 };
 
 /**
- * List uncarchived lobbies
+ * List unarchived lobbies
  */
 module.exports.listLobbiesGET = async function () {
     try {
@@ -162,24 +202,6 @@ module.exports.listAllLobbiesGET = async function () {
         return await LobbiesService.listAllLobbies();
     } catch (error) {
         throw { status: 500, message: error.message };
-    }
-};
-
-/**
- * Login user
- */
-module.exports.loginUserPOST = async function (body) {
-    try {
-        const { username } = body;
-
-        if (!username) {
-            throw { status: 400, message: 'Username is required' };
-        }
-
-        const { user, sessionId } = await UsersService.loginUser(username);
-        return { user, sessionId };
-    } catch (error) {
-        throw { status: error.status || 500, message: error.message };
     }
 };
 
@@ -316,17 +338,14 @@ module.exports.updateHistoryScorePOST = async function(body, gameId) {
 module.exports.subscribeToGameEventsGET = function subscribeToGameEventsGET(req, res) {
     const gameId = req.params.gameId;
 
-    // Verify game exists
     GamesService.getGameById(gameId)
         .then(game => {
             if (!game) {
                 return res.status(404).json({ message: 'Game not found' });
             }
 
-            // Add client to event service
             EventService.addClient(gameId, res);
 
-            // Clean up on close
             res.on('close', () => {
                 console.log(`[SSE] Connection closed for game ${gameId}`);
             });

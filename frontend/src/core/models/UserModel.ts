@@ -2,10 +2,11 @@
 export type User = {
     id: string;
     username: string;
+    fullTag: string;  // e.g., "Tim#4523"
     createdAt: string;
 };
 
-const STORAGE_KEY = "app_user_v1";
+const STORAGE_KEY = "app_user_v2";  // Changed version to migrate from old schema
 
 export class UserModel {
     private static instance: UserModel;
@@ -27,7 +28,7 @@ export class UserModel {
             const raw = localStorage.getItem(STORAGE_KEY);
             if (!raw) return;
             const parsed = JSON.parse(raw);
-            if (!parsed || !parsed.id) return;
+            if (!parsed || !parsed.id || !parsed.fullTag) return;
             this.currentUser = parsed;
         } catch (e) {
             console.warn("UserModel: failed to load from storage", e);
@@ -59,5 +60,18 @@ export class UserModel {
     clearUser(): void {
         this.currentUser = null;
         this.saveToStorage();
+    }
+
+    // Helper to get display name (just the username part)
+    getDisplayName(): string | null {
+        if (!this.currentUser) return null;
+        return this.currentUser.username;
+    }
+
+    // Helper to get the discriminator (the #1234 part)
+    getDiscriminator(): string | null {
+        if (!this.currentUser) return null;
+        const parts = this.currentUser.fullTag.split('#');
+        return parts.length === 2 ? `#${parts[1]}` : null;
     }
 }

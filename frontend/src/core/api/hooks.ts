@@ -1,4 +1,4 @@
-// src/core/api/hooks.ts - Fixed hook naming
+// src/core/api/hooks.ts
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {ApiClient} from './client';
@@ -25,7 +25,20 @@ export function useLogin() {
     const queryClient = useQueryClient();
 
     return useMutation({
-        mutationFn: (username: string) => ApiClient.login(username),
+        mutationFn: ({ username, password }: { username: string; password?: string }) =>
+            ApiClient.login(username, password),
+        onSuccess: (data) => {
+            queryClient.setQueryData(queryKeys.currentUser, data.user);
+        },
+    });
+}
+
+export function useRegister() {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: ({ username, password }: { username: string; password: string }) =>
+            ApiClient.register(username, password),
         onSuccess: (data) => {
             queryClient.setQueryData(queryKeys.currentUser, data.user);
         },

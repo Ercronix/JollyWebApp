@@ -208,7 +208,7 @@ export function LobbyPage() {
 
                 <div className="space-y-2 space-x-2">
                     <Text size="lg" className="text-gray-300 animate-in slide-in-from-bottom-4 duration-1000 delay-300">
-                        Welcome, <span className="text-purple-300 font-semibold">{currentUser.username}</span>!
+                        Welcome, <span className="text-purple-300 font-semibold">{currentUser.fullTag || currentUser.username}</span>!
                     </Text>
                     <Text size="lg" className="text-gray-400">
                         Join a lobby or create one to start
