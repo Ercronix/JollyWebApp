@@ -155,13 +155,13 @@ export function LandingPage() {
             {/* Auth Section */}
             <div className="w-full max-w-md space-y-6 animate-in slide-in-from-bottom-8 duration-1000 delay-700">
                 <div
-                    className="rounded-3xl bg-white/10 backdrop-blur-xl border border-white/20 p-8 shadow-2xl hover:shadow-purple-500/25 transition-all duration-500 hover:scale-105 relative overflow-hidden">
+                    className="rounded-3xl bg-white/10 backdrop-blur-xl border border-white/20 p-4 shadow-2xl hover:shadow-purple-500/25 transition-all duration-500 hover:scale-105 relative overflow-hidden">
                     <div
                         className="absolute inset-0 bg-gradient-to-br from-purple-500/10 via-pink-500/10 to-blue-500/10 animate-pulse"></div>
 
                     <div className="relative z-10 space-y-6">
                         {/* Mode Selector */}
-                        <div className="flex gap-2 bg-white/5 rounded-xl p-1">
+                        <div className="flex gap-2 bg-white/5 rounded-xl p-2">
                             <button
                                 onClick={() => setAuthMode('quick')}
                                 className={`flex-1 py-2 px-4 rounded-lg transition-all duration-300 ${
