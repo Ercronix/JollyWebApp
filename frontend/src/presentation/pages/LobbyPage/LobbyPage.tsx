@@ -5,6 +5,8 @@ import {Input} from "@/presentation/components/input";
 import {Text} from "@/presentation/components/Text";
 import {DeleteConfirmationModal} from "@/presentation/components/DeleteConfirmationModal";
 import {ArchiveConfirmationModal} from "@/presentation/components/ArchiveConfirmationModal";
+import { JoinByCodeModal } from "@/presentation/components/JoinByCodeModal";
+import { PrivateLobbyInfo } from "@/presentation/components/PrivateLobbyInfo";
 import {useNavigate} from "@tanstack/react-router";
 import {UserModel} from "@/core/models/UserModel";
 import type {Lobby} from "@/types";
@@ -20,6 +22,9 @@ import {
 export function LobbyPage() {
     const navigate = useNavigate();
     const [lobbyName, setLobbyName] = useState("");
+    const [isPrivate, setIsPrivate] = useState(false);
+    const [showJoinByCode, setShowJoinByCode] = useState(false);
+    const [createdPrivateLobby, setCreatedPrivateLobby] = useState<Lobby | null>(null);
     const [currentUser, setCurrentUser] = useState(() => UserModel.getInstance().getCurrentUser());
     const [deleteConfirmation, setDeleteConfirmation] = useState<{ show: boolean; lobby: Lobby | null }>({
         show: false,
@@ -54,9 +59,21 @@ export function LobbyPage() {
             const lobby = await createLobbyMutation.mutateAsync({
                 name: trimmedName || fallbackName,
                 userId: currentUser.id,
+                isPrivate: isPrivate, // ADD THIS LINE
             });
 
-            // Navigate to game with the gameId and lobbyId from the lobby
+            if (lobby.isPrivate && lobby.accessCode) {
+                setCreatedPrivateLobby(lobby);
+            }
+
+            setLobbyName("");
+            setIsPrivate(false);
+
+            if (lobby.isPrivate && lobby.accessCode) {
+                setCreatedPrivateLobby(lobby);
+                return;
+            }
+
             if (lobby.gameId) {
                 await navigate({
                     to: "/Game",
@@ -343,6 +360,23 @@ export function LobbyPage() {
                                     className="text-white bg-white/5 border-white/30 focus:border-purple-400 focus:ring-purple-400/50 placeholder-gray-400 transition-all duration-300 hover:bg-white/10"
                                     disabled={createLobbyMutation.isPending}
                                 />
+
+                                <label className="flex items-center justify-between p-3 rounded-lg bg-white/5 hover:bg-white/10 transition-all cursor-pointer">
+                                    <div className="flex items-center gap-2">
+                                        <svg className="w-5 h-5 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                                        </svg>
+                                        <div>
+                                            <Text className="text-white text-sm font-medium">Private Lobby</Text>
+                                        </div>
+                                    </div>
+                                    <input
+                                        type="checkbox"
+                                        checked={isPrivate}
+                                        onChange={(e) => setIsPrivate(e.target.checked)}
+                                        className="w-4 h-4 rounded border-white/30 bg-white/5 text-purple-500 focus:ring-2 focus:ring-purple-400 cursor-pointer"
+                                    />
+                                </label>
                                 <div
                                     className="absolute inset-0 bg-gradient-to-r from-purple-500/20 to-blue-500/20 rounded-lg opacity-0 hover:opacity-100 transition-opacity duration-300 pointer-events-none"></div>
                             </div>
@@ -359,6 +393,17 @@ export function LobbyPage() {
                         </div>
                     </div>
                 </div>
+            </div>
+
+            <div className="w-full max-w-2xl">
+                <Button
+                    onClick={() => setShowJoinByCode(true)}
+                    colorscheme="purpleToBlue"
+                    variant="outline"
+                    className="w-full text-lg py-3 hover:scale-105 transition-transform duration-300"
+                >
+                    Join Private Lobby by Code
+                </Button>
             </div>
             {/* User Controls */}
             <div className="flex gap-4 items-center">
@@ -387,6 +432,51 @@ export function LobbyPage() {
                     <span className="group-hover:animate-spin inline-block mr-2">🔄</span>
                     Refresh Lobbies
                 </Button>
+
+                {showJoinByCode && currentUser && (
+                    <JoinByCodeModal
+                        userId={currentUser.id}
+                        onClose={() => setShowJoinByCode(false)}
+                    />
+                )}
+                {createdPrivateLobby && createdPrivateLobby.isPrivate && createdPrivateLobby.accessCode && (
+                    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
+                        <div className="bg-gradient-to-br from-purple-900/90 to-blue-900/90 backdrop-blur-xl border border-white/20 rounded-2xl p-6 max-w-md w-full mx-4 shadow-2xl">
+                            <div className="mb-4">
+                                <Text size="xl" weight="bold" className="text-white text-center">
+                                    Private Lobby Created! 🎉
+                                </Text>
+                            </div>
+
+                            <PrivateLobbyInfo
+                                accessCode={createdPrivateLobby.accessCode}
+                                lobbyName={createdPrivateLobby.name}
+                            />
+
+                            <Button
+                                colorscheme="greenToBlue"
+                                variant="solid"
+                                className="w-full"
+                                onClick={async () => {
+                                    if (createdPrivateLobby.gameId) {
+                                        await navigate({
+                                            to: "/Game",
+                                            search: {
+                                                gameId: createdPrivateLobby.gameId,
+                                                lobbyName: createdPrivateLobby.name,
+                                                lobbyId: createdPrivateLobby.id,
+                                                accessCode: createdPrivateLobby.accessCode,
+                                            },
+                                        });
+                                    }
+                                    setCreatedPrivateLobby(null);
+                                }}
+                            >
+                                Join Game →
+                            </Button>
+                        </div>
+                    </div>
+                )}
             </div>
         </div>
     );

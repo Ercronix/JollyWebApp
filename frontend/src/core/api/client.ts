@@ -118,11 +118,32 @@ export class ApiClient {
         });
     }
 
-    static async createLobby(name: string, userId: string): Promise<Lobby> {
+    static async createLobby(
+        name: string,
+        userId: string,
+        isPrivate: boolean = false
+    ): Promise<Lobby> {
         return this.request<Lobby>('/api/lobbies', {
             method: 'POST',
-            body: JSON.stringify({ name, userId }),
+            body: JSON.stringify({ name, userId, isPrivate }),
         });
+    }
+
+    static async joinLobbyByCode(accessCode: string, userId: string): Promise<JoinLobbyResponse> {
+        return this.request<JoinLobbyResponse>(
+            '/api/lobbies/join-by-code',
+            {
+                method: 'POST',
+                body: JSON.stringify({ accessCode, userId }),
+            }
+        );
+    }
+
+    static async getLobbyByCode(accessCode: string): Promise<Lobby> {
+        return this.request<Lobby>(
+            `/api/lobbies/code/${accessCode}`,
+            { method: 'GET' }
+        );
     }
 
     static async joinLobby(lobbyId: string, userId: string): Promise<JoinLobbyResponse> {

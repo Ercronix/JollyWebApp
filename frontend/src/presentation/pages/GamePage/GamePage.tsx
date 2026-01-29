@@ -8,6 +8,7 @@ import {useNavigate, useSearch} from "@tanstack/react-router";
 import {MainLayout} from "@/presentation/layout/MainLayout";
 import {UserModel} from "@/core/models/UserModel";
 import {PlayerPointsChart} from "@/presentation/components/PlayerPointsChart";
+import {PrivateLobbyInfo} from "@/presentation/components/PrivateLobbyInfo";
 import type {Player} from "@/types";
 import {
     useGameState,
@@ -29,6 +30,7 @@ import {PlayerCard} from "./components/PlayerCard";
 import {GameStats} from "./components/GameStats";
 
 export type GameSearchParams = {
+    accessCode?: string;
     gameId?: string;
     lobbyName?: string;
     lobbyId?: string;
@@ -341,8 +343,15 @@ export function GamePage() {
             <MainLayout>
                 <div className="relative z-10 container mx-auto px-4 py-6">
                     <div className="flex flex-col gap-3 max-w-4xl mx-auto">
-                        <GameHeader lobbyName={searchParams.lobbyName} />
+                        <GameHeader lobbyName={searchParams.lobbyName}/>
 
+
+                        {searchParams.accessCode && (
+                            <div>
+                            <Text as="h1" size="sm" weight="bold" className="bg-gradient-to-r from-purple-400 via-white-300 to-blue-400 bg-clip-text text-transparent text-center whitespace-nowrap">
+                                (private Lobby)
+                            </Text>
+                            </div>)}
                         <WinConditionDisplay
                             isFinished={game.isFinished}
                             winCondition={game.winCondition}
@@ -396,7 +405,8 @@ export function GamePage() {
 
                         <div className="space-y-4">
                             <div className="text-center mb-6">
-                                <div className="w-32 h-1 bg-gradient-to-r from-purple-400 to-blue-400 mx-auto rounded-full"></div>
+                                <div
+                                    className="w-32 h-1 bg-gradient-to-r from-purple-400 to-blue-400 mx-auto rounded-full"></div>
                             </div>
 
                             <div className="space-y-3">
@@ -424,7 +434,7 @@ export function GamePage() {
                         </div>
 
                         {game.players.length > 0 && (
-                            <PlayerPointsChart players={game.players} currentRound={game.currentRound} />
+                            <PlayerPointsChart players={game.players} currentRound={game.currentRound}/>
                         )}
 
                         <GameStats
@@ -435,7 +445,8 @@ export function GamePage() {
                             highestScore={highestTotalScore}
                         />
 
-                        <div className="text-center mt-6 p-4 rounded-xl bg-white/5 backdrop-blur-xl border border-white/10">
+                        <div
+                            className="text-center mt-6 p-4 rounded-xl bg-white/5 backdrop-blur-xl border border-white/10">
                             <Text className="text-gray-300 text-sm">
                                 {game.isFinished
                                     ? "🎉 Game has ended! Check out the final scores above."
@@ -445,6 +456,13 @@ export function GamePage() {
                                 }
                             </Text>
                         </div>
+
+                        {searchParams.accessCode && (
+                            <PrivateLobbyInfo
+                                accessCode={searchParams.accessCode}
+                                lobbyName={searchParams.lobbyName || "Private Game"}
+                            />
+                        )}
 
                         <Button colorscheme="pinkToOrange" variant="outline" size="md"
                                 onClick={handleLeaveLobby}

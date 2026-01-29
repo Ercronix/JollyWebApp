@@ -9,5 +9,7 @@ router.delete('/:lobbyId', Default.deleteLobbyDELETE);
 router.post('/:lobbyId/archive', Default.archiveLobbyPOST);
 router.post('/:lobbyId/leave', Default.leaveLobbyPOST);
 router.get('/history', Default.listAllLobbiesGET);
+router.get('/code/:accessCode', Default.getLobbyByCodeGET);
+router.post('/join-by-code', Default.joinLobbyByCodePOST);
 
 module.exports = router;

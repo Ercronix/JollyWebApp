@@ -4,6 +4,9 @@ export interface Lobby {
     playerCount: number;
     createdAt: string;
     gameId?: string;
+    archived?: boolean;
+    isPrivate?: boolean;
+    accessCode?: string;
 }
 
 export interface JoinLobbyResponse {

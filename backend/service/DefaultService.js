@@ -45,34 +45,6 @@ module.exports.registerUserPOST = async function (body) {
 };
 
 /**
- * Create a lobby
- */
-module.exports.createLobbyPOST = async function(body) {
-    try {
-        const { name, userId } = body;
-
-        if (!name) {
-            throw { status: 400, message: 'Lobby name is required' };
-        }
-
-        if (!userId) {
-            throw { status: 400, message: 'User ID is required' };
-        }
-
-        const user = await UsersService.getUserById(userId);
-        if (!user) {
-            console.error(`[CreateLobby] User not found with ID: ${userId}`);
-            throw { status: 401, message: 'User not found' };
-        }
-
-        return await LobbiesService.createLobby(name, userId, user.username);
-    } catch (error) {
-        console.error('[CreateLobby] Error:', error);
-        throw { status: error.status || 500, message: error.message };
-    }
-}
-
-/**
  * Delete a lobby
  */
 module.exports.deleteLobbyDELETE = async function(body, lobbyId) {
@@ -122,6 +94,72 @@ module.exports.leaveLobbyPOST = async function(body, lobbyId) {
     } catch (error) {
         console.error('[LeaveLobby] Error:', error);
         throw { status: error.status || 500, message: error.message };
+    }
+}
+
+/**
+ * Create a lobby (now with privacy option)
+ */
+module.exports.createLobbyPOST = async function(body) {
+    try {
+        const { name, userId, isPrivate } = body;
+
+        if (!name) {
+            throw { status: 400, message: 'Lobby name is required' };
+        }
+
+        if (!userId) {
+            throw { status: 400, message: 'User ID is required' };
+        }
+
+        const user = await UsersService.getUserById(userId);
+        if (!user) {
+            console.error(`[CreateLobby] User not found with ID: ${userId}`);
+            throw { status: 401, message: 'User not found' };
+        }
+
+        return await LobbiesService.createLobby(name, userId, user.username, isPrivate || false);
+    } catch (error) {
+        console.error('[CreateLobby] Error:', error);
+        throw { status: error.status || 500, message: error.message };
+    }
+}
+
+/**
+ * Join lobby by access code
+ */
+module.exports.joinLobbyByCodePOST = async function(body) {
+    try {
+        const { accessCode, userId } = body;
+
+        if (!accessCode) {
+            throw { status: 400, message: 'Access code is required' };
+        }
+
+        if (!userId) {
+            throw { status: 400, message: 'User ID is required' };
+        }
+
+        const user = await UsersService.getUserById(userId);
+        if (!user) {
+            throw { status: 401, message: 'User not found' };
+        }
+
+        return await LobbiesService.joinLobbyByCode(accessCode, userId, user.username);
+    } catch (error) {
+        throw { status: error.status || 400, message: error.message };
+    }
+}
+
+/**
+ * Get lobby by access code (for preview before joining)
+ */
+module.exports.getLobbyByCodeGET = async function(accessCode) {
+    try {
+        const lobby = await LobbiesService.getLobbyByCode(accessCode);
+        return LobbiesService.getLobbyResponse(lobby);
+    } catch (error) {
+        throw { status: 404, message: error.message };
     }
 }
 

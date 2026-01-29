@@ -35,6 +35,15 @@ export function LandingPage() {
                 console.log('New account created with tag:', response.user.fullTag);
             }
 
+            const pendingCode = localStorage.getItem('pendingJoinCode');
+            if (pendingCode) {
+                console.log('Found pending join code, redirecting to join:', pendingCode);
+                localStorage.removeItem('pendingJoinCode');
+
+                await navigate({ to: `/join/${pendingCode}` });
+                return;
+            }
+
             await navigate({to: "/lobby"});
         } catch (error) {
             console.error('Quick join failed:', error);
@@ -57,6 +66,15 @@ export function LandingPage() {
 
             const userModel = UserModel.getInstance();
             userModel.setUser(response.user);
+
+            const pendingCode = localStorage.getItem('pendingJoinCode');
+            if (pendingCode) {
+                console.log('Found pending join code, redirecting to join:', pendingCode);
+                localStorage.removeItem('pendingJoinCode');
+
+                await navigate({ to: `/join/${pendingCode}` });
+                return;
+            }
 
             await navigate({to: "/lobby"});
         } catch (error) {
@@ -84,6 +102,14 @@ export function LandingPage() {
             const userModel = UserModel.getInstance();
             userModel.setUser(response.user);
 
+            const pendingCode = localStorage.getItem('pendingJoinCode');
+            if (pendingCode) {
+                console.log('Pending join code found:', pendingCode);
+                localStorage.removeItem('pendingJoinCode');
+                await navigate({ to: `/join/${pendingCode}` });
+                return;
+            }
+
             await navigate({to: "/lobby"});
         } catch (error) {
             console.error('Registration failed:', error);
@@ -94,11 +120,11 @@ export function LandingPage() {
     const handleKeyPress = (e: React.KeyboardEvent) => {
         if (e.key === 'Enter' && username.trim()) {
             if (authMode === 'quick' && !loginMutation.isPending) {
-                handleQuickJoin();
+                void handleQuickJoin();
             } else if (authMode === 'login' && !loginMutation.isPending) {
-                handleLogin();
+                void handleLogin();
             } else if (authMode === 'register' && password.trim() && !registerMutation.isPending) {
-                handleRegister();
+                void handleRegister();
             }
         }
     };

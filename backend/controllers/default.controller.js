@@ -143,5 +143,17 @@ module.exports = {
         Default.updateHistoryScorePOST(req.body, req.params.gameId)
             .then(r => utils.writeJson(res, r))
             .catch(e => utils.writeJson(res, e, e.status || 500));
+    },
+
+    joinLobbyByCodePOST(req, res) {
+        Default.joinLobbyByCodePOST(req.body)
+            .then(r => utils.writeJson(res, r))
+            .catch(e => utils.writeJson(res, e, e.status || 500));
+    },
+
+    getLobbyByCodeGET(req, res) {
+        Default.getLobbyByCodeGET(req.params.accessCode)
+            .then(r => utils.writeJson(res, r))
+            .catch(e => utils.writeJson(res, e, e.status || 500));
     }
 };

@@ -5,6 +5,7 @@ type GameSearch = {
     gameId?: string;
     lobbyName?: string;
     lobbyId?: string;
+    accessCode?: string;
 };
 
 export const Route = createFileRoute('/Game')({

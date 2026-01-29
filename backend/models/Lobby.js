@@ -31,6 +31,12 @@ const lobbySchema = new mongoose.Schema({
         default: Date.now
     },
     archived: Boolean,
+    isPrivate: {
+        type: Boolean, default: false
+    },
+    accessCode: {
+        type: String, unique: true, sparse: true
+    },
 });
 
 module.exports = mongoose.model('Lobby', lobbySchema);

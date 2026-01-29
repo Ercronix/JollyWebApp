@@ -78,11 +78,34 @@ export function useCreateLobby() {
     const queryClient = useQueryClient();
 
     return useMutation({
-        mutationFn: ({ name, userId }: { name: string; userId: string }) =>
-            ApiClient.createLobby(name, userId),
+        mutationFn: ({
+                         name,
+                         userId,
+                         isPrivate
+                     }: {
+            name: string;
+            userId: string;
+            isPrivate?: boolean;
+        }) => ApiClient.createLobby(name, userId, isPrivate || false),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: queryKeys.lobbies });
         },
+    });
+}
+
+export function useJoinLobbyByCode() {
+    return useMutation({
+        mutationFn: ({ accessCode, userId }: { accessCode: string; userId: string }) =>
+            ApiClient.joinLobbyByCode(accessCode, userId),
+    });
+}
+
+export function useGetLobbyByCode(accessCode: string | undefined) {
+    return useQuery({
+        queryKey: ['lobby', 'code', accessCode],
+        queryFn: () => accessCode ? ApiClient.getLobbyByCode(accessCode) : Promise.reject('No code'),
+        enabled: !!accessCode,
+        retry: false,
     });
 }
 

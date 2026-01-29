@@ -4,14 +4,19 @@ const Lobby = require('../models/Lobby');
 const GamesService = require('./GamesService');
 
 class LobbiesService {
-    async createLobby(name, userId, username) {
+    async createLobby(name, userId, username, isPrivate = false) {
         const lobby = new Lobby({
             name,
             playerCount: 0,
             players: [],
             createdBy: userId,
-            archived: false
+            archived: false,
+            isPrivate: isPrivate
         });
+
+        if (isPrivate) {
+            lobby.accessCode = await this.generateAccessCode();
+        }
 
         if (userId && username) {
             lobby.players.push({ userId, name: username });
@@ -33,14 +38,15 @@ class LobbiesService {
         const lobbies = await Lobby.find(undefined, undefined, undefined);
 
         return lobbies
-            .filter(lobby => !lobby.archived)
+            .filter(lobby => !lobby.archived && !lobby.isPrivate)
             .map(lobby => ({
                 id: lobby._id,
                 name: lobby.name,
                 playerCount: lobby.playerCount,
                 createdAt: lobby.createdAt,
                 gameId: lobby.gameId,
-                archived: lobby.archived
+                archived: lobby.archived,
+                isPrivate: lobby.isPrivate
             }));
     }
 
@@ -144,8 +150,61 @@ class LobbiesService {
             name: lobby.name,
             playerCount: lobby.playerCount,
             createdAt: lobby.createdAt,
-            gameId: lobby.gameId
+            gameId: lobby.gameId,
+            isPrivate: lobby.isPrivate,
         };
+    }
+
+    /**
+     * Get lobby by access code
+     */
+    async getLobbyByCode(accessCode) {
+        const lobby = await Lobby.findOne({
+            accessCode: accessCode.toUpperCase(),
+            archived: false
+        });
+
+        if (!lobby) {
+            throw new Error('Lobby not found with this code');
+        }
+
+        return lobby;
+    }
+
+    /**
+     * Join lobby by access code
+     */
+    async joinLobbyByCode(accessCode, userId, username) {
+        const lobby = await this.getLobbyByCode(accessCode);
+
+        // Use existing join logic
+        return this.joinLobby(lobby._id.toString(), userId, username);
+    }
+
+    /**
+     * Generate a unique 6-character access code
+     */
+    async generateAccessCode() {
+        const characters = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // Removed similar chars
+        let attempts = 0;
+        const maxAttempts = 100;
+
+        while (attempts < maxAttempts) {
+            let code = '';
+            for (let i = 0; i < 6; i++) {
+                code += characters.charAt(Math.floor(Math.random() * characters.length));
+            }
+
+            // Check if code already exists
+            const exists = await Lobby.findOne({ accessCode: code });
+            if (!exists) {
+                return code;
+            }
+
+            attempts++;
+        }
+
+        throw new Error('Could not generate unique access code');
     }
 }
 
