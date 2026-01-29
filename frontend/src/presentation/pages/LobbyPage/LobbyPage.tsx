@@ -440,7 +440,7 @@ export function LobbyPage() {
                 )}
                 {createdPrivateLobby && createdPrivateLobby.isPrivate && createdPrivateLobby.accessCode && (
                     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
-                        <div className="bg-gradient-to-br from-purple-900/90 to-blue-900/90 backdrop-blur-xl border border-white/20 rounded-2xl p-6 max-w-md w-full mx-4 shadow-2xl">
+                        <div className="bg-gradient-to-br from-purple-900/90 to-blue-900/90 backdrop-blur-xl border border-white/20 rounded-2xl p-6 max-w-md w-full mx-4 shadow-2xl space-y-4">
                             <div className="mb-4">
                                 <Text size="xl" weight="bold" className="text-white text-center">
                                     Private Lobby Created! 🎉

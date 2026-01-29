@@ -112,7 +112,6 @@ export const JoinByCodeModal: React.FC<JoinByCodeModalProps> = ({ userId, onClos
                             <Text className="text-white">{lobbyPreview.playerCount} player(s)</Text>
                         </div>
                     )}
-
                     {lobbyPreview && (
                         <div className="flex gap-3">
                             <Button
