@@ -8,11 +8,13 @@ interface PrivateLobbyInfoProps {
 }
 
 export const PrivateLobbyInfo: React.FC<PrivateLobbyInfoProps> = ({
-                                                                      accessCode
+                                                                      accessCode,
+    lobbyName,
                                                                   }) => {
     const [copied, setCopied] = useState(false);
 
     const shareUrl = `${window.location.origin}/join/${accessCode}`;
+    const shareText = `Join my game "${lobbyName}"! Use code: ${accessCode}`;
 
     const copyCode = () => {
         void navigator.clipboard.writeText(accessCode);
@@ -24,6 +26,27 @@ export const PrivateLobbyInfo: React.FC<PrivateLobbyInfoProps> = ({
         void navigator.clipboard.writeText(shareUrl);
         setCopied(true);
         setTimeout(() => setCopied(false), 2000);
+    };
+
+    const handleNativeShare = async () => {
+        if (navigator.share) {
+            try {
+                await navigator.share({
+                    title: `Join ${lobbyName}`,
+                    text: shareText,
+                    url: shareUrl,
+                });
+                console.log('Shared successfully');
+            } catch (error) {
+                if ((error as Error).name !== 'AbortError') {
+                    console.error('Error sharing:', error);
+                    // Fallback to copy
+                    copyLink();
+                }
+            }
+        } else {
+            copyLink();
+        }
     };
 
     return (
@@ -54,6 +77,16 @@ export const PrivateLobbyInfo: React.FC<PrivateLobbyInfoProps> = ({
                         {copied ? "✓ Copied!" : "Copy Code"}
                     </Button>
                 </div>
+
+                <Button
+                    size="sm"
+                    colorscheme="greenToBlue"
+                    variant="solid"
+                    onClick={handleNativeShare}
+                    className="w-full"
+                >
+                    📤 Share Invite
+                </Button>
 
                 <Button
                     size="sm"
