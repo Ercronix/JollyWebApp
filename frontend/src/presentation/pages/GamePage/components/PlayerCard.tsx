@@ -12,7 +12,7 @@ interface ScoreDisplayProps {
 
 const ScoreDisplay: React.FC<ScoreDisplayProps> = ({ total, last, hasSubmitted }) => {
     return (
-        <div className="flex flex-col items-end justify-center min-w-[110px]">
+        <div className="flex flex-col items-end justify-center min-w-[90px]">
             {/* TOTAL SCORE */}
             <AnimatePresence mode="popLayout">
                 <motion.div
