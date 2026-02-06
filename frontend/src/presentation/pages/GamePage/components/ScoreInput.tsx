@@ -24,7 +24,7 @@ export const ScoreInput: React.FC<ScoreInputProps> = ({
     return (
         <div className="flex justify-center">
             <div className="p-3 rounded-2xl bg-white/10 backdrop-blur-xl border border-white/20 shadow-2xl">
-                <Text className="text-center text-white font-semibold mb-4">Enter Your Score</Text>
+                <Text className="text-center text-white font-semibold mb-4">Enter your score</Text>
                 <div className="flex items-center justify-center gap-3">
                     <Button size="md" colorscheme="greenToBlue" variant="solid"
                             onClick={onCalculatorOpen}

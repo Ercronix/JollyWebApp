@@ -95,7 +95,7 @@ export const PrivateLobbyInfo: React.FC<PrivateLobbyInfoProps> = ({
                     onClick={copyLink}
                     className="w-full"
                 >
-                    Copy Link: {shareUrl}
+                    Copy Link
                 </Button>
             </div>
 

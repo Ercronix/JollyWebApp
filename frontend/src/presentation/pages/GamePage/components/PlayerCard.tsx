@@ -36,7 +36,7 @@ const ScoreDisplay: React.FC<ScoreDisplayProps> = ({ total, last, hasSubmitted }
                     initial={{ opacity: 0, scale: 0.9 }}
                     animate={{ opacity: 1, scale: 1 }}
                     transition={{ duration: 0.2 }}
-                    className={`font-semibold text-lg leading-tight ${
+                    className={`font-semibold text-md leading-tight ${
                         last > 0
                             ? "text-green-400"
                             : last < 0
@@ -44,7 +44,7 @@ const ScoreDisplay: React.FC<ScoreDisplayProps> = ({ total, last, hasSubmitted }
                                 : "text-gray-300"
                     }`}
                 >
-                    {last > 0 ? "+" : ""}
+                    {last > 0 ? "▲" : "▼"}
                     {last}
                 </motion.div>
             )}
@@ -70,7 +70,6 @@ export const PlayerCard: React.FC<PlayerCardProps> = ({
                                                           index,
                                                           isCurrentUser,
                                                           isDealer,
-                                                          isFinished,
                                                           showReorderMode,
                                                           onDragStart,
                                                           onDragOver,
@@ -128,17 +127,12 @@ export const PlayerCard: React.FC<PlayerCardProps> = ({
                         />
                     </div>
                 </div>
-                {!showReorderMode && !isCurrentUser && !player.hasSubmitted && !isFinished && (
-                    <div className="text-right">
-                        <Text size="sm" className="text-gray-400">Waiting for player...</Text>
-                    </div>
-                )}
 
                 {!showReorderMode && player.hasSubmitted && (
                     <div className="flex items-center gap-3">
                         <div className="text-right">
                             <Text size="xl" weight="bold" className="text-green-300">{player.currentRoundScore}</Text>
-                            <Text size="sm" className="text-green-400">{isCurrentUser ? 'points' : 'submitted'}</Text>
+                            <Text size="sm" className="text-green-400">{isCurrentUser ? ' points' : ' submitted'}</Text>
                         </div>
                     </div>
                 )}
