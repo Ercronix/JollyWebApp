@@ -11,6 +11,7 @@ import {UserModel} from "@/core/models/UserModel";
 import {PlayerPointsChart} from "@/presentation/components/PlayerPointsChart";
 import {PrivateLobbyInfo} from "@/presentation/components/PrivateLobbyInfo";
 import type {Player} from "@/types";
+import { useQueryClient } from "@tanstack/react-query";
 import {
     useGameState,
     useGameEvents,
@@ -62,6 +63,7 @@ export function GamePage() {
     const leaveLobbyMutation = useLeaveLobby();
     const submitWinConditionMutation = useSubmitWinCondition();
     const updateHistoryScoreMutation = useUpdateHistoryScore();
+    const queryClient = useQueryClient();
 
     // SSE subscription
     useGameEvents(searchParams.gameId);
@@ -313,6 +315,40 @@ export function GamePage() {
             }
         }
     }, [game, historyPlayer]);
+
+
+    useEffect(() => {
+      if (!searchParams.gameId) return;
+        const handleVisibilityChange = () => {
+          if (document.visibilityState === "visible") {
+            // Force re-sync with server
+            queryClient.invalidateQueries({
+                queryKey: ["game", searchParams.gameId],
+              });
+          }
+        };
+
+      document.addEventListener("visibilitychange", handleVisibilityChange);
+        return () => {
+          document.removeEventListener("visibilitychange", handleVisibilityChange);
+      };
+    }, [queryClient, searchParams.gameId]);
+
+    
+    useEffect(() => {
+        if (!searchParams.gameId) return;
+
+        const handleFocus = () => {
+            queryClient.invalidateQueries({
+                queryKey: ["game", searchParams.gameId],
+            });
+        };
+
+        window.addEventListener("focus", handleFocus);
+        return () => {
+            window.removeEventListener("focus", handleFocus);
+        };
+    }, [queryClient, searchParams.gameId]);
 
     // Early returns AFTER all hooks
     if (!currentUser) {

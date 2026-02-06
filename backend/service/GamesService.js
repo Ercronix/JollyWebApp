@@ -155,6 +155,12 @@ class GamesService {
                 throw new Error('Player has already submitted score for this round');
             }
 
+            let expectedRound = game.currentRound - 1;
+            if (player.pointsHistory.length !== expectedRound) {
+              console.log(`[GamesService] Player ${player.name} tried to submit for old round`);
+              throw new Error('Player not in the correct Round');
+              
+            }
             player.currentRoundScore = score;
             player.hasSubmitted = true;
 
