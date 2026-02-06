@@ -13,6 +13,13 @@ interface ScoreInputProps {
     onSubmit: () => void;
 }
 
+// Haptic feedback utility function
+const triggerHaptic = (duration: number = 10) => {
+    if (navigator.vibrate) {
+        navigator.vibrate(duration);
+    }
+};
+
 export const ScoreInput: React.FC<ScoreInputProps> = ({
                                                           tempScore,
                                                           scoreError,
@@ -21,13 +28,25 @@ export const ScoreInput: React.FC<ScoreInputProps> = ({
                                                           onCalculatorOpen,
                                                           onSubmit,
                                                       }) => {
+    const handleCalculatorOpen = () => {
+        triggerHaptic(15); // Light tap for opening calculator
+        onCalculatorOpen();
+    };
+
+    const handleSubmit = () => {
+        if (tempScore && !isPending) {
+            triggerHaptic(30); // Medium tap for important action
+            onSubmit();
+        }
+    };
+
     return (
         <div className="flex justify-center">
             <div className="p-3 rounded-2xl bg-white/10 backdrop-blur-xl border border-white/20 shadow-2xl">
                 <Text className="text-center text-white font-semibold mb-4">Enter your score</Text>
                 <div className="flex items-center justify-center gap-3">
                     <Button size="md" colorscheme="greenToBlue" variant="solid"
-                            onClick={onCalculatorOpen}
+                            onClick={handleCalculatorOpen}
                             className="hover:scale-110 transition-transform border-white/80 border"><svg
                         width="24"
                         height="24"
@@ -55,7 +74,7 @@ export const ScoreInput: React.FC<ScoreInputProps> = ({
                         className="w-16 text-center text-white text-lg bg-white/5 border focus:border-purple-400 placeholder-gray-400 h-11"
                     />
                     <Button size="md" colorscheme="greenToBlue" variant="solid"
-                            onClick={onSubmit}
+                            onClick={handleSubmit}
                             disabled={!tempScore || isPending}
                             className="border-white/80 border hover:scale-110 transition-transform disabled:opacity-50 h-11">Submit</Button>
                 </div>
