@@ -155,5 +155,22 @@ module.exports = {
         Default.getLobbyByCodeGET(req.params.accessCode)
             .then(r => utils.writeJson(res, r))
             .catch(e => utils.writeJson(res, e, e.status || 500));
-    }
+    },
+    addPlayerToGamePOST(req, res) {
+        Default.addPlayerToGamePOST(req.body, req.params.gameId)
+            .then(r => utils.writeJson(res, r))
+            .catch(e => utils.writeJson(res, e, e.status || 500));
+    },
+
+    removePlayerFromGamePOST(req, res) {
+        Default.removePlayerFromGamePOST(req.body, req.params.gameId)
+            .then(r => utils.writeJson(res, r))
+            .catch(e => utils.writeJson(res, e, e.status || 500));
+    },
+
+    submitScoreForPlayerPOST(req, res) {
+        Default.submitScoreForPlayerPOST(req.body, req.params.gameId)
+            .then(r => utils.writeJson(res, r))
+            .catch(e => utils.writeJson(res, e, e.status || 500));
+    },
 };

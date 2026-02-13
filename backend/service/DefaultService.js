@@ -370,6 +370,66 @@ module.exports.updateHistoryScorePOST = async function(body, gameId) {
     }
 };
 
+module.exports.addPlayerToGamePOST = async function(body, gameId) {
+    try {
+        const { playerName } = body;
+
+        if (!playerName || typeof playerName !== 'string') {
+            throw { status: 400, message: 'Player name is required' };
+        }
+
+        const trimmedName = playerName.trim();
+        if (trimmedName.length < 1 || trimmedName.length > 50) {
+            throw { status: 400, message: 'Player name must be between 1 and 50 characters' };
+        }
+
+        const game = await GamesService.addTemporaryPlayer(gameId, trimmedName);
+        return GamesService.getGameResponse(game);
+    } catch (error) {
+        console.error('[AddPlayerToGame] Error:', error);
+        throw { status: error.status || 400, message: error.message };
+    }
+};
+
+module.exports.removePlayerFromGamePOST = async function(body, gameId) {
+    try {
+        const { playerId } = body;
+
+        if (!playerId) {
+            throw { status: 400, message: 'Player ID is required' };
+        }
+
+        const game = await GamesService.removePlayer(gameId, playerId);
+        return GamesService.getGameResponse(game);
+    } catch (error) {
+        console.error('[RemovePlayerFromGame] Error:', error);
+        throw { status: error.status || 400, message: error.message };
+    }
+};
+
+module.exports.submitScoreForPlayerPOST = async function(body, gameId) {
+    try {
+        const { playerId, score } = body;
+
+        if (!playerId) {
+            throw { status: 400, message: 'Player ID is required' };
+        }
+
+        if (typeof score !== 'number') {
+            throw { status: 400, message: 'Score must be a number' };
+        }
+
+        if (score % 5 !== 0) {
+            throw { status: 400, message: 'Score must be divisible by 5' };
+        }
+
+        return await GamesService.submitScoreForPlayer(gameId, playerId, score);
+    } catch (error) {
+        console.error('[SubmitScoreForPlayer] Error:', error);
+        throw { status: error.status || 400, message: error.message };
+    }
+};
+
 /**
  * Subscribe to game events (SSE)
  */

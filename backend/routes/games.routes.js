@@ -9,7 +9,9 @@ router.post('/:gameId/reorderPlayers', Default.reorderPlayersPOST);
 router.post('/:gameId/resetRound', Default.resetRoundPOST);
 router.post('/:gameId/submitWinCondition', Default.submitWinConditionPOST);
 router.post('/:gameId/updateHistoryScore', Default.updateHistoryScorePOST);
-
+router.post('/:gameId/addPlayer', Default.addPlayerToGamePOST);
+router.post('/:gameId/removePlayer', Default.removePlayerFromGamePOST);
+router.post('/:gameId/submitScoreForPlayer', Default.submitScoreForPlayerPOST);
 // SSE
 router.options('/:gameId/events', (req, res) => res.sendStatus(204));
 router.get('/:gameId/events', Default.subscribeToGameEventsGET);

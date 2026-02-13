@@ -6,6 +6,7 @@ export interface Player {
     hasSubmitted: boolean;
     pointsHistory?: number[];
     createdAt: string;
+    isTemporary?: boolean;
 }
 
 export interface Game {
@@ -44,7 +45,8 @@ export type GameEventType =
     | 'PLAYER_LEFT'
     | 'GAME_ENDED'
     | 'WIN_CONDITION_SET'
-    | 'HISTORY_SCORE_UPDATED';
+    | 'HISTORY_SCORE_UPDATED'
+    | 'PLAYER_REMOVED';
 
 export interface GameEvent {
     type: GameEventType;

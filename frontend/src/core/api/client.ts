@@ -255,6 +255,40 @@ export class ApiClient {
         );
     }
 
+    static async addPlayerToGame(gameId: string, playerName: string): Promise<Game> {
+        return this.request<Game>(
+            `/api/games/${gameId}/addPlayer`,
+            {
+                method: 'POST',
+                body: JSON.stringify({ playerName }),
+            }
+        );
+    }
+
+    static async removePlayerFromGame(gameId: string, playerId: string): Promise<Game> {
+        return this.request<Game>(
+            `/api/games/${gameId}/removePlayer`,
+            {
+                method: 'POST',
+                body: JSON.stringify({ playerId }),
+            }
+        );
+    }
+
+    static async submitScoreForPlayer(
+        gameId: string,
+        playerId: string,
+        score: number
+    ): Promise<SubmitScoreResponse> {
+        return this.request<SubmitScoreResponse>(
+            `/api/games/${gameId}/submitScoreForPlayer`,
+            {
+                method: 'POST',
+                body: JSON.stringify({ playerId, score }),
+            }
+        );
+    }
+
     // SSE endpoint
     static subscribeToGameEvents(gameId: string, onEvent: (data: GameEvent) => void): () => void {
         const url = new URL(`${API_BASE_URL}/api/games/${gameId}/events`);

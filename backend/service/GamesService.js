@@ -3,6 +3,7 @@
 const Game = require('../models/Game');
 const EventService = require('./EventService');
 const config = require('../config');
+const mongoose = require('mongoose');
 
 class GamesService {
     constructor() {
@@ -359,7 +360,8 @@ class GamesService {
                 totalScore: p.totalScore,
                 currentRoundScore: p.currentRoundScore,
                 hasSubmitted: p.hasSubmitted,
-                pointsHistory: p.pointsHistory || []
+                pointsHistory: p.pointsHistory || [],
+                isTemporary: p.isTemporary || false
             })),
             currentDealer: game.currentDealer,
             currentRound: game.currentRound,
@@ -410,6 +412,157 @@ class GamesService {
 
             console.log(`[GamesService] Updated history score for player ${player.name} round ${roundIndex + 1}: ${oldScore} -> ${newScore}`);
             return game;
+        });
+    }
+
+    async addTemporaryPlayer(gameId, playerName) {
+        return this.queueOperation(gameId, async () => {
+            const game = await Game.findById(gameId);
+            if (!game) {
+                throw new Error('Game not found');
+            }
+
+            if (game.isFinished) {
+                throw new Error('Cannot add players to a finished game');
+            }
+
+            // Check if player name already exists in this game (case-insensitive)
+            const existingPlayer = game.players.find(
+                p => p.name.toLowerCase() === playerName.toLowerCase()
+            );
+
+            if (existingPlayer) {
+                // Provide a more helpful error message
+                if (existingPlayer.isTemporary) {
+                    throw new Error(`A temporary player named "${playerName}" already exists in this game. Please use a different name.`);
+                } else {
+                    throw new Error(`A player named "${playerName}" is already in this game. Please use a different name.`);
+                }
+            }
+
+            // Generate a real MongoDB ObjectId for the temporary player
+            const tempUserId = new mongoose.Types.ObjectId();
+
+            // Create points history array to match current round
+            let pointsHistory = [];
+            if (game.currentRound > 1) {
+                pointsHistory = Array(game.currentRound - 1).fill(0);
+            }
+
+            // Add the new player
+            game.players.push({
+                name: playerName,
+                userId: tempUserId,
+                totalScore: 0,
+                currentRoundScore: 0,
+                hasSubmitted: false,
+                pointsHistory: pointsHistory,
+                isTemporary: true
+            });
+
+            await game.save();
+
+            EventService.sendEvent(gameId.toString(), {
+                type: 'PLAYER_JOINED',
+                game: this.getGameResponse(game),
+                player: {
+                    userId: tempUserId.toString(),
+                    name: playerName,
+                    totalScore: 0,
+                    isTemporary: true
+                }
+            });
+
+            console.log(`[GamesService] Temporary player "${playerName}" added to game ${gameId} with ObjectId ${tempUserId}`);
+            return game;
+        });
+    }
+
+    async removePlayer(gameId, playerId) {
+        return this.queueOperation(gameId, async () => {
+            const game = await Game.findById(gameId);
+            if (!game) {
+                throw new Error('Game not found');
+            }
+
+            const playerIndex = game.players.findIndex(
+                p => p.userId.toString() === playerId.toString()
+            );
+
+            if (playerIndex === -1) {
+                throw new Error('Player not found in game');
+            }
+
+            const removedPlayer = game.players[playerIndex];
+            game.players.splice(playerIndex, 1);
+
+            if (game.currentDealer.toString() === playerId.toString() && game.players.length > 0) {
+                game.currentDealer = game.players[0].userId;
+            }
+
+            await game.save();
+
+            EventService.sendEvent(gameId.toString(), {
+                type: 'PLAYER_REMOVED',
+                game: this.getGameResponse(game),
+                playerId: playerId,
+                playerName: removedPlayer.name
+            });
+
+            console.log(`[GamesService] Player ${removedPlayer.name} removed from game ${gameId}`);
+            return game;
+        });
+    }
+
+    async submitScoreForPlayer(gameId, playerId, score) {
+        return this.queueOperation(gameId, async () => {
+            const game = await Game.findById(gameId);
+            if (!game) {
+                throw new Error('Game not found');
+            }
+
+            if (game.isFinished) {
+                throw new Error('Game has already ended');
+            }
+
+            const player = game.players.find(
+                p => p.userId.toString() === playerId.toString()
+            );
+
+            if (!player) {
+                throw new Error('Player not found in game');
+            }
+
+            if (player.hasSubmitted) {
+                throw new Error('Player has already submitted score for this round');
+            }
+
+            let expectedRound = game.currentRound - 1;
+            if (player.pointsHistory.length !== expectedRound) {
+                console.log(`[GamesService] Player ${player.name} tried to submit for wrong round`);
+                throw new Error('Player not in the correct round');
+            }
+
+            player.currentRoundScore = score;
+            player.hasSubmitted = true;
+
+            await game.save();
+
+            const allPlayersSubmitted = this.allPlayersSubmitted(game);
+
+            EventService.sendEvent(gameId.toString(), {
+                type: 'SCORE_SUBMITTED',
+                game: this.getGameResponse(game),
+                player: {
+                    userId: player.userId,
+                    name: player.name,
+                    score: score
+                },
+                allPlayersSubmitted
+            });
+
+            console.log(`[GamesService] Score ${score} submitted for player ${player.name} by admin`);
+            return { game, player };
         });
     }
 

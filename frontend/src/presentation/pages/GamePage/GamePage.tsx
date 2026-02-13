@@ -22,6 +22,9 @@ import {
     useLeaveLobby,
     useSubmitWinCondition,
     useUpdateHistoryScore,
+    useAddPlayerToGame,
+    useRemovePlayerFromGame,
+    useSubmitScoreForPlayer,
 } from "@/core/api/hooks";
 import {GameHeader} from "./components/GameHeader";
 import {WinConditionDisplay} from "./components/WinConditionDisplay";
@@ -29,6 +32,7 @@ import {RoundStatus} from "./components/RoundStatus";
 import {ScoreInput} from "./components/ScoreInput";
 import {PlayerCard} from "./components/PlayerCard";
 import {GameStats} from "./components/GameStats";
+import {AdminPanel} from "@/presentation/components/AdminPanel";
 
 export type GameSearchParams = {
     accessCode?: string;
@@ -53,6 +57,7 @@ export function GamePage() {
     const [editingWinCondition, setEditingWinCondition] = useState(false);
     const [tempWinCondition, setTempWinCondition] = useState<string>('');
     const [showSettings, setShowSettings] = useState(false);
+    const [isAdminMode, setIsAdminMode] = useState(false);
 
     // All React Query hooks
     const {data: game, isLoading} = useGameState(searchParams.gameId);
@@ -64,6 +69,9 @@ export function GamePage() {
     const submitWinConditionMutation = useSubmitWinCondition();
     const updateHistoryScoreMutation = useUpdateHistoryScore();
     const queryClient = useQueryClient();
+    const addPlayerMutation = useAddPlayerToGame();
+    const removePlayerMutation = useRemovePlayerFromGame();
+    const submitScoreForPlayerMutation = useSubmitScoreForPlayer();
 
     // SSE subscription
     useGameEvents(searchParams.gameId);
@@ -298,6 +306,62 @@ export function GamePage() {
         setDraggedIndex(null);
     }, [draggedIndex, reorderPlayersMutation, searchParams.gameId, currentUser]);
 
+    const handleToggleAdminMode = useCallback(() => {
+        setIsAdminMode(prev => !prev);
+    }, []);
+
+    const handleAddPlayer = useCallback(async (playerName: string) => {
+        if (!searchParams.gameId) return;
+
+        try {
+            await addPlayerMutation.mutateAsync({
+                gameId: searchParams.gameId,
+                playerName,
+            });
+        } catch (error) {
+            console.error('Failed to add player:', error);
+            alert('Failed to add player. Please try again.');
+        }
+    }, [addPlayerMutation, searchParams.gameId]);
+
+    const handleRemovePlayer = useCallback(async (playerId: string) => {
+        if (!searchParams.gameId) return;
+
+        const player = game?.players.find(p => p.userId === playerId);
+        if (!player) return;
+
+        const confirmed = window.confirm(
+            `Are you sure you want to remove ${player.name} from the game?`
+        );
+
+        if (!confirmed) return;
+
+        try {
+            await removePlayerMutation.mutateAsync({
+                gameId: searchParams.gameId,
+                playerId,
+            });
+        } catch (error) {
+            console.error('Failed to remove player:', error);
+            alert('Failed to remove player. Please try again.');
+        }
+    }, [removePlayerMutation, searchParams.gameId, game?.players]);
+
+    const handleSubmitScoreForPlayer = useCallback(async (playerId: string, score: number) => {
+        if (!searchParams.gameId) return;
+
+        try {
+            await submitScoreForPlayerMutation.mutateAsync({
+                gameId: searchParams.gameId,
+                playerId,
+                score,
+            });
+        } catch (error) {
+            console.error('Failed to submit score:', error);
+            alert('Failed to submit score. Please try again.');
+        }
+    }, [submitScoreForPlayerMutation, searchParams.gameId]);
+
     // All side effects
     useEffect(() => {
         if (!autoAdvance || !allPlayersSubmitted || game?.isFinished) return;
@@ -322,7 +386,7 @@ export function GamePage() {
         const handleVisibilityChange = () => {
           if (document.visibilityState === "visible") {
             // Force re-sync with server
-            queryClient.invalidateQueries({
+            void queryClient.invalidateQueries({
                 queryKey: ["game", searchParams.gameId],
               });
           }
@@ -339,7 +403,7 @@ export function GamePage() {
         if (!searchParams.gameId) return;
 
         const handleFocus = () => {
-            queryClient.invalidateQueries({
+            void queryClient.invalidateQueries({
                 queryKey: ["game", searchParams.gameId],
             });
         };
@@ -392,7 +456,16 @@ export function GamePage() {
                         )}
                         <GameHeader lobbyName={searchParams.lobbyName}/>
                     </div>
-
+                        <AdminPanel
+                            isAdminMode={isAdminMode}
+                            onToggleAdminMode={handleToggleAdminMode}
+                            players={game.players}
+                            onAddPlayer={handleAddPlayer}
+                            onRemovePlayer={handleRemovePlayer}
+                            onSubmitScoreForPlayer={handleSubmitScoreForPlayer}
+                            currentRound={game.currentRound}
+                            isFinished={game.isFinished}
+                        />
 
                         {/* Horizontal layout for Win Condition and Settings */}
                         <div className="flex flex-col items-center gap-2">

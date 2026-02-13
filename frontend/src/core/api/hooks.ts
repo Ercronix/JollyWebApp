@@ -269,6 +269,51 @@ export function useUpdateHistoryScore() {
     });
 }
 
+export function useAddPlayerToGame() {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: ({ gameId, playerName }: { gameId: string; playerName: string }) =>
+            ApiClient.addPlayerToGame(gameId, playerName),
+        onSuccess: (data, variables) => {
+            queryClient.setQueryData(queryKeys.game(variables.gameId), data);
+            queryClient.invalidateQueries({ queryKey: queryKeys.game(variables.gameId) });
+        },
+    });
+}
+
+export function useRemovePlayerFromGame() {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: ({ gameId, playerId }: { gameId: string; playerId: string }) =>
+            ApiClient.removePlayerFromGame(gameId, playerId),
+        onSuccess: (data, variables) => {
+            queryClient.setQueryData(queryKeys.game(variables.gameId), data);
+            queryClient.invalidateQueries({ queryKey: queryKeys.game(variables.gameId) });
+        },
+    });
+}
+
+export function useSubmitScoreForPlayer() {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: ({
+                         gameId,
+                         playerId,
+                         score
+                     }: {
+            gameId: string;
+            playerId: string;
+            score: number;
+        }) => ApiClient.submitScoreForPlayer(gameId, playerId, score),
+        onSuccess: (_, variables) => {
+            queryClient.invalidateQueries({ queryKey: queryKeys.game(variables.gameId) });
+        },
+    });
+}
+
 // SSE hook for game events
 export function useGameEvents(gameId: string | undefined) {
     const queryClient = useQueryClient();
@@ -294,6 +339,7 @@ export function useGameEvents(gameId: string | undefined) {
                 case  'PLAYER_LEFT':
                 case 'WIN_CONDITION_SET':
                 case 'HISTORY_SCORE_UPDATED':
+                case 'PLAYER_REMOVED':
                     if (eventData.game) {
                         console.log('Updating game state from SSE event:', eventData.type);
                         console.log('New game state:', eventData.game);
