@@ -29,6 +29,8 @@ jobs:
           path: ~/.cache/mongodb-binaries
           key: mongodb-binaries-${{ hashFiles('backend/package-lock.json') }}
       - run: npm ci
+      # Fail on known high/critical vulnerabilities in what ships to production
+      - run: npm audit --omit=dev --audit-level=high
       - run: npm test
 
   frontend:
@@ -45,6 +47,7 @@ jobs:
           cache: npm
           cache-dependency-path: frontend/package-lock.json
       - run: npm ci
+      - run: npm audit --omit=dev --audit-level=high
       - run: npm run lint
       - run: npm run typecheck
       - run: npm test
