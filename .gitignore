@@ -154,3 +154,6 @@ vite.config.ts.timestamp-*
 storybook-static
 
 node_modules/
+
+# MongoDB backups written by the mongo-backup service
+backups/

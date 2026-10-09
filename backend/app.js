@@ -56,7 +56,10 @@ app.use(cookieParser());
 // Logging (path only: bodies contain passwords and query strings may contain session ids)
 if (process.env.NODE_ENV !== 'test') {
     app.use((req, res, next) => {
-        console.log(`${req.method} ${req.path}`);
+        // Skip the healthcheck, which Docker calls every 30 seconds
+        if (req.path !== '/health') {
+            console.log(`${req.method} ${req.path}`);
+        }
         next();
     });
 }
