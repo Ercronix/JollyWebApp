@@ -19,6 +19,16 @@ export default defineConfig({
   }), react(),tsconfigPaths()],
   test: {
     projects: [{
+      // Fast unit tests for logic, hooks and components: npm test
+      extends: true,
+      test: {
+        name: 'unit',
+        environment: 'jsdom',
+        include: ['src/**/*.test.{ts,tsx}'],
+        setupFiles: ['src/test/setup.ts'],
+        restoreMocks: true,
+      }
+    }, {
       extends: true,
       plugins: [
       // The plugin will run tests for the stories defined in your Storybook config

@@ -33,6 +33,7 @@ import {ScoreInput} from "./components/ScoreInput";
 import {PlayerCard} from "./components/PlayerCard";
 import {GameStats} from "./components/GameStats";
 import {AdminPanel} from "@/presentation/components/AdminPanel";
+import {useStoredFlag} from "@/core/hooks/useStoredFlag";
 
 export type GameSearchParams = {
     accessCode?: string;
@@ -53,22 +54,7 @@ export function GamePage() {
     const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
     const [calculatorOpen, setCalculatorOpen] = useState<string | null>(null);
     const [historyPlayer, setHistoryPlayer] = useState<Player | null>(null);
-    const autoAdvanceKey = `autoAdvance:${searchParams.gameId}`;
-    const [autoAdvance, setAutoAdvanceState] = useState(() => {
-        try {
-            return localStorage.getItem(autoAdvanceKey) === 'true';
-        } catch {
-            return false;
-        }
-    });
-    const setAutoAdvance = useCallback((value: boolean) => {
-        setAutoAdvanceState(value);
-        try {
-            localStorage.setItem(autoAdvanceKey, String(value));
-        } catch {
-            // storage unavailable, keep in-memory value only
-        }
-    }, [autoAdvanceKey]);
+    const [autoAdvance, setAutoAdvance] = useStoredFlag(`autoAdvance:${searchParams.gameId}`);
     const [editingWinCondition, setEditingWinCondition] = useState(false);
     const [tempWinCondition, setTempWinCondition] = useState<string>('');
     const [showSettings, setShowSettings] = useState(false);

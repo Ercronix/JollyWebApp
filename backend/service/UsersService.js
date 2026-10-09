@@ -43,7 +43,9 @@ function validateUsername(username, { allowTag = false } = {}) {
     }
 
     const trimmed = username.trim();
-    if (trimmed.length < 1 || trimmed.length > USERNAME_MAX_LENGTH + (allowTag ? 5 : 0)) {
+    // A full tag ("Name#1234") may be up to 5 characters longer than a plain name
+    const isTag = allowTag && trimmed.includes('#');
+    if (trimmed.length < 1 || trimmed.length > USERNAME_MAX_LENGTH + (isTag ? 5 : 0)) {
         throw { status: 400, message: `Username must be between 1 and ${USERNAME_MAX_LENGTH} characters` };
     }
 
