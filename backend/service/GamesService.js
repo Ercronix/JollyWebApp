@@ -17,15 +17,14 @@ class GamesService {
         }
 
         const currentQueue = this.operationQueues.get(gameId);
-        const newQueue = currentQueue
-            .then(() => operation())
-            .catch(err => {
-                console.error(`[GamesService] Operation error for game ${gameId}:`, err);
-                throw err;
-            });
+        const result = currentQueue.then(() => operation());
 
-        this.operationQueues.set(gameId, newQueue);
-        return newQueue;
+        // The stored queue must never stay rejected, otherwise one failed operation
+        // makes every later operation for this game fail. Callers still get the rejection.
+        this.operationQueues.set(gameId, result.catch(err => {
+            console.error(`[GamesService] Operation error for game ${gameId}:`, err);
+        }));
+        return result;
     }
 
     async createGame(lobbyId, players) {
@@ -112,6 +111,12 @@ class GamesService {
             const playerIndex = game.players.findIndex(p => p.userId.toString() === userId.toString());
             if (playerIndex === -1) {
                 console.log(`[GamesService] Player ${userId} not in game ${gameId}`);
+                return game;
+            }
+
+            // Keep players who already scored so they can rejoin without losing their points
+            if (game.players[playerIndex].totalScore !== 0) {
+                console.log(`[GamesService] Player ${userId} has points, keeping them in game ${gameId}`);
                 return game;
             }
 

@@ -53,7 +53,22 @@ export function GamePage() {
     const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
     const [calculatorOpen, setCalculatorOpen] = useState<string | null>(null);
     const [historyPlayer, setHistoryPlayer] = useState<Player | null>(null);
-    const [autoAdvance, setAutoAdvance] = useState(false);
+    const autoAdvanceKey = `autoAdvance:${searchParams.gameId}`;
+    const [autoAdvance, setAutoAdvanceState] = useState(() => {
+        try {
+            return localStorage.getItem(autoAdvanceKey) === 'true';
+        } catch {
+            return false;
+        }
+    });
+    const setAutoAdvance = useCallback((value: boolean) => {
+        setAutoAdvanceState(value);
+        try {
+            localStorage.setItem(autoAdvanceKey, String(value));
+        } catch {
+            // storage unavailable, keep in-memory value only
+        }
+    }, [autoAdvanceKey]);
     const [editingWinCondition, setEditingWinCondition] = useState(false);
     const [tempWinCondition, setTempWinCondition] = useState<string>('');
     const [showSettings, setShowSettings] = useState(false);
