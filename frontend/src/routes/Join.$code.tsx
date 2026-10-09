@@ -3,6 +3,7 @@ import { useEffect, useRef } from 'react';
 import { useJoinLobbyByCode, useCurrentUser } from '@/core/api/hooks';
 import { Text } from '@/presentation/components/Text';
 import { MainLayout } from '@/presentation/layout/MainLayout';
+import { logger } from '@/utils/logger';
 
 type JoinParams = {
     code: string;
@@ -25,21 +26,21 @@ function JoinByCode() {
     useEffect(() => {
         // If user is not logged in, store the code and redirect to login
         if (!isLoadingUser && !currentUser) {
-            console.log('User not logged in, storing code and redirecting to login');
+            logger.debug('User not logged in, storing code and redirecting to login');
             localStorage.setItem('pendingJoinCode', code);
             void navigate({ to: '/' });
             return;
         }
 
         if (currentUser && code && !hasAttemptedJoin.current) {
-            console.log('User logged in, joining lobby with code:', code);
+            logger.debug('User logged in, joining lobby with code:', code);
             hasAttemptedJoin.current = true; // Mark as attempted
 
             joinLobby(
-                { accessCode: code.toUpperCase(), userId: currentUser.id },
+                { accessCode: code.toUpperCase() },
                 {
                     onSuccess: (result) => {
-                        console.log('Successfully joined lobby:', result);
+                        logger.debug('Successfully joined lobby:', result);
                         if (result.lobby.gameId) {
                             void navigate({
                                 to: '/Game',
@@ -53,7 +54,7 @@ function JoinByCode() {
                         }
                     },
                     onError: (error) => {
-                        console.error('Failed to join lobby:', error);
+                        logger.error('Failed to join lobby:', error);
                         // Redirect to lobby page on error with error message
                         void navigate({ to: '/lobby' });
                     },

@@ -12,6 +12,7 @@ import type {
     SubmitWinConditionResponse,
 } from '@/types';
 import { UserModel } from '@/core/models/UserModel';
+import { logger } from '@/utils/logger';
 
 const DEFAULT_DEV_API = 'http://localhost:3501';
 const DEFAULT_PROD_API = 'https://jolly-api.timmornhinweg.de';
@@ -98,13 +99,10 @@ export class ApiClient {
         return response;
     }
 
-    static async leaveLobby(lobbyId: string, userId: string): Promise<void> {
+    static async leaveLobby(lobbyId: string): Promise<void> {
         return this.request<void>(
             `/api/lobbies/${lobbyId}/leave`,
-            {
-                method: 'POST',
-                body: JSON.stringify({ userId }),
-            }
+            { method: 'POST' }
         );
     }
 
@@ -128,23 +126,19 @@ export class ApiClient {
         });
     }
 
-    static async createLobby(
-        name: string,
-        userId: string,
-        isPrivate: boolean = false
-    ): Promise<Lobby> {
+    static async createLobby(name: string, isPrivate: boolean = false): Promise<Lobby> {
         return this.request<Lobby>('/api/lobbies', {
             method: 'POST',
-            body: JSON.stringify({ name, userId, isPrivate }),
+            body: JSON.stringify({ name, isPrivate }),
         });
     }
 
-    static async joinLobbyByCode(accessCode: string, userId: string): Promise<JoinLobbyResponse> {
+    static async joinLobbyByCode(accessCode: string): Promise<JoinLobbyResponse> {
         return this.request<JoinLobbyResponse>(
             '/api/lobbies/join-by-code',
             {
                 method: 'POST',
-                body: JSON.stringify({ accessCode, userId }),
+                body: JSON.stringify({ accessCode }),
             }
         );
     }
@@ -156,23 +150,17 @@ export class ApiClient {
         );
     }
 
-    static async joinLobby(lobbyId: string, userId: string): Promise<JoinLobbyResponse> {
+    static async joinLobby(lobbyId: string): Promise<JoinLobbyResponse> {
         return this.request<JoinLobbyResponse>(
             `/api/lobbies/${lobbyId}/join`,
-            {
-                method: 'POST',
-                body: JSON.stringify({ userId }),
-            }
+            { method: 'POST' }
         );
     }
 
-    static async deleteLobby(lobbyId: string, userId: string): Promise<void> {
+    static async deleteLobby(lobbyId: string): Promise<void> {
         return this.request<void>(
             `/api/lobbies/${lobbyId}`,
-            {
-                method: 'DELETE',
-                body: JSON.stringify({ userId }),
-            }
+            { method: 'DELETE' }
         );
     }
 
@@ -190,12 +178,13 @@ export class ApiClient {
         return this.request<Game>(`/api/games/${gameId}`, { method: 'GET' });
     }
 
-    static async submitScore(gameId: string, playerId: string, score: number): Promise<SubmitScoreResponse> {
+    // Always submits for the logged-in user; use submitScoreForPlayer for others
+    static async submitScore(gameId: string, score: number): Promise<SubmitScoreResponse> {
         return this.request<SubmitScoreResponse>(
             `/api/games/${gameId}/submitScore`,
             {
                 method: 'POST',
-                body: JSON.stringify({ playerId, score }),
+                body: JSON.stringify({ score }),
             }
         );
     }
@@ -209,25 +198,17 @@ export class ApiClient {
         );
     }
 
-    static async resetRound(gameId: string, userId: string): Promise<NextRoundResponse> {
+    static async resetRound(gameId: string): Promise<NextRoundResponse> {
         return this.request<NextRoundResponse>(
             `/api/games/${gameId}/resetRound`,
-            {
-                method: 'POST',
-                body: JSON.stringify({ userId }),
-            }
+            { method: 'POST' }
         );
     }
 
-    static async reorderPlayers(
-        gameId: string,
-        fromIndex: number,
-        toIndex: number,
-        userId: string
-    ): Promise<Game> {
+    static async reorderPlayers(gameId: string, fromIndex: number, toIndex: number): Promise<Game> {
         return this.request<Game>(`/api/games/${gameId}/reorderPlayers`, {
             method: 'POST',
-            body: JSON.stringify({ fromIndex, toIndex, userId }),
+            body: JSON.stringify({ fromIndex, toIndex }),
         });
     }
 
@@ -250,17 +231,13 @@ export class ApiClient {
         );
     }
 
-    static async updateHistoryScore(
-        gameId: string,
-        playerId: string,
-        roundIndex: number,
-        newScore: number
-    ): Promise<Game> {
+    // Always edits the logged-in user's own history
+    static async updateHistoryScore(gameId: string, roundIndex: number, newScore: number): Promise<Game> {
         return this.request<Game>(
             `/api/games/${gameId}/updateHistoryScore`,
             {
                 method: 'POST',
-                body: JSON.stringify({ playerId, roundIndex, newScore }),
+                body: JSON.stringify({ roundIndex, newScore }),
             }
         );
     }
@@ -311,12 +288,12 @@ export class ApiClient {
                 const data = JSON.parse(event.data) as GameEvent;
                 onEvent(data);
             } catch (error) {
-                console.error('Failed to parse SSE event:', error);
+                logger.error('Failed to parse SSE event:', error);
             }
         };
 
         eventSource.onerror = (error) => {
-            console.error('SSE connection error:', error);
+            logger.error('SSE connection error:', error);
         };
 
         return () => eventSource.close();

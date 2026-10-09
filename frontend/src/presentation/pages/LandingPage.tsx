@@ -6,6 +6,7 @@ import {Text} from "@/presentation/components/Text";
 import {useNavigate} from "@tanstack/react-router";
 import {UserModel} from "@/core/models/UserModel";
 import {useLogin, useRegister} from "@/core/api/hooks";
+import {logger} from "@/utils/logger";
 
 type AuthMode = 'quick' | 'login' | 'register';
 
@@ -23,22 +24,22 @@ export function LandingPage() {
         if (!username.trim()) return;
 
         try {
-            console.log('Quick join with username:', username.trim());
+            logger.debug('Quick join with username:', username.trim());
             setError(null);
 
             const response = await loginMutation.mutateAsync({username: username.trim()});
-            console.log('Login response:', response);
+            logger.debug('Login response:', response);
 
             const userModel = UserModel.getInstance();
             userModel.setUser(response.user);
 
             if (response.isNewAccount) {
-                console.log('New account created with tag:', response.user.fullTag);
+                logger.debug('New account created with tag:', response.user.fullTag);
             }
 
             const pendingCode = localStorage.getItem('pendingJoinCode');
             if (pendingCode) {
-                console.log('Found pending join code, redirecting to join:', pendingCode);
+                logger.debug('Found pending join code, redirecting to join:', pendingCode);
                 localStorage.removeItem('pendingJoinCode');
 
                 await navigate({ to: `/join/${pendingCode}` });
@@ -47,7 +48,7 @@ export function LandingPage() {
 
             await navigate({to: "/lobby"});
         } catch (error) {
-            console.error('Quick join failed:', error);
+            logger.error('Quick join failed:', error);
             setError(error instanceof Error ? error.message : 'Login failed');
         }
     };
@@ -56,21 +57,21 @@ export function LandingPage() {
         if (!username.trim()) return;
 
         try {
-            console.log('Login with username:', username.trim());
+            logger.debug('Login with username:', username.trim());
             setError(null);
 
             const response = await loginMutation.mutateAsync({
                 username: username.trim(),
                 password: password || undefined
             });
-            console.log('Login response:', response);
+            logger.debug('Login response:', response);
 
             const userModel = UserModel.getInstance();
             userModel.setUser(response.user);
 
             const pendingCode = localStorage.getItem('pendingJoinCode');
             if (pendingCode) {
-                console.log('Found pending join code, redirecting to join:', pendingCode);
+                logger.debug('Found pending join code, redirecting to join:', pendingCode);
                 localStorage.removeItem('pendingJoinCode');
 
                 await navigate({ to: `/join/${pendingCode}` });
@@ -79,7 +80,7 @@ export function LandingPage() {
 
             await navigate({to: "/lobby"});
         } catch (error) {
-            console.error('Login failed:', error);
+            logger.error('Login failed:', error);
             setError(error instanceof Error ? error.message : 'Login failed');
         }
     };
@@ -91,21 +92,21 @@ export function LandingPage() {
         }
 
         try {
-            console.log('Registering with username:', username.trim());
+            logger.debug('Registering with username:', username.trim());
             setError(null);
 
             const response = await registerMutation.mutateAsync({
                 username: username.trim(),
                 password: password
             });
-            console.log('Register response:', response);
+            logger.debug('Register response:', response);
 
             const userModel = UserModel.getInstance();
             userModel.setUser(response.user);
 
             const pendingCode = localStorage.getItem('pendingJoinCode');
             if (pendingCode) {
-                console.log('Pending join code found:', pendingCode);
+                logger.debug('Pending join code found:', pendingCode);
                 localStorage.removeItem('pendingJoinCode');
                 await navigate({ to: `/join/${pendingCode}` });
                 return;
@@ -113,7 +114,7 @@ export function LandingPage() {
 
             await navigate({to: "/lobby"});
         } catch (error) {
-            console.error('Registration failed:', error);
+            logger.error('Registration failed:', error);
             setError(error instanceof Error ? error.message : 'Registration failed');
         }
     };

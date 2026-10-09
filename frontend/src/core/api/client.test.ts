@@ -40,7 +40,7 @@ describe("ApiClient.request", () => {
     it("throws the server's error message", async () => {
         mockFetch(400, {message: "Score must be divisible by 5"});
 
-        await expect(ApiClient.submitScore("g", "p", 7)).rejects.toThrow("Score must be divisible by 5");
+        await expect(ApiClient.submitScore("g", 7)).rejects.toThrow("Score must be divisible by 5");
     });
 
     it("expires the local session and redirects to login on 401", async () => {
@@ -65,6 +65,6 @@ describe("ApiClient.request", () => {
     it("returns an empty object for 204 responses", async () => {
         vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response(null, {status: 204})));
 
-        await expect(ApiClient.leaveLobby("l", "u")).resolves.toEqual({});
+        await expect(ApiClient.leaveLobby("l")).resolves.toEqual({});
     });
 });

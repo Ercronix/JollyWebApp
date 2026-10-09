@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { Button } from "@/presentation/components/Button";
 import { Text } from "@/presentation/components/Text";
+import { logger } from "@/utils/logger";
 
 interface PrivateLobbyInfoProps {
     accessCode: string;
@@ -36,10 +37,10 @@ export const PrivateLobbyInfo: React.FC<PrivateLobbyInfoProps> = ({
                     text: shareText,
                     url: shareUrl,
                 });
-                console.log('Shared successfully');
+                logger.debug('Shared successfully');
             } catch (error) {
                 if ((error as Error).name !== 'AbortError') {
-                    console.error('Error sharing:', error);
+                    logger.error('Error sharing:', error);
                     // Fallback to copy
                     copyLink();
                 }

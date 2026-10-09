@@ -1,4 +1,5 @@
 // src/core/models/UserModel.ts
+import {logger} from "@/utils/logger";
 export type User = {
     id: string;
     username: string;
@@ -32,7 +33,7 @@ export class UserModel {
             if (!parsed || !parsed.id || !parsed.fullTag) return;
             this.currentUser = parsed;
         } catch (e) {
-            console.warn("UserModel: failed to load from storage", e);
+            logger.warn("UserModel: failed to load from storage", e);
             this.currentUser = null;
         }
     }
@@ -45,7 +46,7 @@ export class UserModel {
                 localStorage.removeItem(STORAGE_KEY);
             }
         } catch (e) {
-            console.warn("UserModel: failed to save to storage", e);
+            logger.warn("UserModel: failed to save to storage", e);
         }
     }
 
@@ -72,7 +73,7 @@ export class UserModel {
             try {
                 localStorage.setItem(LAST_TAG_KEY, this.currentUser.fullTag);
             } catch (e) {
-                console.warn("UserModel: failed to remember tag", e);
+                logger.warn("UserModel: failed to remember tag", e);
             }
         }
         this.clearUser();
