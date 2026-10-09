@@ -90,6 +90,28 @@ describe('joining lobbies', () => {
         expect((await alice.get(`/api/games/${gameId}`)).body.players).toHaveLength(2);
     });
 
+    it('keeps every player when several join at the same time', async () => {
+        const { lobby, gameId } = await createLobbyWith(alice);
+        const joiners = await Promise.all(['P1', 'P2', 'P3', 'P4', 'P5'].map(loginAs));
+
+        await Promise.all(joiners.map(c => c.post(`/api/lobbies/${lobby.id}/join`).expect(200)));
+
+        const listed = (await alice.get('/api/lobbies')).body.find(l => l.id === lobby.id);
+        expect(listed.playerCount).toBe(6);
+        expect((await alice.get(`/api/games/${gameId}`)).body.players).toHaveLength(6);
+    });
+
+    it('keeps the remaining players when several leave at the same time', async () => {
+        const joiners = await Promise.all(['P1', 'P2', 'P3', 'P4'].map(loginAs));
+        const { lobby, gameId } = await createLobbyWith(alice, joiners);
+
+        await Promise.all(joiners.slice(0, 3).map(c => c.post(`/api/lobbies/${lobby.id}/leave`).expect(204)));
+
+        const listed = (await alice.get('/api/lobbies')).body.find(l => l.id === lobby.id);
+        expect(listed.playerCount).toBe(2);
+        expect((await alice.get(`/api/games/${gameId}`)).body.players.map(p => p.name).sort()).toEqual(['Alice', 'P4']);
+    });
+
     it('joins private lobbies by access code (case-insensitive)', async () => {
         const { lobby, gameId } = await createLobbyWith(alice, [], { isPrivate: true });
 

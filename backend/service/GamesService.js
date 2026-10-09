@@ -4,27 +4,16 @@ const Game = require('../models/Game');
 const EventService = require('./EventService');
 const config = require('../config');
 const mongoose = require('mongoose');
+const OperationQueue = require('../utils/operationQueue');
 
 class GamesService {
     constructor() {
-        this.operationQueues = new Map();
+        this.operationQueue = new OperationQueue('GamesService');
         this.POINTS_GOAL = config.game.pointsGoal;
     }
 
     queueOperation(gameId, operation) {
-        if (!this.operationQueues.has(gameId)) {
-            this.operationQueues.set(gameId, Promise.resolve());
-        }
-
-        const currentQueue = this.operationQueues.get(gameId);
-        const result = currentQueue.then(() => operation());
-
-        // The stored queue must never stay rejected, otherwise one failed operation
-        // makes every later operation for this game fail. Callers still get the rejection.
-        this.operationQueues.set(gameId, result.catch(err => {
-            console.error(`[GamesService] Operation error for game ${gameId}:`, err);
-        }));
-        return result;
+        return this.operationQueue.run(gameId, operation);
     }
 
     async createGame(lobbyId, players) {
@@ -56,7 +45,6 @@ class GamesService {
 
     async deleteGame(gameId) {
         await Game.findByIdAndDelete(gameId);
-        this.operationQueues.delete(gameId);
         console.log(`[GamesService] Game ${gameId} deleted`);
     }
 
@@ -579,8 +567,7 @@ class GamesService {
     }
 
     shutdown() {
-        const allQueues = Array.from(this.operationQueues.values());
-        return Promise.allSettled(allQueues);
+        return this.operationQueue.settled();
     }
 }
 
