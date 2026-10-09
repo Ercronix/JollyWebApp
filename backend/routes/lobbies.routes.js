@@ -1,6 +1,10 @@
 const express = require('express');
 const Default = require('../controllers/default.controller');
+const { requireAuth, validateObjectId } = require('../middleware/auth');
 const router = express.Router();
+
+router.use(requireAuth());
+router.param('lobbyId', validateObjectId);
 
 router.get('/', Default.listLobbiesGET);
 router.post('/', Default.createLobbyPOST);

@@ -1,5 +1,6 @@
 'use strict';
 
+const crypto = require('crypto');
 const Lobby = require('../models/Lobby');
 const GamesService = require('./GamesService');
 
@@ -50,8 +51,20 @@ class LobbiesService {
             }));
     }
 
-    async listAllLobbies() {
-        return Lobby.find(undefined, undefined, undefined);
+    /**
+     * All lobbies for the history page. Private lobbies are only listed for their creator and players.
+     */
+    async listAllLobbies(userId) {
+        const lobbies = await Lobby.find(undefined, undefined, undefined);
+
+        return lobbies
+            .filter(lobby => !lobby.isPrivate || this.canManageLobby(lobby, userId))
+            .map(lobby => ({ ...this.getLobbyResponse(lobby), archived: !!lobby.archived }));
+    }
+
+    canManageLobby(lobby, userId) {
+        return lobby.createdBy?.toString() === userId.toString()
+            || lobby.players.some(p => p.userId?.toString() === userId.toString());
     }
 
     async joinLobby(lobbyId, userId, username) {
@@ -127,6 +140,10 @@ class LobbiesService {
             throw new Error('Lobby not found');
         }
 
+        if (!this.canManageLobby(lobby, userId)) {
+            throw { status: 403, message: 'Only the lobby creator or its players can delete this lobby' };
+        }
+
         if (lobby.gameId) {
             await GamesService.deleteGame(lobby.gameId);
         }
@@ -134,14 +151,18 @@ class LobbiesService {
         await Lobby.findByIdAndDelete(lobbyId);
     }
 
-    async archiveLobby(lobbyId) {
+    async archiveLobby(lobbyId, userId) {
         const lobby = await Lobby.findById(lobbyId);
         if (!lobby) {
-            throw new Error('Lobby not found');
+            throw { status: 404, message: 'Lobby not found' };
         }
+
+        if (!this.canManageLobby(lobby, userId)) {
+            throw { status: 403, message: 'Only the lobby creator or its players can archive this lobby' };
+        }
+
         lobby.archived = true;
         await lobby.save();
-        await this.listLobbies();
     }
 
     getLobbyResponse(lobby) {
@@ -159,6 +180,10 @@ class LobbiesService {
      * Get lobby by access code
      */
     async getLobbyByCode(accessCode) {
+        if (typeof accessCode !== 'string') {
+            throw new Error('Lobby not found with this code');
+        }
+
         const lobby = await Lobby.findOne({
             accessCode: accessCode.toUpperCase(),
             archived: false
@@ -192,7 +217,7 @@ class LobbiesService {
         while (attempts < maxAttempts) {
             let code = '';
             for (let i = 0; i < 6; i++) {
-                code += characters.charAt(Math.floor(Math.random() * characters.length));
+                code += characters.charAt(crypto.randomInt(characters.length));
             }
 
             // Check if code already exists
@@ -208,4 +233,4 @@ class LobbiesService {
     }
 }
 
-module.exports = new LobbiesService();
+module.exports = new LobbiesService();

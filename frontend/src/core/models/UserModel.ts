@@ -7,6 +7,7 @@ export type User = {
 };
 
 const STORAGE_KEY = "app_user_v2";  // Changed version to migrate from old schema
+const LAST_TAG_KEY = "app_last_tag";
 
 export class UserModel {
     private static instance: UserModel;
@@ -60,6 +61,29 @@ export class UserModel {
     clearUser(): void {
         this.currentUser = null;
         this.saveToStorage();
+    }
+
+    /**
+     * Called when the server rejects the session. Remembers the tag so the user
+     * can log back into the same account instead of creating a new one.
+     */
+    expireSession(): void {
+        if (this.currentUser) {
+            try {
+                localStorage.setItem(LAST_TAG_KEY, this.currentUser.fullTag);
+            } catch (e) {
+                console.warn("UserModel: failed to remember tag", e);
+            }
+        }
+        this.clearUser();
+    }
+
+    getLastFullTag(): string | null {
+        try {
+            return localStorage.getItem(LAST_TAG_KEY);
+        } catch {
+            return null;
+        }
     }
 
     // Helper to get display name (just the username part)

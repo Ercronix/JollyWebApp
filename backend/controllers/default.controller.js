@@ -1,138 +1,142 @@
 'use strict';
 
 const utils = require('../utils/writer.js');
+const config = require('../config');
 const Default = require('../service/DefaultService');
+const { getSessionId } = require('../middleware/auth');
 
-function getSessionId(req) {
-    return req.cookies?.sessionId || req.headers['x-session-id'];
+// clearCookie only clears the cookie when given the same options it was set with
+const sessionCookieOptions = {
+    httpOnly: true,
+    sameSite: 'none',
+    secure: true,
+};
+
+function sendError(res, e) {
+    const status = e?.status || 500;
+    if (status >= 500) {
+        console.error('[Controller] Error:', e);
+    }
+    // Don't leak internal error details to clients
+    const message = status >= 500 ? 'Internal Server Error' : e.message;
+    utils.writeJson(res, { message }, status);
+}
+
+function sendSession(res, r) {
+    res.cookie('sessionId', r.sessionId, { ...sessionCookieOptions, maxAge: config.session.durationMs });
+    utils.writeJson(res, r);
 }
 
 module.exports = {
     loginUserPOST(req, res) {
         Default.loginUserPOST(req.body)
-            .then(r => {
-                res.cookie('sessionId', r.sessionId, {
-                    httpOnly: true,
-                    maxAge: 24 * 60 * 60 * 1000,
-                    sameSite: 'none',
-                    secure: true,
-                });
-                utils.writeJson(res, r);
-            })
-            .catch(e => utils.writeJson(res, e, e.status || 500));
+            .then(r => sendSession(res, r))
+            .catch(e => sendError(res, e));
     },
 
     registerUserPOST(req, res) {
         Default.registerUserPOST(req.body)
-            .then(r => {
-                res.cookie('sessionId', r.sessionId, {
-                    httpOnly: true,
-                    maxAge: 24 * 60 * 60 * 1000,
-                    sameSite: 'none',
-                    secure: true,
-                });
-                utils.writeJson(res, r);
-            })
-            .catch(e => utils.writeJson(res, e, e.status || 500));
+            .then(r => sendSession(res, r))
+            .catch(e => sendError(res, e));
     },
 
     createLobbyPOST(req, res) {
-        Default.createLobbyPOST(req.body)
+        Default.createLobbyPOST(req.user, req.body)
             .then(r => utils.writeJson(res, r, 201))
-            .catch(e => utils.writeJson(res, e, e.status || 500));
+            .catch(e => sendError(res, e));
     },
 
     deleteLobbyDELETE(req, res) {
-        Default.deleteLobbyDELETE(req.body, req.params.lobbyId)
+        Default.deleteLobbyDELETE(req.user, req.params.lobbyId)
             .then(() => res.sendStatus(204))
-            .catch(e => utils.writeJson(res, e, e.status || 500));
+            .catch(e => sendError(res, e));
     },
 
     archiveLobbyPOST(req, res) {
-        Default.archiveLobbyPOST(req.body, req.params.lobbyId)
+        Default.archiveLobbyPOST(req.user, req.params.lobbyId)
             .then(() => res.sendStatus(204))
-            .catch(e => utils.writeJson(res, e, e.status || 500));
+            .catch(e => sendError(res, e));
     },
 
     leaveLobbyPOST(req, res) {
-        Default.leaveLobbyPOST(req.body, req.params.lobbyId)
+        Default.leaveLobbyPOST(req.user, req.params.lobbyId)
             .then(() => res.sendStatus(204))
-            .catch(e => utils.writeJson(res, e, e.status || 500));
+            .catch(e => sendError(res, e));
     },
 
     forceNextRoundPOST(req, res) {
-        Default.forceNextRoundPOST(req.params.gameId)
+        Default.forceNextRoundPOST(req.user, req.params.gameId)
             .then(r => utils.writeJson(res, r))
-            .catch(e => utils.writeJson(res, e, e.status || 500));
+            .catch(e => sendError(res, e));
     },
 
     getCurrentUserGET(req, res) {
         Default.getCurrentUserGET(getSessionId(req))
             .then(r => utils.writeJson(res, r))
-            .catch(e => utils.writeJson(res, e, e.status || 500));
+            .catch(e => sendError(res, e));
     },
 
     getGameStateGET(req, res) {
         Default.getGameStateGET(req.params.gameId)
             .then(r => utils.writeJson(res, r))
-            .catch(e => utils.writeJson(res, e, e.status || 500));
+            .catch(e => sendError(res, e));
     },
 
     joinLobbyPOST(req, res) {
-        Default.joinLobbyPOST(req.body, req.params.lobbyId)
+        Default.joinLobbyPOST(req.user, req.params.lobbyId)
             .then(r => utils.writeJson(res, r))
-            .catch(e => utils.writeJson(res, e, e.status || 500));
+            .catch(e => sendError(res, e));
     },
 
     listLobbiesGET(req, res) {
         Default.listLobbiesGET()
             .then(r => utils.writeJson(res, r))
-            .catch(e => utils.writeJson(res, e, e.status || 500));
+            .catch(e => sendError(res, e));
     },
 
     listAllLobbiesGET(req, res) {
-        Default.listAllLobbiesGET()
+        Default.listAllLobbiesGET(req.user)
             .then(r => utils.writeJson(res, r))
-            .catch(e => utils.writeJson(res, e, e.status || 500));
+            .catch(e => sendError(res, e));
     },
 
     logoutUserPOST(req, res) {
         Default.logoutUserPOST(getSessionId(req))
             .then(() => {
-                res.clearCookie('sessionId');
+                res.clearCookie('sessionId', sessionCookieOptions);
                 res.sendStatus(204);
             })
-            .catch(e => utils.writeJson(res, e, e.status || 500));
+            .catch(e => sendError(res, e));
     },
 
     nextRoundPOST(req, res) {
-        Default.nextRoundPOST(req.params.gameId)
+        Default.nextRoundPOST(req.user, req.params.gameId)
             .then(r => utils.writeJson(res, r))
-            .catch(e => utils.writeJson(res, e, e.status || 500));
+            .catch(e => sendError(res, e));
     },
 
     reorderPlayersPOST(req, res) {
-        Default.reorderPlayersPOST(req.body, req.params.gameId)
+        Default.reorderPlayersPOST(req.user, req.body, req.params.gameId)
             .then(r => utils.writeJson(res, r))
-            .catch(e => utils.writeJson(res, e, e.status || 500));
+            .catch(e => sendError(res, e));
     },
 
     resetRoundPOST(req, res) {
-        Default.resetRoundPOST(req.body, req.params.gameId)
+        Default.resetRoundPOST(req.user, req.params.gameId)
             .then(r => utils.writeJson(res, r))
-            .catch(e => utils.writeJson(res, e, e.status || 500));
+            .catch(e => sendError(res, e));
     },
 
     submitWinConditionPOST(req, res) {
-        Default.submitWinConditionPOST(req.body, req.params.gameId)
+        Default.submitWinConditionPOST(req.user, req.body, req.params.gameId)
             .then(r => utils.writeJson(res, r))
-            .catch(e => utils.writeJson(res, e, e.status || 500));
+            .catch(e => sendError(res, e));
     },
 
     submitScorePOST(req, res) {
-        Default.submitScorePOST(req.body, req.params.gameId)
+        Default.submitScorePOST(req.user, req.body, req.params.gameId)
             .then(r => utils.writeJson(res, r))
-            .catch(e => utils.writeJson(res, e, e.status || 500));
+            .catch(e => sendError(res, e));
     },
 
     subscribeToGameEventsGET(req, res) {
@@ -140,37 +144,38 @@ module.exports = {
     },
 
     updateHistoryScorePOST(req, res) {
-        Default.updateHistoryScorePOST(req.body, req.params.gameId)
+        Default.updateHistoryScorePOST(req.user, req.body, req.params.gameId)
             .then(r => utils.writeJson(res, r))
-            .catch(e => utils.writeJson(res, e, e.status || 500));
+            .catch(e => sendError(res, e));
     },
 
     joinLobbyByCodePOST(req, res) {
-        Default.joinLobbyByCodePOST(req.body)
+        Default.joinLobbyByCodePOST(req.user, req.body)
             .then(r => utils.writeJson(res, r))
-            .catch(e => utils.writeJson(res, e, e.status || 500));
+            .catch(e => sendError(res, e));
     },
 
     getLobbyByCodeGET(req, res) {
         Default.getLobbyByCodeGET(req.params.accessCode)
             .then(r => utils.writeJson(res, r))
-            .catch(e => utils.writeJson(res, e, e.status || 500));
+            .catch(e => sendError(res, e));
     },
+
     addPlayerToGamePOST(req, res) {
-        Default.addPlayerToGamePOST(req.body, req.params.gameId)
+        Default.addPlayerToGamePOST(req.user, req.body, req.params.gameId)
             .then(r => utils.writeJson(res, r))
-            .catch(e => utils.writeJson(res, e, e.status || 500));
+            .catch(e => sendError(res, e));
     },
 
     removePlayerFromGamePOST(req, res) {
-        Default.removePlayerFromGamePOST(req.body, req.params.gameId)
+        Default.removePlayerFromGamePOST(req.user, req.body, req.params.gameId)
             .then(r => utils.writeJson(res, r))
-            .catch(e => utils.writeJson(res, e, e.status || 500));
+            .catch(e => sendError(res, e));
     },
 
     submitScoreForPlayerPOST(req, res) {
-        Default.submitScoreForPlayerPOST(req.body, req.params.gameId)
+        Default.submitScoreForPlayerPOST(req.user, req.body, req.params.gameId)
             .then(r => utils.writeJson(res, r))
-            .catch(e => utils.writeJson(res, e, e.status || 500));
+            .catch(e => sendError(res, e));
     },
 };
