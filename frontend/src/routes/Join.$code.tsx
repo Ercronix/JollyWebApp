@@ -17,6 +17,7 @@ function JoinByCode() {
     const navigate = useNavigate();
     const { data: currentUser, isLoading: isLoadingUser } = useCurrentUser();
     const joinMutation = useJoinLobbyByCode();
+    const { mutate: joinLobby } = joinMutation;
 
     // Use ref to track if we've already attempted to join
     const hasAttemptedJoin = useRef(false);
@@ -30,11 +31,11 @@ function JoinByCode() {
             return;
         }
 
-        if (currentUser && code && !hasAttemptedJoin.current && !joinMutation.isPending) {
+        if (currentUser && code && !hasAttemptedJoin.current) {
             console.log('User logged in, joining lobby with code:', code);
             hasAttemptedJoin.current = true; // Mark as attempted
 
-            joinMutation.mutate(
+            joinLobby(
                 { accessCode: code.toUpperCase(), userId: currentUser.id },
                 {
                     onSuccess: (result) => {
@@ -59,7 +60,7 @@ function JoinByCode() {
                 }
             );
         }
-    }, [currentUser, isLoadingUser, code]); // Remove joinMutation and navigate from deps
+    }, [currentUser, isLoadingUser, code, joinLobby, navigate]);
 
     return (
         <MainLayout>
