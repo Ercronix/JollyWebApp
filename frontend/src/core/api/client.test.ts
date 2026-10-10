@@ -1,5 +1,5 @@
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
-import {ApiClient} from "./client";
+import {ApiClient, ApiError} from "./client";
 import {UserModel} from "@/core/models/UserModel";
 
 const user = {id: "1", username: "Tim", fullTag: "Tim#4523", createdAt: "2026-01-01"};
@@ -41,6 +41,15 @@ describe("ApiClient.request", () => {
         mockFetch(400, {message: "Score must be divisible by 5"});
 
         await expect(ApiClient.submitScore("g", 7)).rejects.toThrow("Score must be divisible by 5");
+    });
+
+    it("throws an ApiError carrying the status", async () => {
+        mockFetch(403, {message: "nope"});
+
+        const error = await ApiClient.login("Tim#1").catch((e: unknown) => e);
+
+        expect(error).toBeInstanceOf(ApiError);
+        expect(error).toMatchObject({status: 403, message: "nope"});
     });
 
     it("expires the local session and redirects to login on 401", async () => {

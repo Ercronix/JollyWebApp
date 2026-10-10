@@ -21,6 +21,19 @@ export const API_BASE_URL =
     import.meta.env.VITE_API_BASE_URL ||
     (window.location.hostname === 'localhost' ? DEFAULT_DEV_API : DEFAULT_PROD_API);
 
+/**
+ * An error response from the API, with its HTTP status
+ */
+export class ApiError extends Error {
+    readonly status: number;
+
+    constructor(message: string, status: number) {
+        super(message);
+        this.name = 'ApiError';
+        this.status = status;
+    }
+}
+
 export class ApiClient {
     private static sessionId: string | null = null;
 
@@ -64,7 +77,7 @@ export class ApiClient {
 
         if (!response.ok) {
             const error = await response.json().catch(() => ({ message: 'Unknown error' }));
-            throw new Error(error.message || `HTTP ${response.status}`);
+            throw new ApiError(error.message || `HTTP ${response.status}`, response.status);
         }
 
         if (response.status === 204) {
