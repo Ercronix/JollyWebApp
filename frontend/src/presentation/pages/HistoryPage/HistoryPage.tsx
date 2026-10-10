@@ -58,7 +58,8 @@ export function HistoryPage() {
                     {/* Back Button */}
                     <button
                         onClick={() => navigate({ to: "/lobby" })}
-                        className="absolute left-0 top-1/2 -translate-y-1/2 flex items-center gap-2 text-purple-200 hover:text-white transition-colors focus:outline-none focus:ring-2 focus:ring-purple-400 rounded-lg p-2"
+                        aria-label="Back to lobbies"
+                        className="absolute -left-2 top-0 min-w-11 h-11 flex items-center justify-center gap-2 text-purple-200 hover:text-white transition-colors focus:outline-none focus:ring-2 focus:ring-purple-400 rounded-xl px-2"
                     >
                         <svg
                             className="w-6 h-6"
@@ -72,7 +73,7 @@ export function HistoryPage() {
                     </button>
 
                     {/* Title */}
-                    <h1 className="text-3xl font-bold text-white text-center">
+                    <h1 className="text-2xl sm:text-3xl leading-[2.75rem] font-bold text-white text-center px-12">
                         Game History
                     </h1>
                     <p className="text-purple-200 text-center mt-2 text-sm">
@@ -82,7 +83,7 @@ export function HistoryPage() {
             </div>
 
             {/* Content */}
-            <div className="px-4 mt-6 max-w-2xl mx-auto">
+            <div className="mt-4 max-w-2xl mx-auto">
                 {isLoading ? (
                     <div className="text-center py-12">
                         <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-white border-r-transparent mb-4"></div>
@@ -131,21 +132,7 @@ function LobbyCard({ lobby, onDelete }: LobbyCardProps) {
     const isFinished = game?.isFinished ?? false;
 
     return (
-        <div className="bg-white/10 backdrop-blur-sm rounded-2xl border border-white/20 overflow-hidden shadow-xl transition-all hover:shadow-2xl hover:border-white/30 relative">
-            {/* Delete Button - Shows when expanded */}
-            {isExpanded && (
-                <button
-                    onClick={(e) => {
-                        e.stopPropagation();
-                        onDelete(lobby);
-                    }}
-                    className="absolute top-3 right-3 z-20 bg-red-500/80 hover:bg-red-600 text-white rounded-full w-8 h-8 flex items-center justify-center transition-all duration-300 hover:scale-110"
-                    aria-label="Delete lobby"
-                >
-                    🗑️
-                </button>
-            )}
-
+        <div className="bg-white/10 backdrop-blur-sm rounded-2xl border border-white/20 overflow-hidden shadow-xl relative">
             {/* Card Header */}
             <button
                 onClick={() => setIsExpanded(prev => !prev)}
@@ -230,7 +217,7 @@ function LobbyCard({ lobby, onDelete }: LobbyCardProps) {
                                                         {player.pointsHistory && player.pointsHistory.length > 0 && (
                                                             <button
                                                                 onClick={() => setExpandedPlayer(expandedPlayer === player.userId ? null : player.userId)}
-                                                                className="text-xs text-purple-300 hover:text-purple-200 transition-colors mt-1"
+                                                                className="min-h-11 -my-2 text-xs text-purple-300 hover:text-purple-200 transition-colors"
                                                             >
                                                                 {expandedPlayer === player.userId ? '▼ Hide' : '▶ Show'} round details
                                                             </button>
@@ -291,6 +278,14 @@ function LobbyCard({ lobby, onDelete }: LobbyCardProps) {
                                     <span className="text-white">{game.players.length}</span>
                                 </div>
                             </div>
+
+                            <button
+                                type="button"
+                                onClick={() => onDelete(lobby)}
+                                className="w-full min-h-11 rounded-xl bg-red-500/15 hover:bg-red-500/25 border border-red-500/35 text-red-200 text-sm font-semibold"
+                            >
+                                Delete from history
+                            </button>
                         </>
                     )}
                 </div>

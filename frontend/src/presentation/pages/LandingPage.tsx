@@ -137,15 +137,15 @@ export function LandingPage() {
     const isPending = loginMutation.isPending || registerMutation.isPending || isContinuing;
 
     return (
-        <div className="min-h-screen flex flex-col items-center justify-center gap-12 px-4">
+        <div className="min-h-[calc(100dvh-6rem)] flex flex-col items-center justify-center gap-6 sm:gap-12 py-4">
             {/* Hero Section */}
-            <div className="text-center space-y-6 animate-in fade-in duration-1000">
+            <div className="text-center space-y-3 sm:space-y-6">
                 <div className="relative">
                     <Text
                         as="h1"
                         size="3xl"
                         weight="bold"
-                        className="bg-gradient-to-r from-purple-300 via-pink-300 to-blue-300 bg-clip-text text-transparent text-5xl md:text-6xl lg:text-7xl"
+                        className="bg-gradient-to-r from-purple-300 via-pink-300 to-blue-300 bg-clip-text text-transparent text-[40px] leading-tight sm:text-6xl lg:text-7xl"
                     >
                         JollyTracker
                     </Text>
@@ -155,13 +155,13 @@ export function LandingPage() {
 
                 <Text
                     size="xl"
-                    className="text-gray-300 animate-in slide-in-from-bottom-4 duration-1000 delay-300 max-w-2xl"
+                    className="text-gray-300 text-base sm:text-xl max-w-2xl"
                 >
                     Join friends for epic card game battles. Track scores, manage rounds, and have endless fun!
                 </Text>
 
                 <div
-                    className="flex justify-center gap-8 mt-8 animate-in slide-in-from-bottom-4 duration-1000 delay-500">
+                    className="hidden sm:flex justify-center gap-8 mt-8">
                     <div className="text-center group">
                         <div className="text-3xl font-bold text-white group-hover:text-purple-300 transition-colors">
                             🃏
@@ -184,9 +184,9 @@ export function LandingPage() {
             </div>
 
             {/* Auth Section */}
-            <div className="w-full max-w-md space-y-6 animate-in slide-in-from-bottom-8 duration-1000 delay-700">
+            <div className="w-full max-w-md space-y-6">
                 <div
-                    className="rounded-3xl bg-white/10 backdrop-blur-xl border border-white/20 p-4 shadow-2xl hover:shadow-purple-500/25 transition-all duration-500 hover:scale-105 relative overflow-hidden">
+                    className="rounded-3xl bg-white/10 backdrop-blur-xl border border-white/20 p-4 shadow-2xl relative overflow-hidden">
                     <div
                         className="absolute inset-0 bg-gradient-to-br from-purple-500/10 via-pink-500/10 to-blue-500/10 animate-pulse"></div>
 
@@ -196,7 +196,7 @@ export function LandingPage() {
                                 colorscheme="purpleToBlue"
                                 variant="outline"
                                 size="lg"
-                                className="w-full"
+                                className="w-full min-h-[52px]"
                                 onClick={handleContinueAs}
                                 disabled={isPending}
                             >
@@ -205,10 +205,10 @@ export function LandingPage() {
                         )}
 
                         {/* Mode Selector */}
-                        <div className="flex gap-2 bg-white/5 rounded-xl p-2">
+                        <div className="flex gap-1 bg-white/5 rounded-xl p-1">
                             <button
                                 onClick={() => setAuthMode('quick')}
-                                className={`flex-1 py-2 px-4 rounded-lg transition-all duration-300 ${
+                                className={`flex-1 min-h-11 px-2 rounded-lg text-[15px] font-semibold transition-colors duration-300 ${
                                     authMode === 'quick'
                                         ? 'bg-gradient-to-r from-purple-500 to-blue-500 text-white'
                                         : 'text-gray-400 hover:text-white'
@@ -218,7 +218,7 @@ export function LandingPage() {
                             </button>
                             <button
                                 onClick={() => setAuthMode('login')}
-                                className={`flex-1 py-2 px-4 rounded-lg transition-all duration-300 ${
+                                className={`flex-1 min-h-11 px-2 rounded-lg text-[15px] font-semibold transition-colors duration-300 ${
                                     authMode === 'login'
                                         ? 'bg-gradient-to-r from-purple-500 to-blue-500 text-white'
                                         : 'text-gray-400 hover:text-white'
@@ -228,7 +228,7 @@ export function LandingPage() {
                             </button>
                             <button
                                 onClick={() => setAuthMode('register')}
-                                className={`flex-1 py-2 px-4 rounded-lg transition-all duration-300 ${
+                                className={`flex-1 min-h-11 px-2 rounded-lg text-[15px] font-semibold transition-colors duration-300 ${
                                     authMode === 'register'
                                         ? 'bg-gradient-to-r from-purple-500 to-blue-500 text-white'
                                         : 'text-gray-400 hover:text-white'
@@ -271,6 +271,12 @@ export function LandingPage() {
                                                 : 'Choose your username...'
                                     }
                                     maxLength={authMode === 'register' ? 20 : 25}
+                                    aria-label={authMode === 'login' ? 'Username or tag' : 'Your name'}
+                                    autoComplete={authMode === 'quick' ? 'nickname' : 'username'}
+                                    autoCapitalize="words"
+                                    autoCorrect="off"
+                                    spellCheck={false}
+                                    enterKeyHint="go"
                                     className="text-white bg-white/5 border-white/30 focus:border-purple-400 focus:ring-purple-400/50 placeholder-gray-400 transition-all duration-300 hover:bg-white/10 text-center text-lg py-3"
                                     disabled={isPending}
                                 />
@@ -284,6 +290,9 @@ export function LandingPage() {
                                         onChange={(e) => setPassword(e.target.value)}
                                         onKeyDown={handleKeyPress}
                                         placeholder={authMode === 'register' ? 'Create a password...' : 'Password (optional for tags)...'}
+                                        aria-label="Password"
+                                        autoComplete={authMode === 'register' ? 'new-password' : 'current-password'}
+                                        enterKeyHint="go"
                                         className="text-white bg-white/5 border-white/30 focus:border-purple-400 focus:ring-purple-400/50 placeholder-gray-400 transition-all duration-300 hover:bg-white/10 text-center text-lg py-3"
                                         disabled={isPending}
                                     />
@@ -300,7 +309,7 @@ export function LandingPage() {
                                 colorscheme="purpleToBlue"
                                 variant="solid"
                                 size="lg"
-                                className="w-full text-lg py-4 hover:scale-105 transition-transform duration-300 disabled:opacity-50 disabled:scale-100"
+                                className="w-full text-lg min-h-14 disabled:opacity-50"
                                 onClick={
                                     authMode === 'quick'
                                         ? handleQuickJoin
@@ -332,7 +341,7 @@ export function LandingPage() {
 
                         {/* Info Text */}
                         {username.trim() && (
-                            <div className="text-center animate-in fade-in duration-500">
+                            <div className="text-center">
                                 <Text size="sm" className="text-purple-300">
                                     {authMode === 'quick' && `You'll be assigned a unique tag like ${username}#1234`}
                                     {authMode === 'register' && `You'll log in with "${username}" and your password`}
