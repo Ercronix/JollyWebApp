@@ -55,7 +55,7 @@
     "playwright": "^1.63.0",
     "storybook": "^10.6.1",
     "storybook-addon-pseudo-states": "^10.6.1",
-    "typescript": "~5.8.3",
+    "typescript": "~7.0.2",
     "typescript-eslint": "^8.71.1",
     "vite": "^7.1.5",
     "vite-tsconfig-paths": "^5.1.4",
