@@ -17,6 +17,7 @@ class LobbiesService {
             playerCount: 0,
             players: [],
             createdBy: userId,
+            ownerId: userId,
             archived: false,
             isPrivate: isPrivate
         });
@@ -77,6 +78,10 @@ class LobbiesService {
         return !lobby.isPrivate
             || (lobby.participants ?? []).some(id => id.toString() === userId.toString())
             || this.canManageLobby(lobby, userId);
+    }
+
+    getOwnerId(lobby) {
+        return (lobby.ownerId ?? lobby.createdBy)?.toString();
     }
 
     async getLobbyByGameId(gameId) {

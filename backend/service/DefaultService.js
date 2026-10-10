@@ -37,6 +37,18 @@ async function getGameForPlayer(gameId, user) {
 }
 
 /**
+ * Like getGameForPlayer, but the user must also be the lobby admin
+ */
+async function getGameForOwner(gameId, user) {
+    const game = await getGameForPlayer(gameId, user);
+    const lobby = await LobbiesService.getLobbyByGameId(game._id);
+    if (!lobby || LobbiesService.getOwnerId(lobby) !== user.id) {
+        throw { status: 403, message: 'Only the lobby admin can do this' };
+    }
+    return game;
+}
+
+/**
  * Loads a game and its lobby, and ensures the requesting user may see it
  */
 async function getGameForViewer(gameId, user) {
@@ -192,7 +204,7 @@ module.exports.getLobbyByCodeGET = async function(accessCode) {
  */
 module.exports.forceNextRoundPOST = async function(user, gameId) {
     try {
-        await getGameForPlayer(gameId, user);
+        await getGameForOwner(gameId, user);
         return await GamesService.nextRound(gameId, true);
     } catch (error) {
         throw httpError(error, 400);
@@ -219,8 +231,8 @@ module.exports.getCurrentUserGET = async function (sessionId) {
  */
 module.exports.getGameStateGET = async function (user, gameId) {
     try {
-        const { game } = await getGameForViewer(gameId, user);
-        return GamesService.getGameResponse(game);
+        const { game, lobby } = await getGameForViewer(gameId, user);
+        return { ...GamesService.getGameResponse(game), ownerId: LobbiesService.getOwnerId(lobby) };
     } catch (error) {
         throw httpError(error, 500);
     }
@@ -377,7 +389,7 @@ module.exports.addPlayerToGamePOST = async function(user, body, gameId) {
             throw { status: 400, message: 'Player name must be between 1 and 50 characters' };
         }
 
-        await getGameForPlayer(gameId, user);
+        await getGameForOwner(gameId, user);
         const game = await GamesService.addTemporaryPlayer(gameId, trimmedName);
         return GamesService.getGameResponse(game);
     } catch (error) {
@@ -394,7 +406,10 @@ module.exports.removePlayerFromGamePOST = async function(user, body, gameId) {
             throw { status: 400, message: 'Player ID is required' };
         }
 
-        await getGameForPlayer(gameId, user);
+        await getGameForOwner(gameId, user);
+        if (playerId === user.id) {
+            throw { status: 400, message: 'Use Leave to leave the lobby' };
+        }
         const game = await GamesService.removePlayer(gameId, playerId);
         return GamesService.getGameResponse(game);
     } catch (error) {
@@ -416,7 +431,7 @@ module.exports.submitScoreForPlayerPOST = async function(user, body, gameId) {
 
         validateScore(score);
 
-        await getGameForPlayer(gameId, user);
+        await getGameForOwner(gameId, user);
         return await GamesService.submitScoreForPlayer(gameId, playerId, score);
     } catch (error) {
         console.error('[SubmitScoreForPlayer] Error:', error.message);
