@@ -1,5 +1,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { loginAs, createLobbyWith } from './helpers.mjs';
+import { loginAs, createLobbyWith, requireApp } from './helpers.mjs';
+
+const Lobby = requireApp('../models/Lobby');
 
 let alice, bob, mallory;
 
@@ -71,6 +73,23 @@ describe('listing lobbies', () => {
         const history = (await alice.get('/api/lobbies/history').expect(200)).body;
 
         expect(history.map(l => l.name)).toEqual(['Secret']);
+    });
+
+    it('keeps a private lobby in the history of a player who left', async () => {
+        const { lobby } = await createLobbyWith(alice, [], { name: 'Secret', isPrivate: true });
+        await bob.post('/api/lobbies/join-by-code', { accessCode: lobby.accessCode }).expect(200);
+
+        await bob.post(`/api/lobbies/${lobby.id}/leave`).expect(204);
+
+        expect((await bob.get('/api/lobbies/history').expect(200)).body.map(l => l.name)).toEqual(['Secret']);
+        expect((await mallory.get('/api/lobbies/history').expect(200)).body).toEqual([]);
+    });
+
+    it('still shows private lobbies from before participants were tracked to their creator', async () => {
+        const { lobby } = await createLobbyWith(alice, [], { name: 'Secret', isPrivate: true });
+        await Lobby.updateOne({ _id: lobby.id }, { $unset: { participants: 1 } });
+
+        expect((await alice.get('/api/lobbies/history').expect(200)).body.map(l => l.name)).toEqual(['Secret']);
     });
 });
 

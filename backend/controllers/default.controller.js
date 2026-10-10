@@ -83,7 +83,7 @@ module.exports = {
     },
 
     getGameStateGET(req, res) {
-        Default.getGameStateGET(req.params.gameId)
+        Default.getGameStateGET(req.user, req.params.gameId)
             .then(r => utils.writeJson(res, r))
             .catch(e => sendError(res, e));
     },

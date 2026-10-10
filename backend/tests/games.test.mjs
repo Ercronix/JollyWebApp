@@ -39,6 +39,26 @@ describe('access control', () => {
         await mallory.post(`/admin/games/${gameId}/forceNextRound`).expect(403);
     });
 
+    it('forbids outsiders from reading a private game', async () => {
+        const { gameId: privateGameId } = await createLobbyWith(alice, [], { isPrivate: true });
+
+        await mallory.get(`/api/games/${privateGameId}`).expect(403);
+        await mallory.get(`/api/games/${privateGameId}/events?sessionId=${mallory.sessionId}`).expect(403);
+    });
+
+    it('lets anyone read a public game', async () => {
+        await mallory.get(`/api/games/${gameId}`).expect(200);
+    });
+
+    it('lets a former participant read a private game', async () => {
+        const { lobby, gameId: privateGameId } = await createLobbyWith(alice, [], { isPrivate: true });
+        await bob.post('/api/lobbies/join-by-code', { accessCode: lobby.accessCode }).expect(200);
+
+        await bob.post(`/api/lobbies/${lobby.id}/leave`).expect(204);
+
+        await bob.get(`/api/games/${privateGameId}`).expect(200);
+    });
+
     it('returns 400 for a malformed game id and 404 for an unknown one', async () => {
         await alice.get('/api/games/not-an-id').expect(400);
         await alice.get('/api/games/000000000000000000000000').expect(404);

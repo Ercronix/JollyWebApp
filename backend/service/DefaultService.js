@@ -37,6 +37,21 @@ async function getGameForPlayer(gameId, user) {
 }
 
 /**
+ * Loads a game and its lobby, and ensures the requesting user may see it
+ */
+async function getGameForViewer(gameId, user) {
+    const game = await GamesService.getGameById(gameId);
+    const lobby = game && await LobbiesService.getLobbyByGameId(game._id);
+    if (!game || !lobby) {
+        throw { status: 404, message: 'Game not found' };
+    }
+    if (!LobbiesService.canViewLobby(lobby, user.id)) {
+        throw { status: 403, message: 'This game is private' };
+    }
+    return { game, lobby };
+}
+
+/**
  * Login user (hybrid mode)
  */
 module.exports.loginUserPOST = async function (body) {
@@ -202,12 +217,9 @@ module.exports.getCurrentUserGET = async function (sessionId) {
 /**
  * Get game state
  */
-module.exports.getGameStateGET = async function (gameId) {
+module.exports.getGameStateGET = async function (user, gameId) {
     try {
-        const game = await GamesService.getGameById(gameId);
-        if (!game) {
-            throw { status: 404, message: 'Game not found' };
-        }
+        const { game } = await getGameForViewer(gameId, user);
         return GamesService.getGameResponse(game);
     } catch (error) {
         throw httpError(error, 500);
@@ -418,15 +430,14 @@ module.exports.submitScoreForPlayerPOST = async function(user, body, gameId) {
 module.exports.subscribeToGameEventsGET = function subscribeToGameEventsGET(req, res) {
     const gameId = req.params.gameId;
 
-    GamesService.getGameById(gameId)
-        .then(game => {
-            if (!game) {
-                return res.status(404).json({ message: 'Game not found' });
-            }
-
+    getGameForViewer(gameId, req.user)
+        .then(() => {
             EventService.addClient(gameId, res);
         })
         .catch(error => {
+            if (error.status) {
+                return res.status(error.status).json({ message: error.message });
+            }
             console.error('[SSE] Error:', error);
             res.status(500).json({ message: 'Internal server error' });
         });

@@ -28,6 +28,7 @@ class LobbiesService {
         if (userId && username) {
             lobby.players.push({ userId, name: username });
             lobby.playerCount = 1;
+            lobby.participants.push(userId);
         }
 
         await lobby.save();
@@ -64,8 +65,22 @@ class LobbiesService {
         const lobbies = await Lobby.find(undefined, undefined, undefined);
 
         return lobbies
-            .filter(lobby => !lobby.isPrivate || this.canManageLobby(lobby, userId))
+            .filter(lobby => this.canViewLobby(lobby, userId))
             .map(lobby => ({ ...this.getLobbyResponse(lobby), archived: !!lobby.archived }));
+    }
+
+    /**
+     * Public lobbies are visible to everyone, private ones to anyone who ever played in them.
+     * createdBy and players cover lobbies from before participants were tracked.
+     */
+    canViewLobby(lobby, userId) {
+        return !lobby.isPrivate
+            || (lobby.participants ?? []).some(id => id.toString() === userId.toString())
+            || this.canManageLobby(lobby, userId);
+    }
+
+    async getLobbyByGameId(gameId) {
+        return Lobby.findOne({ gameId });
     }
 
     canManageLobby(lobby, userId) {
@@ -87,6 +102,9 @@ class LobbiesService {
 
             lobby.players.push({ userId, name: username });
             lobby.playerCount = lobby.players.length;
+            if (!lobby.participants.some(id => id.toString() === userId.toString())) {
+                lobby.participants.push(userId);
+            }
 
             if (!lobby.gameId || lobby.playerCount === 1) {
                 const game = await GamesService.createGame(lobby._id, lobby.players);
@@ -246,4 +264,4 @@ class LobbiesService {
     }
 }
 
-module.exports = new LobbiesService();
+module.exports = new LobbiesService();
