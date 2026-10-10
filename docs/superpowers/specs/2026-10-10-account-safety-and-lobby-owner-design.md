@@ -39,6 +39,9 @@ the owner leaves. Public games stay visible to every logged-in user.
 
 ### Frontend
 
+- `ApiClient.request` currently throws a plain `Error` and drops the HTTP status. It throws
+  an `ApiError extends Error` with a `status` field instead (message unchanged, so existing
+  callers keep working), so the UI can tell a 403 or 404 apart from other failures.
 - `User` type gets `hasPassword: boolean`. `ApiClient.secureAccount(password)` and
   `useSecureAccount()` hook; on success it updates `UserModel`.
 - `UserModel.setUser` also stores the tag as the last tag, so the tag survives a manual
@@ -47,7 +50,8 @@ the owner leaves. Public games stay visible to every logged-in user.
   - If a last tag is stored, show a prominent **"Continue as Tim#4523"** button above the
     mode tabs. It logs in with the tag. If the server answers 403 (account is
     password-protected), switch to Login mode with the username pre-filled and show the
-    message.
+    message. If it answers 404 (the account no longer exists), forget the stored tag and show
+    the error.
   - Quick Join hint text: "You'll get a tag like Tim#1234. Remember it, because it's how you
     get back to your private games. You can add a password later."
 - Lobby page: while `hasPassword` is false, show a banner "Playing as Tim#4523 without a
@@ -70,7 +74,9 @@ the owner leaves. Public games stay visible to every logged-in user.
 - `listAllLobbies` (history) filters with `canViewLobby`.
 - `GET /api/games/:gameId` and `GET /api/games/:gameId/events` load the game's lobby and
   require `canViewLobby`; otherwise `403`. Public games stay readable by any logged-in user.
-  A game without a lobby returns `404` as today.
+  A game without a lobby returns `404` as today. `getGameStateGET` does not receive the user
+  today, so the controller starts passing `req.user`; the SSE handler already has `req.user`
+  from `requireAuth({ allowQueryToken: true })`.
 - No data migration: older private lobbies keep working through the `createdBy`/`players`
   fallback; players who already left before this change are not recovered.
 
@@ -79,7 +85,11 @@ the owner leaves. Public games stay visible to every logged-in user.
 - `Lobby` schema gets `ownerId: ObjectId ref User`. `createLobby` sets it to the creator.
   `LobbiesService.getOwnerId(lobby)` returns `ownerId ?? createdBy` for older lobbies.
 - The game state response (`getGameStateGET`) includes `ownerId` (string) from the lobby.
-  The frontend `GameState` type gets `ownerId`.
+  The frontend `GameState` type gets `ownerId` (optional).
+- SSE events carry `game` built by `GamesService.getGameResponse`, which has no lobby and so
+  no `ownerId`, and `useGameEvents` writes that payload straight into the query cache. To
+  keep the AdminPanel from disappearing after every event, `useGameEvents` keeps the cached
+  `ownerId` when the event's game has none. `OWNER_CHANGED` is the only event that changes it.
 - New `getGameForOwner(gameId, user)` in `DefaultService`: like `getGameForPlayer`, plus the
   caller must be the lobby owner; otherwise `403` "Only the lobby admin can do this".
   Used by: `addPlayerToGamePOST`, `removePlayerFromGamePOST`, `submitScoreForPlayerPOST`,
@@ -88,7 +98,10 @@ the owner leaves. Public games stay visible to every logged-in user.
   lobby"), so ownership only changes through the leave path.
 - Handover in `leaveLobby` (inside the existing lobby queue): if the leaving user is the
   owner and players remain, `ownerId` becomes the first remaining entry of `lobby.players`
-  (join order; temporary players are never in `lobby.players`). Then
+  (join order; temporary players are never in `lobby.players`) that is still a player in the
+  game. The admin's remove-player only removes from the game, so a removed user can still be
+  in `lobby.players` and must be skipped. If no remaining lobby player is in the game, fall
+  back to the first remaining lobby player. Then
   `EventService.sendEvent(gameId, { type: 'OWNER_CHANGED', ownerId, ownerName })`.
 - Frontend:
   - `useGameEvents` handles `OWNER_CHANGED` by invalidating the game query and showing a
@@ -116,13 +129,14 @@ Backend (Supertest, `backend/tests/`):
   remove themselves.
 - Handover: owner leaves → next player is owner (visible in game state) and `OWNER_CHANGED`
   is sent; non-owner leaving does not change the owner; old lobby without `ownerId` treats
-  `createdBy` as owner.
+  `createdBy` as owner; a lobby player who was removed from the game is skipped.
 
 Frontend (Vitest):
 - `UserModel` keeps the last tag after `setUser` + `clearUser`.
 - `useLogoutFlow`: warns for accounts without a password, logs out directly otherwise.
 - Landing page shows "Continue as …" when a tag is stored.
 - `AdminPanel` is hidden for non-owners and shown for the owner.
-- `useGameEvents` handles `OWNER_CHANGED`.
+- `useGameEvents` handles `OWNER_CHANGED` and keeps the cached `ownerId` on other events.
+- `ApiClient` throws `ApiError` with the HTTP status.
 
 Then `npm test` in both projects, plus `npm run lint` and `npm run typecheck` in `frontend/`.
