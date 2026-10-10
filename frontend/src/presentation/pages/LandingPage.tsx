@@ -248,8 +248,8 @@ export function LandingPage() {
                             <div>
                                 <Text size="sm" className="text-gray-400">
                                     {authMode === 'quick' && "You'll get a tag like Tim#1234. Remember it, because it's how you get back to your private games. You can add a password later."}
-                                    {authMode === 'login' && 'Login with your tag (e.g., User#4523) or protected username (No tag needed with password)'}
-                                    {authMode === 'register' && 'Claim your username with a password'}
+                                    {authMode === 'login' && 'Log in with your name and password, or with your tag (e.g. Tim#4523) if you have no password'}
+                                    {authMode === 'register' && 'Protect your account with a password, so you can always get back to your games'}
                                 </Text>
                             </div>
                             <div
@@ -335,7 +335,7 @@ export function LandingPage() {
                             <div className="text-center animate-in fade-in duration-500">
                                 <Text size="sm" className="text-purple-300">
                                     {authMode === 'quick' && `You'll be assigned a unique tag like ${username}#1234`}
-                                    {authMode === 'register' && `Claiming "${username}" - others won't be able to use it`}
+                                    {authMode === 'register' && `You'll log in with "${username}" and your password`}
                                 </Text>
                             </div>
                         )}

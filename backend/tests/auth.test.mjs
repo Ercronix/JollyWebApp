@@ -35,6 +35,15 @@ describe('login', () => {
         await request(app).post('/users/login').send({ username: reg.body.user.fullTag }).expect(403);
     });
 
+    it('logs into a password-protected account by its tag and password', async () => {
+        const reg = await request(app).post('/users/register').send({ username: 'Carol', password: 'secret1' }).expect(200);
+
+        const res = await request(app).post('/users/login').send({ username: reg.body.user.fullTag, password: 'secret1' }).expect(200);
+
+        expect(res.body.user.id).toBe(reg.body.user.id);
+        await request(app).post('/users/login').send({ username: reg.body.user.fullTag, password: 'wrong' }).expect(401);
+    });
+
     it('rejects non-string usernames (NoSQL injection)', async () => {
         await request(app).post('/users/login').send({ username: { $ne: null } }).expect(400);
         await request(app).post('/users/login').send({ username: 'Carol', password: { $ne: null } }).expect(400);
@@ -53,16 +62,28 @@ describe('register', () => {
         await request(app).post('/users/login').send({ username: 'Carol', password: 'wrong' }).expect(401);
     });
 
-    it('rejects a second password-protected account with the same name', async () => {
-        await request(app).post('/users/register').send({ username: 'Carol', password: 'secret1' }).expect(200);
+    // Names are shared: name + password identifies the account, so only the exact pair must be unique
+    it('lets several accounts share a name with different passwords, each logging into its own', async () => {
+        const first = await request(app).post('/users/register').send({ username: 'Carol', password: 'secret1' }).expect(200);
+        const second = await request(app).post('/users/register').send({ username: 'Carol', password: 'other1' }).expect(200);
 
-        await request(app).post('/users/register').send({ username: 'Carol', password: 'other1' }).expect(409);
+        const login = (password) => request(app).post('/users/login').send({ username: 'Carol', password }).expect(200);
+        expect((await login('secret1')).body.user.id).toBe(first.body.user.id);
+        expect((await login('other1')).body.user.id).toBe(second.body.user.id);
     });
 
-    it('rejects one of two concurrent registrations of the same name with 409', async () => {
+    it('rejects an account with the same name and password', async () => {
+        await request(app).post('/users/register').send({ username: 'Carol', password: 'secret1' }).expect(200);
+
+        const res = await request(app).post('/users/register').send({ username: 'Carol', password: 'secret1' }).expect(409);
+
+        expect(res.body.message).toBe('Please choose a different password.');
+    });
+
+    it('rejects one of two concurrent registrations with the same name and password', async () => {
         const results = await Promise.all([
             request(app).post('/users/register').send({ username: 'Carol', password: 'secret1' }),
-            request(app).post('/users/register').send({ username: 'Carol', password: 'other1' }),
+            request(app).post('/users/register').send({ username: 'Carol', password: 'secret1' }),
         ]);
 
         expect(results.map(r => r.status).sort()).toEqual([200, 409]);
@@ -144,11 +165,24 @@ describe('securing an account', () => {
         await bob.post('/users/secure', { password: 'secret2' }).expect(409);
     });
 
-    it('refuses a username another account already protected', async () => {
+    // Regression: securing failed for any name another account had already protected
+    it('secures an account whose name another account already protected', async () => {
         await request(app).post('/users/register').send({ username: 'Bob', password: 'pw1234' }).expect(200);
         const bob = await loginAs('Bob');
 
-        await bob.post('/users/secure', { password: 'secret1' }).expect(409);
+        await bob.post('/users/secure', { password: 'secret1' }).expect(200);
+
+        const login = await request(app).post('/users/login').send({ username: 'Bob', password: 'secret1' }).expect(200);
+        expect(login.body.user.id).toBe(bob.user.id);
+    });
+
+    it('refuses a password another account with the same name already uses', async () => {
+        await request(app).post('/users/register').send({ username: 'Bob', password: 'pw1234' }).expect(200);
+        const bob = await loginAs('Bob');
+
+        const res = await bob.post('/users/secure', { password: 'pw1234' }).expect(409);
+
+        expect(res.body.message).toBe('Please choose a different password.');
     });
 
     // Review finding: someone who logged in with a leaked tag must lose access once the account is secured
@@ -162,14 +196,14 @@ describe('securing an account', () => {
         await bob.get('/users/me').expect(200);
     });
 
-    // Review finding: two accounts with the same name securing at once must not both get a password
-    it('lets only one of two same-named accounts secure the name at the same time', async () => {
+    // Review finding: two same-named accounts securing at once must not end up with the same password
+    it('lets only one of two same-named accounts take the same password at the same time', async () => {
         const first = await loginAs('Bob');
         const second = await loginAs('Bob');
 
         const results = await Promise.all([
             first.post('/users/secure', { password: 'secret1' }),
-            second.post('/users/secure', { password: 'secret2' }),
+            second.post('/users/secure', { password: 'secret1' }),
         ]);
 
         expect(results.map(r => r.status).sort()).toEqual([200, 409]);

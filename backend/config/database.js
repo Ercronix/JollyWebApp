@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const { dropLegacyIndexes } = require('./migrations');
 
 const connectDB = async () => {
     try {
@@ -12,6 +13,7 @@ const connectDB = async () => {
 
         console.log(`MongoDB Connected: ${conn.connection.host}`);
         console.log(`Database: ${conn.connection.name}`);
+        await dropLegacyIndexes();
         return conn;
     } catch (error) {
         console.error(`MongoDB Connection Error: ${error.message}`);

@@ -3,10 +3,27 @@ const User = require('../models/User');
 const Session = require('../models/Session');
 const config = require('../config');
 const crypto = require('crypto');
+const OperationQueue = require('../utils/operationQueue');
 
 const USERNAME_MAX_LENGTH = 30;
 const PASSWORD_MIN_LENGTH = 4;
 const PASSWORD_MAX_LENGTH = 72; // bcrypt ignores everything beyond 72 bytes
+
+// Names are shared, and name + password identifies an account, so each pair must be unique.
+// Setting a password is serialized per name, so two concurrent requests can't create the same pair.
+const passwordQueue = new OperationQueue('UsersService');
+const DUPLICATE_PASSWORD = { status: 409, message: 'Please choose a different password.' };
+
+/**
+ * The password-protected account with this name and password, if any
+ */
+async function findByNameAndPassword(username, password) {
+    const candidates = await User.find({ username, password: mongoose.trusted({ $ne: null }) });
+    for (const user of candidates) {
+        if (await user.comparePassword(password)) return user;
+    }
+    return null;
+}
 
 /**
  * Sessions are stored hashed, so a database leak does not expose usable session tokens
@@ -97,7 +114,7 @@ async function findAvailableDiscriminator(username) {
  * Login user with hybrid authentication
  * Supports three modes:
  * 1. username + password (for password-protected accounts)
- * 2. fullTag (e.g., "Tim#4523") without password
+ * 2. fullTag (e.g., "Tim#4523"), plus the password if the account has one
  * 3. username only (creates new account with random discriminator)
  */
 module.exports.loginUser = async function(rawUsername, password = null) {
@@ -113,7 +130,12 @@ module.exports.loginUser = async function(rawUsername, password = null) {
             }
 
             if (user.password) {
-                throw { status: 403, message: 'This account is password-protected. Please use username + password to login.' };
+                if (!password) {
+                    throw { status: 403, message: 'This account is password-protected. Please use username + password to login.' };
+                }
+                if (typeof password !== 'string' || !(await user.comparePassword(password))) {
+                    throw { status: 401, message: 'Invalid username or password' };
+                }
             }
 
             return { user: toUserResponse(user), sessionId: await createSession(user._id) };
@@ -125,9 +147,9 @@ module.exports.loginUser = async function(rawUsername, password = null) {
                 throw { status: 400, message: 'Invalid username or password' };
             }
 
-            const user = await User.findOne({ username, password: mongoose.trusted({ $ne: null }) });
+            const user = await findByNameAndPassword(username, password);
 
-            if (!user || !(await user.comparePassword(password))) {
+            if (!user) {
                 throw { status: 401, message: 'Invalid username or password' };
             }
 
@@ -166,34 +188,21 @@ module.exports.registerUser = async function(rawUsername, rawPassword) {
         const username = validateUsername(rawUsername);
         const password = validatePassword(rawPassword);
 
-        // Check if username is already password-protected
-        const existingProtected = await User.findOne({
-            username,
-            password: mongoose.trusted({ $ne: null })
-        });
-
-        if (existingProtected) {
-            throw { status: 409, message: 'This username is already protected. Please choose a different name or login with your password.' };
-        }
-
-        const discriminator = await findAvailableDiscriminator(username);
-
-        const newUser = new User({
-            username,
-            discriminator,
-            fullTag: `${username}#${discriminator}`,
-            password
-        });
-
-        try {
-            await newUser.save();
-        } catch (error) {
-            // A concurrent registration of the same name hit the unique index on protected usernames
-            if (error.code === 11000) {
-                throw { status: 409, message: 'This username is already protected. Please choose a different name or login with your password.' };
+        const newUser = await passwordQueue.run(username, async () => {
+            if (await findByNameAndPassword(username, password)) {
+                throw DUPLICATE_PASSWORD;
             }
-            throw error;
-        }
+
+            const discriminator = await findAvailableDiscriminator(username);
+            const user = new User({
+                username,
+                discriminator,
+                fullTag: `${username}#${discriminator}`,
+                password
+            });
+            await user.save();
+            return user;
+        });
 
         return { user: toUserResponse(newUser), sessionId: await createSession(newUser._id) };
 
@@ -217,25 +226,13 @@ module.exports.secureAccount = async function(userId, rawPassword, currentSessio
         throw { status: 409, message: 'This account already has a password' };
     }
 
-    // Username + password login looks accounts up by username, so it must stay unambiguous
-    const existingProtected = await User.findOne({
-        username: user.username,
-        password: mongoose.trusted({ $ne: null })
-    });
-    if (existingProtected) {
-        throw { status: 409, message: 'Another account already protects this username with a password' };
-    }
-
-    user.password = password;
-    try {
-        await user.save();
-    } catch (error) {
-        // The unique index on protected usernames catches a concurrent claim of the same name
-        if (error.code === 11000) {
-            throw { status: 409, message: 'Another account already protects this username with a password' };
+    await passwordQueue.run(user.username, async () => {
+        if (await findByNameAndPassword(user.username, password)) {
+            throw DUPLICATE_PASSWORD;
         }
-        throw error;
-    }
+        user.password = password;
+        await user.save();
+    });
 
     // Anyone who got in with the (passwordless) tag loses access now
     await Session.deleteMany({

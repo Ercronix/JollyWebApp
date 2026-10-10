@@ -5,11 +5,17 @@ const cors = require('cors');
 const cookieParser = require('cookie-parser');
 const mongoose = require('mongoose');
 const routes = require('./routes');
+const config = require('./config');
 
 // Strip query operators like { $ne: ... } from user input used in query filters (NoSQL injection)
 mongoose.set('sanitizeFilter', true);
 
 const app = express();
+
+// Behind a reverse proxy, req.ip (used by the rate limits) must come from X-Forwarded-For
+if (config.trustProxy) {
+    app.set('trust proxy', /^\d+$/.test(config.trustProxy) ? Number(config.trustProxy) : config.trustProxy);
+}
 
 const allowedOrigins = [
     'http://localhost:3500', // dev frontend (Docker)
