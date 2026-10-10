@@ -1,6 +1,7 @@
 // src/presentation/components/DeleteConfirmationModal.tsx
 import { Button } from "@/presentation/components/Button";
 import { Text } from "@/presentation/components/Text";
+import { Sheet } from "@/presentation/components/Sheet";
 
 interface DeleteConfirmationModalProps {
     isOpen: boolean;
@@ -28,55 +29,36 @@ export function DeleteConfirmationModal({
                                             confirmingLabel = "Deleting...",
                                             extraAction,
                                         }: DeleteConfirmationModalProps) {
-    if (!isOpen) return null;
-
     return (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 animate-in fade-in duration-300">
-            <div className="bg-gradient-to-br from-gray-900 to-gray-800 rounded-3xl border border-red-500/30 p-8 max-w-md w-full mx-4 shadow-2xl shadow-red-500/20 animate-in zoom-in-95 duration-300">
-                <div className="space-y-6">
-                    <div className="text-center space-y-3">
-                        <div>
-                        <div className="text-5xl mb-4">⚠️</div>
-                            <Text size="xl" weight="bold" className="text-white mb-2">
-                                {title}
-                            </Text>
-                        </div>
-                        <Text size="sm" className="text-gray-300">
-                            {message}{" "}
-                            {itemName && (
-                                <span className="text-red-400 font-semibold">
-                                    {itemName}
-                                </span>
-                            )}
-                            ?
-                        </Text>
-                    </div>
-
+        <Sheet
+            isOpen={isOpen}
+            onClose={isDeleting ? () => {} : onCancel}
+            title={title}
+            footer={
+                <div className="flex flex-col gap-2">
                     {extraAction && (
                         <Button
                             colorscheme="purpleToBlue"
                             variant="solid"
-                            className="w-full"
+                            className="w-full min-h-12"
                             onClick={extraAction.onClick}
                             disabled={isDeleting}
                         >
                             {extraAction.label}
                         </Button>
                     )}
-
-                    <div className="flex gap-3">
+                    <div className="flex gap-2">
                         <Button
                             variant="ghost"
-                            className="flex-1 hover:bg-white/10"
+                            className="flex-1 min-h-12 text-slate-200 hover:bg-white/10"
                             onClick={onCancel}
                             disabled={isDeleting}
                         >
                             Cancel
                         </Button>
                         <Button
-                            colorscheme="pinkToOrange"
                             variant="solid"
-                            className="flex-1 bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700"
+                            className="flex-1 min-h-12 text-white bg-red-600 hover:bg-red-700 focus:ring-4 focus:ring-red-300"
                             onClick={onConfirm}
                             disabled={isDeleting}
                         >
@@ -84,7 +66,17 @@ export function DeleteConfirmationModal({
                         </Button>
                     </div>
                 </div>
-            </div>
-        </div>
+            }
+        >
+            <Text size="sm" className="text-slate-300 px-1">
+                {message}{" "}
+                {itemName && (
+                    <span className="text-red-300 font-semibold break-words">
+                        {itemName}
+                    </span>
+                )}
+                ?
+            </Text>
+        </Sheet>
     );
 }

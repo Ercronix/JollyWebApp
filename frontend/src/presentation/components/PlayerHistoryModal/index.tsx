@@ -4,7 +4,8 @@ import { Button } from "@/presentation/components/Button";
 import { Text } from "@/presentation/components/Text";
 import { Input } from "@/presentation/components/input";
 import type { Player } from "@/types";
-import { isScoreInput, parseScore, validateScore } from "@/core/scores";
+import { isScoreInput, parseScore, toggleSign, validateScore } from "@/core/scores";
+import { Sheet } from "@/presentation/components/Sheet";
 import { logger } from "@/utils/logger";
 
 type PlayerHistoryModalProps = {
@@ -81,159 +82,102 @@ export function PlayerHistoryModal({
         }
     };
 
+    const average = hasHistory ? Math.round(pointsHistory.reduce((a, b) => a + b, 0) / pointsHistory.length) : 0;
+
     return (
-        <div
-            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-in fade-in duration-300"
-            onClick={onClose}
+        <Sheet
+            isOpen={isOpen}
+            onClose={onClose}
+            title={player.name}
+            subtitle={`Total ${player.totalScore} · ${pointsHistory.length} ${pointsHistory.length === 1 ? "round" : "rounds"}`}
         >
-            <div
-                className="relative w-full max-w-md bg-gradient-to-br from-purple-900/50 via-blue-700/50 to-blue-900/50 backdrop-blur-xl border border-white/20 rounded-3xl shadow-2xl animate-in zoom-in-95 duration-300"
-                onClick={(e) => e.stopPropagation()}
-            >
-                {/* Header */}
-                <div className="p-6 border-b border-white/10 gap-2">
-                    <Text size="xl" weight="bold" className="text-white text-center">
-                        📊 {player.name}'s History
-                    </Text>
-                    <div className="flex justify-between items-center mt-2">
-                        <Text size="xl" className="text-gray-300">
-                            Total Score: {player.totalScore}
-                        </Text>
-                    </div>
-                </div>
+            {canEdit && canEditOthers && currentUserId !== player.userId && (
+                <p className="mb-2 px-3 py-2 rounded-xl bg-orange-500/10 border border-orange-500/35 text-[13px] text-orange-100">
+                    Admin mode: you can correct this player's scores.
+                </p>
+            )}
 
-                {/* Content */}
-                <div className="p-6 max-h-96 overflow-y-auto">
-                    {!hasHistory ? (
-                        <div className="text-center py-8">
-                            <Text className="text-gray-400">
-                                No rounds completed yet
-                            </Text>
-                        </div>
-                    ) : (
-                        <div className="space-y-3">
-                            {pointsHistory.map((points, index) => {
-                                const isEditing = editingRound === index;
+            {!hasHistory ? (
+                <Text className="text-slate-400 text-center py-8">No rounds completed yet</Text>
+            ) : (
+                <ol>
+                    {pointsHistory.map((points, index) => {
+                        const isEditing = editingRound === index;
+                        const inputId = `history-round-${index}`;
 
-                                return (
-                                    <div
-                                        key={index}
-                                        className="flex items-center justify-between p-4 rounded-xl bg-white/5 backdrop-blur-xl border border-white/10 hover:bg-white/10 transition-all duration-300"
-                                    >
-                                        <div className="flex items-center gap-3">
-                                            <div className="w-10 h-10 rounded-full bg-purple-500/30 border border-purple-400/50 flex items-center justify-center">
-                                                <span className="text-white font-bold text-sm leading-none flex items-center justify-center">
-                                                    {index + 1}
-                                                </span>
-                                            </div>
-                                            <Text className="text-gray-300">
-                                                Round {index + 1}
-                                            </Text>
+                        return (
+                            <li key={index} className="border-b border-white/[0.08]">
+                                {isEditing ? (
+                                    <div className="flex flex-col gap-2 py-3">
+                                        <label htmlFor={inputId} className="text-sm text-slate-200">Round {index + 1}</label>
+                                        <div className="flex gap-2">
+                                            <Input
+                                                id={inputId}
+                                                type="text"
+                                                inputMode="numeric"
+                                                value={editValue}
+                                                onChange={(e) => handleInputChange(e.target.value)}
+                                                className="flex-1 min-w-0 h-12 text-center text-lg font-bold text-white bg-white/[0.06] border border-violet-400 focus:border-violet-300"
+                                                autoFocus
+                                            />
+                                            <button
+                                                type="button"
+                                                aria-label="Toggle minus"
+                                                onClick={() => handleInputChange(toggleSign(editValue))}
+                                                className="w-12 h-12 flex-none rounded-xl border border-white/20 bg-white/[0.06] text-xl font-bold"
+                                            >
+                                                ±
+                                            </button>
+                                            <Button size="md" colorscheme="pinkToOrange" variant="outline" className="h-12"
+                                                    onClick={handleCancelEdit} disabled={isSubmitting}>
+                                                Cancel
+                                            </Button>
+                                            <Button size="md" colorscheme="purpleToBlue" variant="solid" className="h-12"
+                                                    onClick={() => handleSaveEdit(index)} disabled={isSubmitting}>
+                                                Save
+                                            </Button>
                                         </div>
-
-                                        {isEditing ? (
-                                            <div className="flex items-center gap-2">
-                                                <Input
-                                                    type="text"
-                                                    value={editValue}
-                                                    onChange={(e) => handleInputChange(e.target.value)}
-                                                    className="w-15 text-center text-white bg-white/10 border border-white/30 focus:border-blue-400"
-                                                    autoFocus
-                                                />
-                                                <Button
-                                                    size="sm"
-                                                    colorscheme="greenToBlue"
-                                                    variant="solid"
-                                                    onClick={() => handleSaveEdit(index)}
-                                                    disabled={isSubmitting}
-                                                    className="px-3 py-1 min-w-[36px]"
-                                                >
-                                                    ✓
-                                                </Button>
-                                                <Button
-                                                    size="sm"
-                                                    colorscheme="pinkToOrange"
-                                                    variant="outline"
-                                                    onClick={handleCancelEdit}
-                                                    disabled={isSubmitting}
-                                                    className="px-3 py-1 min-w-[36px]"
-                                                >
-                                                    ✕
-                                                </Button>
-                                            </div>
-                                        ) : (
-                                            <div className="flex items-center gap-3">
-                                                <Text
-                                                    size="lg"
-                                                    weight="bold"
-                                                    className={points >= 0 ? "text-green-300 min-w-[60px] text-right" : "text-red-300 min-w-[60px] text-right"}
-                                                >
-                                                    {points >= 0 ? "+" : ""}{points}
-                                                </Text>
-                                                {canEdit && (
-                                                    <button
-                                                        onClick={() => handleEditClick(index, points)}
-                                                        className="px-3 py-1.5 rounded-lg bg-blue-500/20 hover:bg-blue-500/40 border border-blue-400/40 text-blue-300 text-sm transition-all duration-200 hover:scale-105 flex items-center gap-1.5"
-                                                        title="Edit this score"
-                                                    >
-                                                        <span className="text-xs">Edit</span>
-                                                    </button>
-                                                )}
-                                            </div>
+                                        {error && <p role="alert" className="text-[13px] text-red-300">{error}</p>}
+                                    </div>
+                                ) : (
+                                    <div className="flex items-center gap-3 min-h-14">
+                                        <span className="w-20 text-sm text-slate-400">Round {index + 1}</span>
+                                        <span className={`flex-1 text-[17px] font-bold tabular-nums ${points >= 0 ? "text-green-300" : "text-red-300"}`}>
+                                            {points >= 0 ? "+" : ""}{points}
+                                        </span>
+                                        {canEdit && (
+                                            <button
+                                                type="button"
+                                                onClick={() => handleEditClick(index, points)}
+                                                className="min-h-11 px-4 rounded-xl border border-blue-300/40 bg-blue-500/15 hover:bg-blue-500/25 text-blue-100 text-sm font-semibold"
+                                            >
+                                                Edit
+                                            </button>
                                         )}
                                     </div>
-                                );
-                            })}
-                        </div>
-                    )}
+                                )}
+                            </li>
+                        );
+                    })}
+                </ol>
+            )}
 
-                    {error && (
-                        <div className="mt-3 p-3 rounded-lg bg-red-500/20 border border-red-500/30">
-                            <Text size="sm" className="text-red-300 text-center">
-                                {error}
-                            </Text>
-                        </div>
-                    )}
-
-                    {/* Summary Stats */}
-                    {hasHistory && (
-                        <div className="mt-6 p-4 rounded-xl bg-gradient-to-r from-purple-500/20 to-blue-500/20 border border-white/10">
-                            <div className="grid grid-cols-3 gap-4 text-center">
-                                <div>
-                                    <Text size="sm" className="text-gray-400">Rounds </Text>
-                                    <Text size="lg" weight="bold" className="text-white">
-                                        {pointsHistory.length}
-                                    </Text>
-                                </div>
-                                <div>
-                                    <Text size="sm" className="text-gray-400">Average </Text>
-                                    <Text size="lg" weight="bold" className="text-white">
-                                        {Math.round(pointsHistory.reduce((a, b) => a + b, 0) / pointsHistory.length)}
-                                    </Text>
-                                </div>
-                                <div>
-                                    <Text size="sm" className="text-gray-400">Best </Text>
-                                    <Text size="lg" weight="bold" className="text-green-300">
-                                        {Math.max(...pointsHistory)}
-                                    </Text>
-                                </div>
-                            </div>
-                        </div>
-                    )}
+            {hasHistory && (
+                <div className="grid grid-cols-3 gap-2 mt-4 text-center">
+                    <div className="p-2.5 rounded-xl bg-white/[0.06]">
+                        <div className="text-xs text-slate-400">Rounds</div>
+                        <div className="text-lg font-bold">{pointsHistory.length}</div>
+                    </div>
+                    <div className="p-2.5 rounded-xl bg-white/[0.06]">
+                        <div className="text-xs text-slate-400">Average</div>
+                        <div className="text-lg font-bold tabular-nums">{average}</div>
+                    </div>
+                    <div className="p-2.5 rounded-xl bg-white/[0.06]">
+                        <div className="text-xs text-slate-400">Best</div>
+                        <div className="text-lg font-bold text-green-300 tabular-nums">{Math.max(...pointsHistory)}</div>
+                    </div>
                 </div>
-
-                {/* Footer */}
-                <div className="p-6 border-t border-white/10">
-                    <Button
-                        colorscheme="purpleToBlue"
-                        variant="solid"
-                        className="w-full hover:scale-105 transition-transform duration-300"
-                        onClick={onClose}
-                    >
-                        Close
-                    </Button>
-                </div>
-            </div>
-        </div>
+            )}
+        </Sheet>
     );
 }

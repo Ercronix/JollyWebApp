@@ -3,6 +3,7 @@ import React, {useState} from "react";
 import {Button} from "@/presentation/components/Button";
 import {Input} from "@/presentation/components/input";
 import {Text} from "@/presentation/components/Text";
+import {Sheet} from "@/presentation/components/Sheet";
 import {useSecureAccount} from "@/core/api/hooks";
 import {useToast} from "@/presentation/components/Toast/useToast";
 import {logger} from "@/utils/logger";
@@ -53,16 +54,9 @@ export function SecureAccountModal({isOpen, fullTag, onClose, onSecured}: Secure
     };
 
     return (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 animate-in fade-in duration-300">
-            <form
-                onSubmit={handleSubmit}
-                className="bg-gradient-to-br from-gray-900 to-gray-800 rounded-3xl border border-purple-500/30 p-8 max-w-md w-full mx-4 shadow-2xl shadow-purple-500/20 space-y-6"
-            >
-                <div className="text-center space-y-2">
-                    <div className="text-5xl mb-4">🔒</div>
-                    <Text size="xl" weight="bold" className="text-white">
-                        Secure your account
-                    </Text>
+        <Sheet isOpen onClose={secureAccount.isPending ? () => {} : close} title="Secure your account">
+            <form onSubmit={handleSubmit} className="space-y-5 px-1">
+                <div>
                     <Text size="sm" className="text-gray-300">
                         Add a password to {fullTag}. You keep your tag and all your games, and can log in with your
                         name and password from any device.
@@ -75,7 +69,9 @@ export function SecureAccountModal({isOpen, fullTag, onClose, onSecured}: Secure
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
                         placeholder="Password"
-                        className="text-white bg-white/5 border-white/30 text-center"
+                        autoComplete="new-password"
+                        aria-label="Password"
+                        className="h-12 text-white bg-white/5 border-white/30 text-center"
                         disabled={secureAccount.isPending}
                     />
                     <Input
@@ -83,22 +79,24 @@ export function SecureAccountModal({isOpen, fullTag, onClose, onSecured}: Secure
                         value={confirm}
                         onChange={(e) => setConfirm(e.target.value)}
                         placeholder="Repeat password"
-                        className="text-white bg-white/5 border-white/30 text-center"
+                        autoComplete="new-password"
+                        aria-label="Repeat password"
+                        className="h-12 text-white bg-white/5 border-white/30 text-center"
                         disabled={secureAccount.isPending}
                     />
                 </div>
 
                 <div className="flex gap-3">
-                    <Button type="button" variant="ghost" className="flex-1 hover:bg-white/10" onClick={close}
+                    <Button type="button" variant="ghost" className="flex-1 min-h-12 text-slate-200 hover:bg-white/10" onClick={close}
                             disabled={secureAccount.isPending}>
                         Cancel
                     </Button>
-                    <Button type="submit" colorscheme="purpleToBlue" variant="solid" className="flex-1"
+                    <Button type="submit" colorscheme="purpleToBlue" variant="solid" className="flex-1 min-h-12"
                             disabled={!password || !confirm || secureAccount.isPending}>
                         {secureAccount.isPending ? "Saving..." : "Set password"}
                     </Button>
                 </div>
             </form>
-        </div>
+        </Sheet>
     );
 }

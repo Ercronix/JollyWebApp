@@ -1,10 +1,43 @@
 @import "tailwindcss";
 @custom-variant hover (&:hover);
 
+@theme {
+    --animate-sheet-up: sheet-up 220ms ease-out;
+
+    @keyframes sheet-up {
+        from { transform: translateY(24px); opacity: 0; }
+        to { transform: translateY(0); opacity: 1; }
+    }
+}
+
 html,
 body {
-    background-color: #0d1930; /* pick your color */
+    background-color: #0d1930;
     margin: 0;
     padding: 0;
     height: 100%;
+}
+
+body {
+    -webkit-tap-highlight-color: transparent;
+    -webkit-text-size-adjust: 100%;
+    overscroll-behavior-y: none;
+}
+
+/* No double-tap zoom delay on controls */
+button, a, input, label, select, textarea {
+    touch-action: manipulation;
+}
+
+/* iOS zooms into inputs with text smaller than 16px */
+input, select, textarea {
+    font-size: max(16px, 1em);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
 }

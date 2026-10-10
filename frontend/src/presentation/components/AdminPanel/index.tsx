@@ -4,7 +4,7 @@ import { Button } from "@/presentation/components/Button";
 import { Input } from "@/presentation/components/input";
 import { Text } from "@/presentation/components/Text";
 import type { Player } from "@/types";
-import { isScoreInput, parseScore, validateScore } from "@/core/scores";
+import { isScoreInput, parseScore, toggleSign, validateScore } from "@/core/scores";
 import { useToast } from "@/presentation/components/Toast/useToast";
 
 interface AdminPanelProps {
@@ -71,7 +71,8 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
             <div className="flex justify-center">
                 <button
                     onClick={onToggleAdminMode}
-                    className={`flex items-center gap-3 px-6 py-3 rounded-xl backdrop-blur-xl border transition-all duration-300 ${
+                    aria-pressed={isAdminMode}
+                    className={`w-full justify-center min-h-12 flex items-center gap-3 px-4 rounded-2xl backdrop-blur-xl border transition-all duration-300 ${
                         isAdminMode
                             ? "bg-orange-500/20 border-orange-500/50 shadow-orange-500/25"
                             : "bg-white/10 border-white/20 hover:bg-white/15"
@@ -87,7 +88,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
             </div>
 
             {isAdminMode && (
-                <div className="p-6 rounded-2xl bg-gradient-to-br from-orange-500/10 to-purple-500/10 backdrop-blur-xl border border-orange-500/30 shadow-2xl space-y-6">
+                <div className="p-4 rounded-2xl bg-orange-500/[0.08] border border-orange-500/30 space-y-5">
                     <div className="text-center">
                         <Text size="xl" weight="bold" className="text-orange-300">
                             Admin Controls
@@ -101,10 +102,10 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                     <div className="space-y-3">
                         <button
                             onClick={() => setShowAddPlayer(!showAddPlayer)}
-                            className="w-full flex items-center justify-between p-3 rounded-lg bg-green-500/10 hover:bg-green-500/20 border border-green-500/30 transition-all"
+                            className="w-full min-h-12 flex items-center justify-between px-4 rounded-xl bg-green-500/10 hover:bg-green-500/20 border border-green-500/30 transition-all"
                         >
                             <Text className="text-green-300 font-medium">
-                                {showAddPlayer ? "Cancel" : "➕ Add New Player"}
+                                {showAddPlayer ? "Cancel" : "+ Add new player"}
                             </Text>
                         </button>
 
@@ -116,7 +117,8 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                                     onChange={(e) => setNewPlayerName(e.target.value)}
                                     onKeyPress={(e) => e.key === 'Enter' && handleAddPlayer()}
                                     placeholder="Enter player name"
-                                    className="w-full text-white bg-white/10 border-green-500/30 focus:border-green-400"
+                                    aria-label="Player name"
+                                    className="w-full h-12 text-white bg-white/10 border-green-500/30 focus:border-green-400"
                                 />
                                 <Button
                                     size="md"
@@ -143,7 +145,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                                 <div className="h-px flex-1 bg-gradient-to-r from-transparent via-orange-500/50 to-transparent" />
                             </div>
 
-                            <div className="space-y-2 max-h-96 overflow-y-auto pr-2">
+                            <div className="space-y-2">
                                 {players.map((player) => (
                                     <div
                                         key={player.userId}
@@ -164,8 +166,8 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                                             </Text>
                                             <button
                                                 onClick={() => onRemovePlayer(player.userId)}
-                                                className="p-2 rounded-lg bg-red-500/10 hover:bg-red-500/20 border border-red-500/30 transition-all"
-                                                title="Remove player"
+                                                className="w-11 h-11 flex-none flex items-center justify-center rounded-xl bg-red-500/10 hover:bg-red-500/20 border border-red-500/30 transition-all"
+                                                aria-label={`Remove ${player.name}`}
                                             >
                                                 <svg className="w-4 h-4 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
@@ -181,16 +183,28 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                                                     onChange={(e) => handleScoreInput(player.userId, e.target.value)}
                                                     onKeyPress={(e) => e.key === 'Enter' && handleSubmitScore(player.userId)}
                                                     placeholder="Score"
-                                                    className="flex-1 text-center text-white bg-white/10 border-orange-500/30 focus:border-orange-400"
+                                                    inputMode="numeric"
+                                                    enterKeyHint="send"
+                                                    aria-label={`Score for ${player.name}`}
+                                                    className="flex-1 min-w-0 h-11 text-center text-white bg-white/10 border-orange-500/30 focus:border-orange-400"
                                                 />
+                                                <button
+                                                    type="button"
+                                                    aria-label="Toggle minus"
+                                                    onClick={() => handleScoreInput(player.userId, toggleSign(playerScores[player.userId] || ''))}
+                                                    className="w-11 h-11 flex-none rounded-xl border border-white/20 bg-white/[0.06] text-white text-xl font-bold"
+                                                >
+                                                    ±
+                                                </button>
                                                 <Button
                                                     size="sm"
                                                     colorscheme="greenToBlue"
                                                     variant="solid"
+                                                    className="h-11"
                                                     onClick={() => handleSubmitScore(player.userId)}
                                                     disabled={!playerScores[player.userId]}
                                                 >
-                                                    ✓
+                                                    Save
                                                 </Button>
                                             </div>
                                         )}

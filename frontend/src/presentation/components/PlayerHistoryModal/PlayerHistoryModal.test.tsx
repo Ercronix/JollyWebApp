@@ -23,7 +23,7 @@ describe("PlayerHistoryModal", () => {
 
         fireEvent.click(screen.getAllByRole("button", {name: "Edit"})[1]);
         fireEvent.change(screen.getByDisplayValue("20"), {target: {value: "25"}});
-        fireEvent.click(screen.getByRole("button", {name: "✓"}));
+        fireEvent.click(screen.getByRole("button", {name: "Save"}));
 
         await waitFor(() => expect(onUpdateScore).toHaveBeenCalledWith(1, 25));
     });

@@ -40,7 +40,7 @@ export const ToastProvider: React.FC<{children: React.ReactNode}> = ({children})
     return (
         <ToastContext.Provider value={api}>
             {children}
-            <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-[100] flex flex-col gap-2 w-[calc(100%-2rem)] max-w-md pointer-events-none">
+            <div className="fixed top-[max(1rem,env(safe-area-inset-top))] left-1/2 -translate-x-1/2 z-[100] flex flex-col gap-2 w-[calc(100%-2rem)] max-w-md pointer-events-none">
                 {toasts.map(toast => (
                     <div
                         key={toast.id}
@@ -51,7 +51,7 @@ export const ToastProvider: React.FC<{children: React.ReactNode}> = ({children})
                         <button
                             onClick={() => dismiss(toast.id)}
                             aria-label="Dismiss"
-                            className="text-current opacity-70 hover:opacity-100"
+                            className="-m-2 w-11 h-11 flex-none flex items-center justify-center text-current opacity-70 hover:opacity-100"
                         >
                             ✕
                         </button>
