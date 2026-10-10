@@ -140,3 +140,11 @@ Frontend (Vitest):
 - `ApiClient` throws `ApiError` with the HTTP status.
 
 Then `npm test` in both projects, plus `npm run lint` and `npm run typecheck` in `frontend/`.
+
+## Amendment (2026-10-10): shared names
+
+Requiring one password-protected account per name made securing impossible for any common name.
+Names are now shared: name + password must be unique (409 "Please choose a different password."),
+name + password login picks the account whose password matches, and tag + password also works.
+The unique index on protected usernames is dropped at startup. Failed login/register/secure
+attempts are limited to 10 per minute per IP (`TRUST_PROXY` makes this see client IPs behind a proxy).
