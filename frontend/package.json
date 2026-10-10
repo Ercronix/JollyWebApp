@@ -22,7 +22,7 @@
     "@tanstack/react-router-devtools": "^1.130.1",
     "class-variance-authority": "^0.7.1",
     "fireworks-js": "^2.10.8",
-    "framer-motion": "^12.27.0",
+    "framer-motion": "^14.0.0",
     "react": "^19.3.0",
     "react-dom": "^19.3.0",
     "tailwind-merge": "^3.7.0",
