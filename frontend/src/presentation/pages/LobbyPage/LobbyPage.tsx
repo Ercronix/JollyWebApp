@@ -29,7 +29,7 @@ export function LobbyPage() {
     const [isPrivate, setIsPrivate] = useState(false);
     const [showJoinByCode, setShowJoinByCode] = useState(false);
     const [createdPrivateLobby, setCreatedPrivateLobby] = useState<Lobby | null>(null);
-    const [currentUser, setCurrentUser] = useState(() => UserModel.getInstance().getCurrentUser());
+    const [storedUser, setStoredUser] = useState(() => UserModel.getInstance().getCurrentUser());
     const [showSecureAccount, setShowSecureAccount] = useState(false);
     const [deleteConfirmation, setDeleteConfirmation] = useState<{ show: boolean; lobby: Lobby | null }>({
         show: false,
@@ -47,13 +47,11 @@ export function LobbyPage() {
     const deleteLobbyMutation = useDeleteLobby();
     const archiveLobbyMutation = useArchiveLobby();
     const {data: me} = useCurrentUser();
+    // Prefer the server's copy: users stored before hasPassword existed lack it
+    const currentUser = me ?? storedUser;
 
-    // Users stored before hasPassword existed lack it, so refresh from the server
     useEffect(() => {
-        if (me) {
-            UserModel.getInstance().setUser(me);
-            setCurrentUser(me);
-        }
+        if (me) UserModel.getInstance().setUser(me);
     }, [me]);
 
     // Check if user is logged in
@@ -179,7 +177,7 @@ export function LobbyPage() {
         try {
             await logoutMutation.mutateAsync();
             UserModel.getInstance().clearUser();
-            setCurrentUser(null);
+            setStoredUser(null);
             void navigate({to: "/"});
         } catch (error) {
             logger.error('Logout failed:', error);
@@ -188,7 +186,7 @@ export function LobbyPage() {
     const logoutFlow = useLogoutFlow(currentUser, handleLogout);
 
     const handleSecured = () => {
-        setCurrentUser(UserModel.getInstance().getCurrentUser());
+        setStoredUser(UserModel.getInstance().getCurrentUser());
     };
 
     if (!currentUser) {
