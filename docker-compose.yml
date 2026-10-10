@@ -13,7 +13,8 @@ services:
     build: ./backend
     restart: unless-stopped
     ports:
-      - "3501:3501"
+      # Only the reverse proxy on this host may reach the backend, so X-Forwarded-For can't be spoofed
+      - "127.0.0.1:3501:3501"
     environment:
       - MONGODB_URI=mongodb://${MONGODB_USERNAME}:${MONGODB_PASSWORD}@mongodb:27017/${MONGODB_DATABASE}?authSource=admin
       - SESSION_SECRET=${SESSION_SECRET}
