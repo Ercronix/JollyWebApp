@@ -3,6 +3,7 @@
 const crypto = require('crypto');
 const Lobby = require('../models/Lobby');
 const GamesService = require('./GamesService');
+const EventService = require('./EventService');
 const OperationQueue = require('../utils/operationQueue');
 
 class LobbiesService {
@@ -80,8 +81,25 @@ class LobbiesService {
             || this.canManageLobby(lobby, userId);
     }
 
+    /**
+     * Lobbies from before owners were tracked: the creator while they are still in the lobby,
+     * otherwise the first remaining player
+     */
     getOwnerId(lobby) {
-        return (lobby.ownerId ?? lobby.createdBy)?.toString();
+        if (lobby.ownerId) return lobby.ownerId.toString();
+        const creator = lobby.createdBy?.toString();
+        if (lobby.players.some(p => p.userId?.toString() === creator)) return creator;
+        return (lobby.players[0]?.userId ?? lobby.createdBy)?.toString();
+    }
+
+    /**
+     * The next admin: the earliest-joined lobby player still in the game
+     * (the admin may have removed someone from the game who is still in the lobby)
+     */
+    async pickNextOwner(lobby) {
+        const game = lobby.gameId && await GamesService.getGameById(lobby.gameId);
+        const inGame = (p) => game?.players.some(gp => gp.userId.toString() === p.userId.toString());
+        return lobby.players.find(inGame) ?? lobby.players[0];
     }
 
     async getLobbyByGameId(gameId) {
@@ -139,6 +157,7 @@ class LobbiesService {
                 console.log(`[LobbiesService] Player ${userId} not in lobby ${lobbyId}`);
                 return; // Player not in lobby
             }
+            const wasOwner = this.getOwnerId(lobby) === userId.toString();
 
             // Remove player from lobby
             lobby.players.splice(playerIndex, 1);
@@ -160,8 +179,20 @@ class LobbiesService {
                 await Lobby.findByIdAndDelete(lobbyId);
                 console.log(`[LobbiesService] Lobby ${lobbyId} deleted`);
             } else {
+                const newOwner = wasOwner ? await this.pickNextOwner(lobby) : null;
+                if (newOwner) {
+                    lobby.ownerId = newOwner.userId;
+                }
                 await lobby.save();
                 console.log(`[LobbiesService] Lobby ${lobbyId} updated`);
+
+                if (newOwner && lobby.gameId) {
+                    EventService.sendEvent(lobby.gameId.toString(), {
+                        type: 'OWNER_CHANGED',
+                        ownerId: newOwner.userId.toString(),
+                        ownerName: newOwner.name
+                    });
+                }
             }
         });
     }

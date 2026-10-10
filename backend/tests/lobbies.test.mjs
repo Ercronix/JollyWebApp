@@ -1,7 +1,8 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { loginAs, createLobbyWith, requireApp } from './helpers.mjs';
 
 const Lobby = requireApp('../models/Lobby');
+const EventService = requireApp('../service/EventService');
 
 let alice, bob, mallory;
 
@@ -206,5 +207,54 @@ describe('deleting and archiving lobbies', () => {
         expect((await alice.get('/api/lobbies')).body).toEqual([]);
         const history = (await alice.get('/api/lobbies/history')).body;
         expect(history).toEqual([expect.objectContaining({ id: lobby.id, archived: true })]);
+    });
+});
+
+describe('owner handover', () => {
+    let sendEvent;
+    const ownerChanges = () => sendEvent.mock.calls.filter(([, e]) => e.type === 'OWNER_CHANGED');
+
+    beforeEach(() => {
+        sendEvent = vi.spyOn(EventService, 'sendEvent');
+    });
+
+    afterEach(() => {
+        sendEvent.mockRestore();
+    });
+
+    it('hands admin to the next player when the owner leaves', async () => {
+        const { lobby, gameId } = await createLobbyWith(alice, [bob, mallory]);
+
+        await alice.post(`/api/lobbies/${lobby.id}/leave`).expect(204);
+
+        expect((await bob.get(`/api/games/${gameId}`).expect(200)).body.ownerId).toBe(bob.user.id);
+        expect(ownerChanges()).toEqual([[gameId, expect.objectContaining({ ownerId: bob.user.id, ownerName: 'Bob' })]]);
+    });
+
+    it('skips players the admin removed from the game', async () => {
+        const { lobby, gameId } = await createLobbyWith(alice, [bob, mallory]);
+        await alice.post(`/api/games/${gameId}/removePlayer`, { playerId: bob.user.id }).expect(200);
+
+        await alice.post(`/api/lobbies/${lobby.id}/leave`).expect(204);
+
+        expect((await mallory.get(`/api/games/${gameId}`).expect(200)).body.ownerId).toBe(mallory.user.id);
+    });
+
+    it('keeps the owner when someone else leaves', async () => {
+        const { lobby, gameId } = await createLobbyWith(alice, [bob]);
+
+        await bob.post(`/api/lobbies/${lobby.id}/leave`).expect(204);
+
+        expect((await alice.get(`/api/games/${gameId}`).expect(200)).body.ownerId).toBe(alice.user.id);
+        expect(ownerChanges()).toEqual([]);
+    });
+
+    it('makes the first player admin of an old lobby whose creator already left', async () => {
+        const { lobby, gameId } = await createLobbyWith(alice, [bob]);
+        await alice.post(`/api/lobbies/${lobby.id}/leave`).expect(204);
+        await Lobby.updateOne({ _id: lobby.id }, { $unset: { ownerId: 1 } });
+
+        expect((await bob.get(`/api/games/${gameId}`).expect(200)).body.ownerId).toBe(bob.user.id);
+        await bob.post(`/api/games/${gameId}/addPlayer`, { playerName: 'Ghost' }).expect(200);
     });
 });
