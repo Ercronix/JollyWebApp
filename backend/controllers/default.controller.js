@@ -40,6 +40,12 @@ module.exports = {
             .catch(e => sendError(res, e));
     },
 
+    secureAccountPOST(req, res) {
+        Default.secureAccountPOST(req.user, req.body)
+            .then(r => utils.writeJson(res, r))
+            .catch(e => sendError(res, e));
+    },
+
     createLobbyPOST(req, res) {
         Default.createLobbyPOST(req.user, req.body)
             .then(r => utils.writeJson(res, r, 201))

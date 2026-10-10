@@ -30,6 +30,7 @@ function toUserResponse(user) {
         id: user._id.toString(),
         username: user.username,
         fullTag: user.fullTag,
+        hasPassword: !!user.password,
         createdAt: user.createdAt
     };
 }
@@ -192,6 +193,35 @@ module.exports.registerUser = async function(rawUsername, rawPassword) {
         console.error('[UsersService] Registration error:', error.message);
         throw error;
     }
+};
+
+/**
+ * Adds a password to a passwordless account, keeping its tag (and so its games)
+ */
+module.exports.secureAccount = async function(userId, rawPassword) {
+    const password = validatePassword(rawPassword);
+
+    const user = await User.findById(userId);
+    if (!user) {
+        throw { status: 404, message: 'Account not found' };
+    }
+    if (user.password) {
+        throw { status: 409, message: 'This account already has a password' };
+    }
+
+    // Username + password login looks accounts up by username, so it must stay unambiguous
+    const existingProtected = await User.findOne({
+        username: user.username,
+        password: mongoose.trusted({ $ne: null })
+    });
+    if (existingProtected) {
+        throw { status: 409, message: 'Another account already protects this username with a password' };
+    }
+
+    user.password = password;
+    await user.save();
+
+    return toUserResponse(user);
 };
 
 /**

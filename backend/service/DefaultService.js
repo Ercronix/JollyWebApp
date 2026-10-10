@@ -75,6 +75,17 @@ module.exports.registerUserPOST = async function (body) {
 };
 
 /**
+ * Add a password to the current (passwordless) account
+ */
+module.exports.secureAccountPOST = async function (user, body) {
+    try {
+        return await UsersService.secureAccount(user.id, body?.password);
+    } catch (error) {
+        throw httpError(error, 500);
+    }
+};
+
+/**
  * Delete a lobby
  */
 module.exports.deleteLobbyDELETE = async function(user, lobbyId) {
