@@ -77,6 +77,7 @@ export function GamePage() {
     const submitScoreMutation = useSubmitScore();
     const nextRoundMutation = useNextRound();
     const forceNextRoundMutation = useForceNextRound();
+    const [confirmLeave, setConfirmLeave] = useState(false);
     const [confirmForceNextRound, setConfirmForceNextRound] = useState(false);
     const resetRoundMutation = useResetRound();
     const reorderPlayersMutation = useReorderPlayers();
@@ -106,6 +107,8 @@ export function GamePage() {
         currentDealer,
         highestTotalScore,
         isOwner,
+        isLastLobbyPlayer,
+        hasScores,
     } = useMemo(() => deriveGameState(game, currentUser?.id), [game, currentUser?.id]);
 
     // Follow the live game state, so the modal shows updated scores
@@ -539,7 +542,7 @@ export function GamePage() {
                         )}
 
                         <Button colorscheme="pinkToOrange" variant="outline" size="md"
-                                onClick={handleLeaveLobby}
+                                onClick={() => isLastLobbyPlayer ? setConfirmLeave(true) : void handleLeaveLobby()}
                                 disabled={leaveLobbyMutation.isPending}
                                 className="hover:scale-105 transition-transform duration-300">
                             Quit Game
@@ -573,6 +576,20 @@ export function GamePage() {
                             onConfirm={() => void confirmRemovePlayer()}
                             onCancel={() => setPlayerToRemove(null)}
                             isDeleting={removePlayerMutation.isPending}
+                        />
+
+                        <DeleteConfirmationModal
+                            isOpen={confirmLeave}
+                            title="You're the last player"
+                            message={hasScores
+                                ? "Nobody else can continue this game. It ends and stays in your game history. Leave"
+                                : "Nothing has been scored yet, so this lobby will be deleted. Leave"}
+                            itemName={searchParams.lobbyName || "this game"}
+                            onConfirm={() => void handleLeaveLobby()}
+                            onCancel={() => setConfirmLeave(false)}
+                            isDeleting={leaveLobbyMutation.isPending}
+                            confirmLabel="Leave"
+                            confirmingLabel="Leaving..."
                         />
 
                         <DeleteConfirmationModal

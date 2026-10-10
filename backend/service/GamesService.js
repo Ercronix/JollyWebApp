@@ -43,6 +43,13 @@ class GamesService {
         return Game.findById(gameId);
     }
 
+    /**
+     * Whether anything has been scored yet (a finished round, or a submission in the first one)
+     */
+    hasScores(game) {
+        return game.currentRound > 1 || game.players.some(p => p.hasSubmitted);
+    }
+
     async deleteGame(gameId) {
         await Game.findByIdAndDelete(gameId);
         console.log(`[GamesService] Game ${gameId} deleted`);

@@ -19,6 +19,7 @@ export interface Game {
     isFinished: boolean;
     winner: string | null;
     ownerId?: string; // the lobby admin; only in GET /api/games/:id responses
+    lobbyPlayerIds?: string[]; // real players in the lobby (not temporary ones); same as ownerId
 }
 
 export interface SubmitScoreResponse {

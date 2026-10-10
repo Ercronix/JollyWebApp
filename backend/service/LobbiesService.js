@@ -185,6 +185,18 @@ class LobbiesService {
             lobby.playerCount = lobby.players.length;
             console.log(`[LobbiesService] Player removed. New player count: ${lobby.playerCount}`);
 
+            // The last real player leaving a played game (e.g. one phone with temporary players):
+            // archive it as it is, so it stays in everyone's history
+            if (lobby.playerCount === 0 && lobby.gameId) {
+                const game = await GamesService.getGameById(lobby.gameId);
+                if (game && GamesService.hasScores(game)) {
+                    lobby.archived = true;
+                    await lobby.save();
+                    console.log(`[LobbiesService] Lobby ${lobbyId} is empty, archived its played game`);
+                    return;
+                }
+            }
+
             // Remove player from game if game exists
             if (lobby.gameId) {
                 console.log(`[LobbiesService] Removing player from game ${lobby.gameId}`);
