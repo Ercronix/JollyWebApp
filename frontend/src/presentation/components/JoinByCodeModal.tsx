@@ -4,13 +4,13 @@ import { Input } from "@/presentation/components/input";
 import { Text } from "@/presentation/components/Text";
 import { useJoinLobbyByCode, useGetLobbyByCode } from "@/core/api/hooks";
 import { useNavigate } from "@tanstack/react-router";
+import { logger } from "@/utils/logger";
 
 interface JoinByCodeModalProps {
-    userId: string;
     onClose: () => void;
 }
 
-export const JoinByCodeModal: React.FC<JoinByCodeModalProps> = ({ userId, onClose }) => {
+export const JoinByCodeModal: React.FC<JoinByCodeModalProps> = ({ onClose }) => {
     const [code, setCode] = useState("");
     const [previewCode, setPreviewCode] = useState<string | undefined>();
     const navigate = useNavigate();
@@ -28,7 +28,6 @@ export const JoinByCodeModal: React.FC<JoinByCodeModalProps> = ({ userId, onClos
         try {
             const result = await joinMutation.mutateAsync({
                 accessCode: code.toUpperCase(),
-                userId,
             });
 
             if (result.lobby.gameId) {
@@ -43,7 +42,7 @@ export const JoinByCodeModal: React.FC<JoinByCodeModalProps> = ({ userId, onClos
                 });
             }
         } catch (error) {
-            console.error("Failed to join lobby:", error);
+            logger.error("Failed to join lobby:", error);
         }
     };
 

@@ -3,56 +3,35 @@ import { useNavigate } from "@tanstack/react-router";
 import { useLobbyHistory, useGameState, useDeleteLobby } from "@/core/api/hooks";
 import { DeleteConfirmationModal } from "@/presentation/components/DeleteConfirmationModal";
 import { UserModel } from "@/core/models/UserModel";
+import { useToast } from "@/presentation/components/Toast/useToast";
+import { logger } from "@/utils/logger";
 import type { Lobby } from "@/types";
 import type { Player } from "@/types/game.types";
 
-// Extend Lobby type to handle MongoDB _id
-interface LobbyWithId extends Lobby {
-    _id?: string;
-}
-
 export function HistoryPage() {
     const navigate = useNavigate();
-    const { data: rawLobbies = [], isLoading } = useLobbyHistory();
+    const { data: lobbies = [], isLoading } = useLobbyHistory();
     const deleteLobbyMutation = useDeleteLobby();
     const [currentUser] = useState(() => UserModel.getInstance().getCurrentUser());
-    const [deleteConfirmation, setDeleteConfirmation] = useState<{ show: boolean; lobby: LobbyWithId | null }>({
+    const toast = useToast();
+    const [deleteConfirmation, setDeleteConfirmation] = useState<{ show: boolean; lobby: Lobby | null }>({
         show: false,
         lobby: null,
     });
 
-    // Normalize lobbies to ensure they have an id field
-    const lobbies = (rawLobbies as LobbyWithId[]).map(lobby => ({
-        ...lobby,
-        id: lobby.id || lobby._id || ''
-    }));
-
-    const handleDeleteLobby = (lobby: LobbyWithId) => {
+    const handleDeleteLobby = (lobby: Lobby) => {
         setDeleteConfirmation({ show: true, lobby });
     };
 
     const confirmDeleteLobby = async () => {
         if (!deleteConfirmation.lobby || !currentUser) return;
 
-        const lobbyId = deleteConfirmation.lobby.id || deleteConfirmation.lobby._id;
-
-        console.log('Attempting to delete lobby with ID:', lobbyId);
-        console.log('Full lobby object:', deleteConfirmation.lobby);
-
-        if (!lobbyId || lobbyId === 'undefined') {
-            console.error('Invalid lobby ID:', lobbyId);
-            alert('Cannot delete lobby: Invalid ID');
-            return;
-        }
-
         try {
-            await deleteLobbyMutation.mutateAsync({
-                lobbyId: lobbyId,
-                userId: currentUser.id,
-            });
+            await deleteLobbyMutation.mutateAsync({ lobbyId: deleteConfirmation.lobby.id });
             setDeleteConfirmation({ show: false, lobby: null });
         } catch (error) {
-            console.error('Failed to delete lobby:', error);
+            logger.error('Failed to delete lobby:', error);
+            toast.error(error instanceof Error ? error.message : 'Failed to delete lobby');
         }
     };
 
@@ -119,7 +98,7 @@ export function HistoryPage() {
                     <div className="space-y-3">
                         {lobbies.map(lobby => (
                             <LobbyCard
-                                key={lobby.id || lobby._id}
+                                key={lobby.id}
                                 lobby={lobby}
                                 onDelete={handleDeleteLobby}
                             />
@@ -132,8 +111,8 @@ export function HistoryPage() {
 }
 
 interface LobbyCardProps {
-    lobby: LobbyWithId;
-    onDelete: (lobby: LobbyWithId) => void;
+    lobby: Lobby;
+    onDelete: (lobby: Lobby) => void;
 }
 
 function LobbyCard({ lobby, onDelete }: LobbyCardProps) {

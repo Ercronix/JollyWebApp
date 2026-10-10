@@ -4,6 +4,8 @@ import { Button } from "@/presentation/components/Button";
 import { Input } from "@/presentation/components/input";
 import { Text } from "@/presentation/components/Text";
 import type { Player } from "@/types";
+import { isScoreInput, parseScore, validateScore } from "@/core/scores";
+import { useToast } from "@/presentation/components/Toast/useToast";
 
 interface AdminPanelProps {
     isAdminMode: boolean;
@@ -26,6 +28,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                                                           currentRound,
                                                           isFinished,
                                                       }) => {
+    const toast = useToast();
     const [newPlayerName, setNewPlayerName] = useState("");
     const [playerScores, setPlayerScores] = useState<Record<string, string>>({});
     const [showAddPlayer, setShowAddPlayer] = useState(false);
@@ -39,21 +42,18 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
     };
 
     const handleScoreInput = (userId: string, value: string) => {
-        // Allow negative numbers and empty string
-        if (value === '' || value === '-' || /^-?\d*$/.test(value)) {
+        if (isScoreInput(value)) {
             setPlayerScores(prev => ({ ...prev, [userId]: value }));
         }
     };
 
     const handleSubmitScore = (userId: string) => {
-        const scoreStr = playerScores[userId];
-        if (!scoreStr || scoreStr === '-') return;
+        const score = parseScore(playerScores[userId] ?? '');
+        if (Number.isNaN(score)) return;
 
-        const score = parseInt(scoreStr, 10);
-        if (isNaN(score)) return;
-
-        if (score % 5 !== 0) {
-            alert("Score must be divisible by 5");
+        const error = validateScore(score);
+        if (error) {
+            toast.error(error);
             return;
         }
 

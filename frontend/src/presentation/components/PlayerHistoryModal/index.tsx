@@ -4,6 +4,8 @@ import { Button } from "@/presentation/components/Button";
 import { Text } from "@/presentation/components/Text";
 import { Input } from "@/presentation/components/input";
 import type { Player } from "@/types";
+import { isScoreInput, parseScore, validateScore } from "@/core/scores";
+import { logger } from "@/utils/logger";
 
 type PlayerHistoryModalProps = {
     isOpen: boolean;
@@ -46,15 +48,10 @@ export function PlayerHistoryModal({
     };
 
     const handleSaveEdit = async (roundIndex: number) => {
-        const newScore = parseInt(editValue, 10);
-
-        if (isNaN(newScore)) {
-            setError("Please enter a valid number");
-            return;
-        }
-
-        if (newScore % 5 !== 0) {
-            setError("Score must be divisible by 5");
+        const newScore = parseScore(editValue);
+        const validationError = validateScore(newScore);
+        if (validationError) {
+            setError(validationError);
             return;
         }
 
@@ -67,15 +64,15 @@ export function PlayerHistoryModal({
             setEditValue("");
             setError("");
         } catch (err) {
-            setError("Failed to update score");
-            console.error("Error updating score:", err);
+            setError(err instanceof Error && err.message ? err.message : "Failed to update score");
+            logger.error("Error updating score:", err);
         } finally {
             setIsSubmitting(false);
         }
     };
 
     const handleInputChange = (value: string) => {
-        if (value === "" || /^-?\d*$/.test(value)) {
+        if (isScoreInput(value)) {
             setEditValue(value);
             setError("");
         }

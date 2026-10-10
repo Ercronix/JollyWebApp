@@ -27,6 +27,7 @@ Backend (`backend/`):
 
 ```bash
 npm start                # node server.js on port 3501 (run `npm ci` first)
+npm run lint             # ESLint
 npm test                 # all tests (Vitest + Supertest + in-memory MongoDB)
 npm run test:watch       # watch mode
 npx vitest run tests/games.test.mjs        # a single test file
@@ -41,6 +42,8 @@ Docker:
 docker compose up --build                            # full stack: frontend (3500), backend (3501), MongoDB (27017), mongo-express (8081)
 docker compose -f docker-compose.dev.yml up --build  # backend + MongoDB + mongo-express only; run the frontend locally with Vite
 ```
+
+The production compose also runs `mongo-backup`, which writes a daily gzipped `mongodump` to `./backups` (restore steps are in `scripts/mongo-backup.sh`). The backend and MongoDB have healthchecks, and the backend exposes `GET /health` (no auth). MongoDB and mongo-express are bound to `127.0.0.1` only.
 
 ## Backend architecture
 
@@ -62,6 +65,7 @@ Key details:
 - `app.js` builds the Express app (middleware, routes, error handler) without connecting or listening; `server.js` connects to MongoDB and listens on port 3501. Tests import `app.js`.
 - CORS is open in `NODE_ENV=development`, and otherwise restricted to the `allowedOrigins` list in `app.js`.
 - Game constants (points goal 1000, max 8 players) live in `config/index.js`.
+- **Concurrency**: read-modify-write operations on a game or lobby must run through `OperationQueue` (`utils/operationQueue.js`), via `GamesService.queueOperation` or `LobbiesService.queue`. Queues are keyed by the id's string form and only serialize within one process.
 
 ## Frontend architecture
 
@@ -69,6 +73,10 @@ Key details:
 - **Data layer**: `src/core/api/client.ts` (`ApiClient`, static fetch wrapper with `credentials: 'include'` plus an `x-session-id` header) and `src/core/api/hooks.ts` (TanStack Query hooks with `queryKeys`). Mutations invalidate or set the `['game', gameId]` / `['lobbies']` queries. `useGameEvents(gameId)` opens the SSE `EventSource` and keeps the game query in sync.
 - API base URL: `VITE_API_BASE_URL`, else `http://localhost:3501` on localhost, else the production API.
 - `src/presentation/` holds `components/` (shared UI, some with Storybook stories), `layout/`, and `pages/` (page-specific subcomponents live under e.g. `pages/GamePage/components/`). Shared types are in `src/types/` and re-exported from `@/types`.
+- **Score rules** (whole numbers, divisible by 5, at most ±100000; win condition 100–10000) live in `src/core/scores.ts`. Use them instead of re-implementing validation, and keep them in sync with `backend/service/DefaultService.js`.
+- **User feedback**: use `useToast()` (`src/presentation/components/Toast/useToast.ts`) for errors and confirmations, and `DeleteConfirmationModal` for confirmations. Never use `alert()`/`confirm()`: they block the page.
+- **Logging**: use `logger` from `src/utils/logger.ts`, not `console.*`. `logger.debug` only prints in development builds.
+- Game page logic lives in testable units next to `GamePage.tsx`: `gameState.ts` (derived state), `useAutoAdvance` and `useRefetchOnReturn` (in `src/core/hooks/`).
 - Path alias `@/*` → `src/*`. Styling is Tailwind CSS v4 (via `@tailwindcss/vite`), with `class-variance-authority` + `tailwind-merge` for variants. TypeScript is strict, with `noUnusedLocals`/`noUnusedParameters` and `verbatimModuleSyntax`, so use `import type` for type-only imports.
 
 ## Test-driven development
@@ -81,7 +89,7 @@ This project uses test-driven development. For every change:
 
 Every bug fix gets a regression test. Name the issue in a comment above it (e.g. `// Regression: issue #13 ...`), like the existing ones. Never delete or weaken a failing test to make the suite pass; fix the code, or ask if the test itself is wrong.
 
-CI (`.github/workflows/ci.yml`) runs the backend tests and the frontend lint, typecheck, unit tests and build on every push to `main` and on every pull request.
+CI (`.github/workflows/ci.yml`) runs on every push to `main` and on every pull request. Backend job: production dependency audit, lint and tests. Frontend job: audit, lint, typecheck, unit tests and build. Dependabot (`.github/dependabot.yml`) opens weekly update PRs.
 
 Backend tests (`backend/tests/*.test.mjs`):
 - They're ES modules because Vitest can't be `require()`d, but app code must be loaded through `requireApp` from `tests/helpers.mjs` (Node's `require`). Importing app files directly loads a second copy of the models and fails with `OverwriteModelError`.

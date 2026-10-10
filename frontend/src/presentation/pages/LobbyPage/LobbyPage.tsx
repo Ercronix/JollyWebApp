@@ -18,6 +18,7 @@ import {
     useDeleteLobby,
     useArchiveLobby,
 } from "@/core/api/hooks";
+import {logger} from "@/utils/logger";
 
 export function LobbyPage() {
     const navigate = useNavigate();
@@ -58,7 +59,6 @@ export function LobbyPage() {
 
             const lobby = await createLobbyMutation.mutateAsync({
                 name: trimmedName || fallbackName,
-                userId: currentUser.id,
                 isPrivate: isPrivate, // ADD THIS LINE
             });
 
@@ -85,7 +85,7 @@ export function LobbyPage() {
                 });
             }
         } catch (error) {
-            console.error('Failed to create lobby:', error);
+            logger.error('Failed to create lobby:', error);
         }
     };
 
@@ -101,7 +101,6 @@ export function LobbyPage() {
         try {
             const result = await joinLobbyMutation.mutateAsync({
                 lobbyId: lobby.id,
-                userId: currentUser.id,
             });
 
             // Get gameId from lobby service
@@ -118,7 +117,7 @@ export function LobbyPage() {
                 });
             }
         } catch (error) {
-            console.error('Failed to join lobby:', error);
+            logger.error('Failed to join lobby:', error);
         }
     };
 
@@ -138,7 +137,7 @@ export function LobbyPage() {
             });
             setArchiveConfirmation({show: false, lobby: null});
         } catch (error) {
-            console.error('Failed to archive lobby:', error);
+            logger.error('Failed to archive lobby:', error);
         }
     };
 
@@ -148,11 +147,10 @@ export function LobbyPage() {
         try {
             await deleteLobbyMutation.mutateAsync({
                 lobbyId: deleteConfirmation.lobby.id,
-                userId: currentUser.id,
             });
             setDeleteConfirmation({show: false, lobby: null});
         } catch (error) {
-            console.error('Failed to delete lobby:', error);
+            logger.error('Failed to delete lobby:', error);
         }
     };
 
@@ -171,7 +169,7 @@ export function LobbyPage() {
             setCurrentUser(null);
             void navigate({to: "/"});
         } catch (error) {
-            console.error('Logout failed:', error);
+            logger.error('Logout failed:', error);
         }
     };
 
@@ -434,7 +432,6 @@ export function LobbyPage() {
 
                 {showJoinByCode && currentUser && (
                     <JoinByCodeModal
-                        userId={currentUser.id}
                         onClose={() => setShowJoinByCode(false)}
                     />
                 )}

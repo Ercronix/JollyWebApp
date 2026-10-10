@@ -4,6 +4,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {ApiClient} from './client';
 import {useEffect} from 'react';
 import type { GameEvent } from '@/types';
+import { logger } from '@/utils/logger';
 
 // Query keys
 export const queryKeys = {
@@ -78,15 +79,8 @@ export function useCreateLobby() {
     const queryClient = useQueryClient();
 
     return useMutation({
-        mutationFn: ({
-                         name,
-                         userId,
-                         isPrivate
-                     }: {
-            name: string;
-            userId: string;
-            isPrivate?: boolean;
-        }) => ApiClient.createLobby(name, userId, isPrivate || false),
+        mutationFn: ({ name, isPrivate }: { name: string; isPrivate?: boolean }) =>
+            ApiClient.createLobby(name, isPrivate || false),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: queryKeys.lobbies });
         },
@@ -95,8 +89,8 @@ export function useCreateLobby() {
 
 export function useJoinLobbyByCode() {
     return useMutation({
-        mutationFn: ({ accessCode, userId }: { accessCode: string; userId: string }) =>
-            ApiClient.joinLobbyByCode(accessCode, userId),
+        mutationFn: ({ accessCode }: { accessCode: string }) =>
+            ApiClient.joinLobbyByCode(accessCode),
     });
 }
 
@@ -111,8 +105,8 @@ export function useGetLobbyByCode(accessCode: string | undefined) {
 
 export function useJoinLobby() {
     return useMutation({
-        mutationFn: ({ lobbyId, userId }: { lobbyId: string; userId: string }) =>
-            ApiClient.joinLobby(lobbyId, userId),
+        mutationFn: ({ lobbyId }: { lobbyId: string }) =>
+            ApiClient.joinLobby(lobbyId),
     });
 }
 
@@ -120,8 +114,8 @@ export function useLeaveLobby() {
     const queryClient = useQueryClient();
 
     return useMutation({
-        mutationFn: ({ lobbyId, userId }: { lobbyId: string; userId: string }) =>
-            ApiClient.leaveLobby(lobbyId, userId),
+        mutationFn: ({ lobbyId }: { lobbyId: string }) =>
+            ApiClient.leaveLobby(lobbyId),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: queryKeys.lobbies });
         },
@@ -132,8 +126,8 @@ export function useDeleteLobby() {
     const queryClient = useQueryClient();
 
     return useMutation({
-        mutationFn: ({ lobbyId, userId }: { lobbyId: string; userId: string }) =>
-            ApiClient.deleteLobby(lobbyId, userId),
+        mutationFn: ({ lobbyId }: { lobbyId: string }) =>
+            ApiClient.deleteLobby(lobbyId),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: queryKeys.lobbies });
         },
@@ -166,15 +160,8 @@ export function useSubmitScore() {
     const queryClient = useQueryClient();
 
     return useMutation({
-        mutationFn: ({
-                         gameId,
-                         playerId,
-                         score,
-                     }: {
-            gameId: string;
-            playerId: string;
-            score: number;
-        }) => ApiClient.submitScore(gameId, playerId, score),
+        mutationFn: ({ gameId, score }: { gameId: string; score: number }) =>
+            ApiClient.submitScore(gameId, score),
         onSuccess: (_, variables) => {
             queryClient.invalidateQueries({ queryKey: queryKeys.game(variables.gameId) });
         },
@@ -196,8 +183,8 @@ export function useResetRound() {
     const queryClient = useQueryClient();
 
     return useMutation({
-        mutationFn: ({ gameId, userId }: { gameId: string; userId: string }) =>
-            ApiClient.resetRound(gameId, userId),
+        mutationFn: ({ gameId }: { gameId: string }) =>
+            ApiClient.resetRound(gameId),
         onSuccess: (_, variables) => {
             queryClient.invalidateQueries({ queryKey: queryKeys.game(variables.gameId) });
         },
@@ -208,17 +195,8 @@ export function useReorderPlayers() {
     const queryClient = useQueryClient();
 
     return useMutation({
-        mutationFn: ({
-                         gameId,
-                         fromIndex,
-                         toIndex,
-                         userId,
-                     }: {
-            gameId: string;
-            fromIndex: number;
-            toIndex: number;
-            userId: string;
-        }) => ApiClient.reorderPlayers(gameId, fromIndex, toIndex, userId),
+        mutationFn: ({ gameId, fromIndex, toIndex }: { gameId: string; fromIndex: number; toIndex: number }) =>
+            ApiClient.reorderPlayers(gameId, fromIndex, toIndex),
         onSuccess: (_, variables) => {
             queryClient.invalidateQueries({ queryKey: queryKeys.game(variables.gameId) });
         },
@@ -252,17 +230,8 @@ export function useUpdateHistoryScore() {
     const queryClient = useQueryClient();
 
     return useMutation({
-        mutationFn: ({
-                         gameId,
-                         playerId,
-                         roundIndex,
-                         newScore
-                     }: {
-            gameId: string;
-            playerId: string;
-            roundIndex: number;
-            newScore: number;
-        }) => ApiClient.updateHistoryScore(gameId, playerId, roundIndex, newScore),
+        mutationFn: ({ gameId, roundIndex, newScore }: { gameId: string; roundIndex: number; newScore: number }) =>
+            ApiClient.updateHistoryScore(gameId, roundIndex, newScore),
         onSuccess: (_, variables) => {
             queryClient.invalidateQueries({ queryKey: queryKeys.game(variables.gameId) });
         },
@@ -321,14 +290,14 @@ export function useGameEvents(gameId: string | undefined) {
     useEffect(() => {
         if (!gameId) return;
 
-        console.log('Subscribing to game events for gameId:', gameId);
+        logger.debug('Subscribing to game events for gameId:', gameId);
 
         const unsubscribe = ApiClient.subscribeToGameEvents(gameId, (eventData: GameEvent) => {
-            console.log('Game event received:', eventData);
+            logger.debug('Game event received:', eventData);
 
             switch (eventData.type) {
                 case 'CONNECTED':
-                    console.log('Connected to game events');
+                    logger.debug('Connected to game events');
                     break;
 
                 case 'ROUND_STARTED':
@@ -341,8 +310,8 @@ export function useGameEvents(gameId: string | undefined) {
                 case 'HISTORY_SCORE_UPDATED':
                 case 'PLAYER_REMOVED':
                     if (eventData.game) {
-                        console.log('Updating game state from SSE event:', eventData.type);
-                        console.log('New game state:', eventData.game);
+                        logger.debug('Updating game state from SSE event:', eventData.type);
+                        logger.debug('New game state:', eventData.game);
                         queryClient.setQueryData(queryKeys.game(gameId), eventData.game);
                         queryClient.invalidateQueries({ queryKey: queryKeys.game(gameId) });
                     }
@@ -354,17 +323,17 @@ export function useGameEvents(gameId: string | undefined) {
                         queryClient.invalidateQueries({ queryKey: queryKeys.game(gameId) });
                     }
                     if (eventData.winner) {
-                        console.log(`Game ended! Winner: ${eventData.winner.name}`);
+                        logger.debug(`Game ended! Winner: ${eventData.winner.name}`);
                     }
                     break;
 
                 default:
-                    console.log('Unknown event type:', eventData.type);
+                    logger.debug('Unknown event type:', eventData.type);
             }
         });
 
         return () => {
-            console.log('Unsubscribing from game events');
+            logger.debug('Unsubscribing from game events');
             unsubscribe();
         };
     }, [gameId, queryClient]);

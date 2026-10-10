@@ -1,6 +1,8 @@
 import { describe, it, expect } from 'vitest';
 import { requireApp } from './helpers.mjs';
 
+const mongoose = requireApp('mongoose');
+
 const GamesService = requireApp('../service/GamesService');
 
 const deferred = () => {
@@ -23,6 +25,23 @@ describe('queueOperation', () => {
         gate.resolve();
         await Promise.all([first, second]);
         expect(order).toEqual(['first', 'second']);
+    });
+
+    it('treats an ObjectId and its string form as the same game', async () => {
+        const order = [];
+        const gate = deferred();
+        const id = new mongoose.Types.ObjectId();
+
+        const first = GamesService.queueOperation(id, async () => {
+            await gate.promise;
+            order.push('first');
+        });
+        const second = GamesService.queueOperation(new mongoose.Types.ObjectId(id.toString()), async () => order.push('second'));
+        const third = GamesService.queueOperation(id.toString(), async () => order.push('third'));
+
+        gate.resolve();
+        await Promise.all([first, second, third]);
+        expect(order).toEqual(['first', 'second', 'third']);
     });
 
     // Regression: issue #13 - a rejected operation used to poison the queue for the game

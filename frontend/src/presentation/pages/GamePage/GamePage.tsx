@@ -1,11 +1,11 @@
 // src/presentation/pages/GamePage/GamePage.tsx
-import React, {useState, useEffect, useCallback, useMemo} from "react";
+import React, {useState, useCallback, useMemo} from "react";
 import {Button} from "@/presentation/components/Button";
 import {Text} from "@/presentation/components/Text";
 import {Input} from "@/presentation/components/input";
 import {ScoreCalculator} from "@/presentation/components/ScoreCalculator";
 import {PlayerHistoryModal} from "@/presentation/components/PlayerHistoryModal";
-import {useNavigate, useSearch} from "@tanstack/react-router";
+import {Navigate, useNavigate, useSearch} from "@tanstack/react-router";
 import {MainLayout} from "@/presentation/layout/MainLayout";
 import {UserModel} from "@/core/models/UserModel";
 import {PlayerPointsChart} from "@/presentation/components/PlayerPointsChart";
@@ -25,6 +25,7 @@ import {
     useAddPlayerToGame,
     useRemovePlayerFromGame,
     useSubmitScoreForPlayer,
+    queryKeys,
 } from "@/core/api/hooks";
 import {GameHeader} from "./components/GameHeader";
 import {WinConditionDisplay} from "./components/WinConditionDisplay";
@@ -34,6 +35,13 @@ import {PlayerCard} from "./components/PlayerCard";
 import {GameStats} from "./components/GameStats";
 import {AdminPanel} from "@/presentation/components/AdminPanel";
 import {useStoredFlag} from "@/core/hooks/useStoredFlag";
+import {useAutoAdvance} from "@/core/hooks/useAutoAdvance";
+import {useRefetchOnReturn} from "@/core/hooks/useRefetchOnReturn";
+import {isScoreInput, parseScore, validateScore, validateWinCondition} from "@/core/scores";
+import {useToast} from "@/presentation/components/Toast/useToast";
+import {DeleteConfirmationModal} from "@/presentation/components/DeleteConfirmationModal";
+import {logger} from "@/utils/logger";
+import {deriveGameState} from "./gameState";
 
 export type GameSearchParams = {
     accessCode?: string;
@@ -43,25 +51,28 @@ export type GameSearchParams = {
 };
 
 export function GamePage() {
-    const navigate = useNavigate();
     const searchParams = useSearch({from: '/Game'}) as GameSearchParams;
+    const gameId = searchParams.gameId;
+    const navigate = useNavigate();
+    const toast = useToast();
     const currentUser = UserModel.getInstance().getCurrentUser();
 
-    // All state declarations
+    // UI state
     const [showReorderMode, setShowReorderMode] = useState(false);
-    const [tempScores, setTempScores] = useState<Record<string, string>>({});
-    const [scoreErrors, setScoreErrors] = useState<Record<string, string>>({});
+    const [scoreInput, setScoreInput] = useState('');
+    const [scoreError, setScoreError] = useState<string | undefined>();
     const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
-    const [calculatorOpen, setCalculatorOpen] = useState<string | null>(null);
-    const [historyPlayer, setHistoryPlayer] = useState<Player | null>(null);
-    const [autoAdvance, setAutoAdvance] = useStoredFlag(`autoAdvance:${searchParams.gameId}`);
+    const [calculatorOpen, setCalculatorOpen] = useState(false);
+    const [historyPlayerId, setHistoryPlayerId] = useState<string | null>(null);
+    const [playerToRemove, setPlayerToRemove] = useState<Player | null>(null);
+    const [autoAdvance, setAutoAdvance] = useStoredFlag(`autoAdvance:${gameId}`);
     const [editingWinCondition, setEditingWinCondition] = useState(false);
     const [tempWinCondition, setTempWinCondition] = useState<string>('');
     const [showSettings, setShowSettings] = useState(false);
     const [isAdminMode, setIsAdminMode] = useState(false);
 
-    // All React Query hooks
-    const {data: game, isLoading} = useGameState(searchParams.gameId);
+    // Server state
+    const {data: game, isLoading} = useGameState(gameId);
     const submitScoreMutation = useSubmitScore();
     const nextRoundMutation = useNextRound();
     const resetRoundMutation = useResetRound();
@@ -69,88 +80,71 @@ export function GamePage() {
     const leaveLobbyMutation = useLeaveLobby();
     const submitWinConditionMutation = useSubmitWinCondition();
     const updateHistoryScoreMutation = useUpdateHistoryScore();
-    const queryClient = useQueryClient();
     const addPlayerMutation = useAddPlayerToGame();
     const removePlayerMutation = useRemovePlayerFromGame();
     const submitScoreForPlayerMutation = useSubmitScoreForPlayer();
+    const queryClient = useQueryClient();
 
-    // SSE subscription
-    useGameEvents(searchParams.gameId);
+    // Live updates, plus a re-sync whenever the user comes back to the tab
+    useGameEvents(gameId);
+    useRefetchOnReturn(useCallback(() => {
+        if (gameId) void queryClient.invalidateQueries({queryKey: queryKeys.game(gameId)});
+    }, [queryClient, gameId]));
 
-    // All memoized computed values
-    const allPlayersSubmitted = useMemo(
-        () => game?.players.every((p: Player) => p.hasSubmitted) || false,
-        [game?.players]
-    );
+    const {
+        allPlayersSubmitted,
+        submittedCount,
+        currentUserPlayer,
+        hasCurrentUserSubmitted,
+        currentDealer,
+        highestTotalScore,
+    } = useMemo(() => deriveGameState(game, currentUser?.id), [game, currentUser?.id]);
 
-    const currentUserPlayer = useMemo(
-        () => currentUser && game?.players ? game.players.find((p: Player) => p.userId === currentUser.id) : undefined,
-        [game?.players, currentUser]
-    );
+    // Follow the live game state, so the modal shows updated scores
+    const historyPlayer = game?.players.find(p => p.userId === historyPlayerId) ?? null;
 
-    const hasCurrentUserSubmitted = useMemo(
-        () => currentUserPlayer?.hasSubmitted || false,
-        [currentUserPlayer?.hasSubmitted]
-    );
+    const showError = useCallback((fallback: string, error: unknown) => {
+        logger.error(fallback, error);
+        toast.error(error instanceof Error && error.message ? error.message : fallback);
+    }, [toast]);
 
-    const submittedCount = useMemo(
-        () => game?.players.filter((p: Player) => p.hasSubmitted).length || 0,
-        [game?.players]
-    );
-
-    const currentDealer = useMemo(
-        () => game?.players.find((p: Player) => p.userId === game?.currentDealer),
-        [game?.players, game?.currentDealer]
-    );
-
-    const highestTotalScore = useMemo(
-        () => game?.players.length ? Math.max(...game.players.map((p: Player) => p.totalScore)) : 0,
-        [game?.players]
-    );
-
-    const handleNextRound = useCallback(async () => {
-        if (!searchParams.gameId) return;
+    const advanceRound = useCallback(async ({silent}: {silent: boolean}) => {
+        if (!gameId) return;
         try {
-            await nextRoundMutation.mutateAsync(searchParams.gameId);
+            await nextRoundMutation.mutateAsync(gameId);
         } catch (error) {
-            console.error('Failed to advance round:', error);
+            // With auto-advance, every client requests the next round and all but one lose the race
+            if (silent) {
+                logger.debug('Auto-advance skipped:', error);
+            } else {
+                showError('Failed to start the next round', error);
+            }
         }
-    }, [nextRoundMutation, searchParams.gameId]);
+    }, [nextRoundMutation, gameId, showError]);
+
+    const handleNextRound = useCallback(() => advanceRound({silent: false}), [advanceRound]);
+
+    useAutoAdvance({
+        enabled: autoAdvance && !game?.isFinished,
+        ready: allPlayersSubmitted,
+        onAdvance: useCallback(() => void advanceRound({silent: true}), [advanceRound]),
+    });
 
     const handleLeaveLobby = useCallback(async () => {
-        if (!currentUser) return;
-        if (!searchParams.lobbyId) {
-            await navigate({to: "/lobby"});
-            return;
+        if (searchParams.lobbyId) {
+            try {
+                await leaveLobbyMutation.mutateAsync({lobbyId: searchParams.lobbyId});
+            } catch (error) {
+                logger.error('Failed to leave lobby:', error);
+            }
         }
-
-        try {
-            await leaveLobbyMutation.mutateAsync({
-                lobbyId: searchParams.lobbyId,
-                userId: currentUser.id,
-            });
-            await navigate({to: "/lobby"});
-        } catch (error) {
-            console.error('[handleLeaveLobby] Error:', error);
-            await navigate({to: "/lobby"});
-        }
-    }, [currentUser, searchParams.lobbyId, leaveLobbyMutation, navigate]);
+        await navigate({to: "/lobby"});
+    }, [searchParams.lobbyId, leaveLobbyMutation, navigate]);
 
     const handleUpdateHistoryScore = useCallback(async (roundIndex: number, newScore: number) => {
-        if (!currentUser || !searchParams.gameId) return;
-
-        try {
-            await updateHistoryScoreMutation.mutateAsync({
-                gameId: searchParams.gameId,
-                playerId: currentUser.id,
-                roundIndex,
-                newScore,
-            });
-        } catch (error) {
-            console.error('[handleUpdateHistoryScore] Error:', error);
-            throw error;
-        }
-    }, [currentUser, searchParams.gameId, updateHistoryScoreMutation]);
+        if (!gameId) return;
+        await updateHistoryScoreMutation.mutateAsync({gameId, roundIndex, newScore});
+    }, [gameId, updateHistoryScoreMutation]);
 
     const handleWinConditionEdit = useCallback(() => {
         setTempWinCondition(game?.winCondition?.toString() || '1000');
@@ -158,128 +152,68 @@ export function GamePage() {
     }, [game?.winCondition]);
 
     const handleWinConditionSubmit = useCallback(async () => {
-        if (!searchParams.gameId) return;
+        if (!gameId) return;
 
-        const value = parseInt(tempWinCondition, 10);
-        if (isNaN(value) || value < 100 || value > 10000) {
-            alert('Win condition must be between 100 and 10000');
+        const value = Number(tempWinCondition);
+        const error = validateWinCondition(value);
+        if (error) {
+            toast.error(error);
             return;
         }
 
         try {
-            await submitWinConditionMutation.mutateAsync({
-                gameId: searchParams.gameId,
-                winCondition: value,
-            });
+            await submitWinConditionMutation.mutateAsync({gameId, winCondition: value});
             setEditingWinCondition(false);
         } catch (error) {
-            console.error('Failed to update win condition:', error);
-            alert('Failed to update win condition');
+            showError('Failed to update win condition', error);
         }
-    }, [tempWinCondition, submitWinConditionMutation, searchParams.gameId]);
+    }, [tempWinCondition, submitWinConditionMutation, gameId, toast, showError]);
 
     const handleWinConditionCancel = useCallback(() => {
         setEditingWinCondition(false);
         setTempWinCondition('');
     }, []);
 
-    const handleScoreInput = useCallback((playerId: string, value: string) => {
-        if (currentUserPlayer?.userId !== playerId) return;
+    const handleScoreInput = useCallback((value: string) => {
+        if (!isScoreInput(value)) return;
+        setScoreInput(value);
+        // Only complain about a finished number, not while typing "" or "-"
+        const score = parseScore(value);
+        setScoreError(Number.isNaN(score) ? undefined : validateScore(score) ?? undefined);
+    }, []);
 
-        if (value === '') {
-            setTempScores(prev => ({...prev, [playerId]: value}));
-            setScoreErrors(prev => {
-                const newErrors = {...prev};
-                delete newErrors[playerId];
-                return newErrors;
-            });
-            return;
-        }
-        if (!/^(-?\d*)$/.test(value)) return;
+    const handleSubmitScore = useCallback(async (directScore?: number) => {
+        if (!gameId) return;
 
-        const numericValue = parseInt(value, 10);
-
-        if (numericValue % 5 !== 0) {
-            setScoreErrors(prev => ({
-                ...prev,
-                [playerId]: 'Score must be divisible by 5'
-            }));
-        } else {
-            setScoreErrors(prev => {
-                const newErrors = {...prev};
-                delete newErrors[playerId];
-                return newErrors;
-            });
-        }
-
-        setTempScores(prev => ({...prev, [playerId]: value}));
-    }, [currentUserPlayer?.userId]);
-
-    const handleSubmitScore = useCallback(async (playerId: string, directScore?: number) => {
-        if (!searchParams.gameId) return;
-
-        const scoreValue =
-            typeof directScore === 'number'
-                ? directScore
-                : parseInt(tempScores[playerId] || '0');
-
-        if (isNaN(scoreValue)) {
-            setScoreErrors(prev => ({
-                ...prev,
-                [playerId]: 'Please enter a valid number',
-            }));
-            return;
-        }
-
-        if (scoreValue % 5 !== 0) {
-            setScoreErrors(prev => ({
-                ...prev,
-                [playerId]: 'Score must be divisible by 5',
-            }));
+        // An empty input submits 0
+        const score = typeof directScore === 'number' ? directScore : parseScore(scoreInput || '0');
+        const error = validateScore(score);
+        if (error) {
+            setScoreError(error);
             return;
         }
 
         try {
-            await submitScoreMutation.mutateAsync({
-                gameId: searchParams.gameId,
-                playerId,
-                score: scoreValue,
-            });
-
-            setTempScores(prev => {
-                const next = {...prev};
-                delete next[playerId];
-                return next;
-            });
-
-            setScoreErrors(prev => {
-                const next = {...prev};
-                delete next[playerId];
-                return next;
-            });
+            await submitScoreMutation.mutateAsync({gameId, score});
+            setScoreInput('');
+            setScoreError(undefined);
         } catch (error) {
-            console.error('Failed to submit score:', error);
-            setScoreErrors(prev => ({
-                ...prev,
-                [playerId]: 'Failed to submit score',
-            }));
+            logger.error('Failed to submit score:', error);
+            setScoreError(error instanceof Error && error.message ? error.message : 'Failed to submit score');
         }
-    }, [tempScores, submitScoreMutation, searchParams.gameId]);
+    }, [scoreInput, submitScoreMutation, gameId]);
 
     const handleResetRound = useCallback(async () => {
-        if (!currentUser || !searchParams.gameId) return;
+        if (!gameId) return;
 
         try {
-            await resetRoundMutation.mutateAsync({
-                gameId: searchParams.gameId,
-                userId: currentUser.id,
-            });
-            setTempScores({});
-            setScoreErrors({});
+            await resetRoundMutation.mutateAsync({gameId});
+            setScoreInput('');
+            setScoreError(undefined);
         } catch (error) {
-            console.error('Failed to reset round:', error);
+            showError('Failed to reset the round', error);
         }
-    }, [resetRoundMutation, searchParams.gameId, currentUser]);
+    }, [resetRoundMutation, gameId, showError]);
 
     const handleDragStart = useCallback((e: React.DragEvent, index: number) => {
         setDraggedIndex(index);
@@ -292,133 +226,58 @@ export function GamePage() {
 
     const handleDrop = useCallback(async (e: React.DragEvent, toIndex: number) => {
         e.preventDefault();
-        if (draggedIndex === null || draggedIndex === toIndex || !currentUser || !searchParams.gameId) return;
+        if (draggedIndex === null || draggedIndex === toIndex || !gameId) return;
 
         try {
-            await reorderPlayersMutation.mutateAsync({
-                gameId: searchParams.gameId,
-                fromIndex: draggedIndex,
-                toIndex,
-                userId: currentUser.id,
-            });
+            await reorderPlayersMutation.mutateAsync({gameId, fromIndex: draggedIndex, toIndex});
         } catch (error) {
-            console.error('Failed to reorder players:', error);
+            showError('Failed to reorder players', error);
         }
         setDraggedIndex(null);
-    }, [draggedIndex, reorderPlayersMutation, searchParams.gameId, currentUser]);
+    }, [draggedIndex, reorderPlayersMutation, gameId, showError]);
 
     const handleToggleAdminMode = useCallback(() => {
         setIsAdminMode(prev => !prev);
     }, []);
 
     const handleAddPlayer = useCallback(async (playerName: string) => {
-        if (!searchParams.gameId) return;
+        if (!gameId) return;
 
         try {
-            await addPlayerMutation.mutateAsync({
-                gameId: searchParams.gameId,
-                playerName,
-            });
+            await addPlayerMutation.mutateAsync({gameId, playerName});
         } catch (error) {
-            console.error('Failed to add player:', error);
-            alert('Failed to add player. Please try again.');
+            showError('Failed to add player', error);
         }
-    }, [addPlayerMutation, searchParams.gameId]);
+    }, [addPlayerMutation, gameId, showError]);
 
-    const handleRemovePlayer = useCallback(async (playerId: string) => {
-        if (!searchParams.gameId) return;
+    const handleRemovePlayer = useCallback((playerId: string) => {
+        setPlayerToRemove(game?.players.find(p => p.userId === playerId) ?? null);
+    }, [game?.players]);
 
-        const player = game?.players.find(p => p.userId === playerId);
-        if (!player) return;
-
-        const confirmed = window.confirm(
-            `Are you sure you want to remove ${player.name} from the game?`
-        );
-
-        if (!confirmed) return;
+    const confirmRemovePlayer = useCallback(async () => {
+        if (!gameId || !playerToRemove) return;
 
         try {
-            await removePlayerMutation.mutateAsync({
-                gameId: searchParams.gameId,
-                playerId,
-            });
+            await removePlayerMutation.mutateAsync({gameId, playerId: playerToRemove.userId});
+            setPlayerToRemove(null);
         } catch (error) {
-            console.error('Failed to remove player:', error);
-            alert('Failed to remove player. Please try again.');
+            showError('Failed to remove player', error);
         }
-    }, [removePlayerMutation, searchParams.gameId, game?.players]);
+    }, [removePlayerMutation, gameId, playerToRemove, showError]);
 
     const handleSubmitScoreForPlayer = useCallback(async (playerId: string, score: number) => {
-        if (!searchParams.gameId) return;
+        if (!gameId) return;
 
         try {
-            await submitScoreForPlayerMutation.mutateAsync({
-                gameId: searchParams.gameId,
-                playerId,
-                score,
-            });
+            await submitScoreForPlayerMutation.mutateAsync({gameId, playerId, score});
         } catch (error) {
-            console.error('Failed to submit score:', error);
-            alert('Failed to submit score. Please try again.');
+            showError('Failed to submit score', error);
         }
-    }, [submitScoreForPlayerMutation, searchParams.gameId]);
-
-    // All side effects
-    useEffect(() => {
-        if (!autoAdvance || !allPlayersSubmitted || game?.isFinished) return;
-        const timer = setTimeout(handleNextRound, 1500);
-        return () => clearTimeout(timer);
-    }, [autoAdvance, allPlayersSubmitted, game?.isFinished, handleNextRound]);
-
-    useEffect(() => {
-        if (historyPlayer && game) {
-            const updatedPlayer = game.players.find(
-                (p: Player) => p.userId === historyPlayer.userId
-            );
-            if (updatedPlayer) {
-                setHistoryPlayer(updatedPlayer);
-            }
-        }
-    }, [game, historyPlayer]);
-
-
-    useEffect(() => {
-      if (!searchParams.gameId) return;
-        const handleVisibilityChange = () => {
-          if (document.visibilityState === "visible") {
-            // Force re-sync with server
-            void queryClient.invalidateQueries({
-                queryKey: ["game", searchParams.gameId],
-              });
-          }
-        };
-
-      document.addEventListener("visibilitychange", handleVisibilityChange);
-        return () => {
-          document.removeEventListener("visibilitychange", handleVisibilityChange);
-      };
-    }, [queryClient, searchParams.gameId]);
-
-    
-    useEffect(() => {
-        if (!searchParams.gameId) return;
-
-        const handleFocus = () => {
-            void queryClient.invalidateQueries({
-                queryKey: ["game", searchParams.gameId],
-            });
-        };
-
-        window.addEventListener("focus", handleFocus);
-        return () => {
-            window.removeEventListener("focus", handleFocus);
-        };
-    }, [queryClient, searchParams.gameId]);
+    }, [submitScoreForPlayerMutation, gameId, showError]);
 
     // Early returns AFTER all hooks
     if (!currentUser) {
-        void navigate({to: "/"});
-        return null;
+        return <Navigate to="/"/>;
     }
 
     if (isLoading) {
@@ -431,7 +290,7 @@ export function GamePage() {
         );
     }
 
-    if (!game || !searchParams.gameId) {
+    if (!game || !gameId) {
         return (
             <div className="flex items-center justify-center h-screen">
                 <Text size="lg" className="text-red-400">Game not found</Text>
@@ -589,12 +448,12 @@ export function GamePage() {
                             {!game.isFinished && !hasCurrentUserSubmitted && currentUserPlayer && !showReorderMode && (
                                 <ScoreInput
                                     currentUserId={currentUser.id}
-                                    tempScore={tempScores[currentUser.id] || ''}
-                                    scoreError={scoreErrors[currentUser.id]}
+                                    tempScore={scoreInput}
+                                    scoreError={scoreError}
                                     isPending={submitScoreMutation.isPending}
-                                    onScoreInput={(value) => handleScoreInput(currentUser.id, value)}
-                                    onCalculatorOpen={() => setCalculatorOpen(currentUser.id)}
-                                    onSubmit={() => handleSubmitScore(currentUser.id)}
+                                    onScoreInput={handleScoreInput}
+                                    onCalculatorOpen={() => setCalculatorOpen(true)}
+                                    onSubmit={() => handleSubmitScore()}
                                 />
                             )}
                             <div className="space-y-3">
@@ -614,7 +473,7 @@ export function GamePage() {
                                             onDragStart={handleDragStart}
                                             onDragOver={handleDragOver}
                                             onDrop={handleDrop}
-                                            onClick={() => setHistoryPlayer(player)}
+                                            onClick={() => setHistoryPlayerId(player.userId)}
                                         />
                                     );
                                 })}
@@ -666,10 +525,10 @@ export function GamePage() {
 
                         {currentUserPlayer && (
                             <ScoreCalculator
-                                isOpen={calculatorOpen === currentUserPlayer.userId}
-                                onClose={() => setCalculatorOpen(null)}
+                                isOpen={calculatorOpen}
+                                onClose={() => setCalculatorOpen(false)}
                                 onSubmit={(score) => {
-                                    void handleSubmitScore(currentUserPlayer.userId, score);
+                                    void handleSubmitScore(score);
                                 }}
                                 playerName={currentUserPlayer.name || "Player"}
                             />
@@ -677,11 +536,21 @@ export function GamePage() {
 
                         <PlayerHistoryModal
                             isOpen={!!historyPlayer}
-                            onClose={() => setHistoryPlayer(null)}
+                            onClose={() => setHistoryPlayerId(null)}
                             player={historyPlayer}
                             currentUserId={currentUser.id}
-                            gameId={searchParams.gameId}
+                            gameId={gameId}
                             onUpdateScore={handleUpdateHistoryScore}
+                        />
+
+                        <DeleteConfirmationModal
+                            isOpen={!!playerToRemove}
+                            title="Remove player?"
+                            message="Are you sure you want to remove"
+                            itemName={playerToRemove?.name}
+                            onConfirm={() => void confirmRemovePlayer()}
+                            onCancel={() => setPlayerToRemove(null)}
+                            isDeleting={removePlayerMutation.isPending}
                         />
                     </div>
                 </div>
