@@ -43,6 +43,12 @@ describe("ApiClient.request", () => {
         await expect(ApiClient.submitScore("g", 7)).rejects.toThrow("Score must be divisible by 5");
     });
 
+    it("falls back to the HTTP status when the error body is not JSON", async () => {
+        vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response("<html>Not Found</html>", {status: 404})));
+
+        await expect(ApiClient.getCurrentUser()).rejects.toMatchObject({message: "HTTP 404", status: 404});
+    });
+
     it("throws an ApiError carrying the status", async () => {
         mockFetch(403, {message: "nope"});
 
