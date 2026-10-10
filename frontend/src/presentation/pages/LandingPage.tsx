@@ -11,7 +11,8 @@ type AuthMode = 'quick' | 'login' | 'register';
 
 export function LandingPage() {
     const navigate = useNavigate();
-    const [username, setUsername] = useState("");
+    // Pre-fill the tag of an expired session so the user gets back into the same account
+    const [username, setUsername] = useState(() => UserModel.getInstance().getLastFullTag() ?? "");
     const [password, setPassword] = useState("");
     const [authMode, setAuthMode] = useState<AuthMode>('quick');
     const [error, setError] = useState<string | null>(null);
@@ -252,7 +253,7 @@ export function LandingPage() {
                                                 ? 'Username or Tag (e.g., Tim#4523)...'
                                                 : 'Choose your username...'
                                     }
-                                    maxLength={20}
+                                    maxLength={authMode === 'register' ? 20 : 25}
                                     className="text-white bg-white/5 border-white/30 focus:border-purple-400 focus:ring-purple-400/50 placeholder-gray-400 transition-all duration-300 hover:bg-white/10 text-center text-lg py-3"
                                     disabled={isPending}
                                 />

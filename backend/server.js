@@ -4,8 +4,13 @@ const express = require('express');
 const cors = require('cors');
 const cookieParser = require('cookie-parser');
 const http = require('http');
+const mongoose = require('mongoose');
 const routes = require('./routes');
 const connectDB = require("./config/database");
+const EventService = require('./service/EventService');
+
+// Strip query operators like { $ne: ... } from user input used in query filters (NoSQL injection)
+mongoose.set('sanitizeFilter', true);
 
 const serverPort = 3501;
 const app = express();
@@ -49,13 +54,12 @@ if (process.env.NODE_ENV === 'development') {
 }
 
 // Body + cookies
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+app.use(express.json({ limit: '10kb' }));
 app.use(cookieParser());
 
-// Logging
+// Logging (path only: bodies contain passwords and query strings may contain session ids)
 app.use((req, res, next) => {
-    console.log(`${req.method} ${req.url}`, 'Body:', req.body);
+    console.log(`${req.method} ${req.path}`);
     next();
 });
 
@@ -66,12 +70,33 @@ app.use(routes);
 
 // Error handling
 app.use((err, req, res, next) => {
-    console.error('Error:', err);
-    res.status(err.status || 500).json({
-        message: err.message || 'Internal Server Error'
+    const status = err.status || err.statusCode || 500;
+    if (status >= 500) {
+        console.error('Error:', err);
+    }
+    res.status(status).json({
+        message: status >= 500 ? 'Internal Server Error' : err.message
     });
 });
 
-http.createServer(app).listen(serverPort, () => {
+const server = http.createServer(app).listen(serverPort, () => {
     console.log(`Server is listening on port ${serverPort}`);
 });
+
+process.on('unhandledRejection', (reason) => {
+    console.error('Unhandled promise rejection:', reason);
+});
+
+async function shutdown(signal) {
+    console.log(`${signal} received, shutting down`);
+    EventService.shutdown();
+    server.close();
+    try {
+        await mongoose.connection.close();
+    } finally {
+        process.exit(0);
+    }
+}
+
+process.on('SIGINT', () => shutdown('SIGINT'));
+process.on('SIGTERM', () => shutdown('SIGTERM'));

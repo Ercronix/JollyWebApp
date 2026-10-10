@@ -217,6 +217,13 @@ class GamesService {
         });
     }
 
+    /**
+     * Whether userId belongs to a real (non-temporary) player of the game
+     */
+    isPlayer(game, userId) {
+        return game.players.some(p => !p.isTemporary && p.userId.toString() === userId.toString());
+    }
+
     allPlayersSubmitted(game) {
         return game.players.every(p => p.hasSubmitted);
     }

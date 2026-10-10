@@ -28,6 +28,10 @@ const playerSchema = new mongoose.Schema({
     pointsHistory: {
         type: [Number],
         default: []
+    },
+    isTemporary: {
+        type: Boolean,
+        default: false
     }
 }, { _id: false });
 
@@ -66,4 +70,4 @@ const gameSchema = new mongoose.Schema({
     }
 });
 
-module.exports = mongoose.model('Game', gameSchema);
+module.exports = mongoose.model('Game', gameSchema);

@@ -11,6 +11,7 @@ import type {
     GameEvent,
     SubmitWinConditionResponse,
 } from '@/types';
+import { UserModel } from '@/core/models/UserModel';
 
 const DEFAULT_DEV_API = 'http://localhost:3501';
 const DEFAULT_PROD_API = 'https://jolly-api.timmornhinweg.de';
@@ -50,6 +51,15 @@ export class ApiClient {
             },
             credentials: 'include',
         });
+
+        // Session expired or invalid: drop the stale local user and send them to login.
+        // /users/* endpoints handle 401 themselves (login errors, the /users/me check).
+        if (response.status === 401 && !endpoint.startsWith('/users/')) {
+            UserModel.getInstance().expireSession();
+            if (window.location.pathname !== '/') {
+                window.location.assign('/');
+            }
+        }
 
         if (!response.ok) {
             const error = await response.json().catch(() => ({ message: 'Unknown error' }));
