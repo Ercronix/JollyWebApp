@@ -59,6 +59,15 @@ describe('register', () => {
         await request(app).post('/users/register').send({ username: 'Carol', password: 'other1' }).expect(409);
     });
 
+    it('rejects one of two concurrent registrations of the same name with 409', async () => {
+        const results = await Promise.all([
+            request(app).post('/users/register').send({ username: 'Carol', password: 'secret1' }),
+            request(app).post('/users/register').send({ username: 'Carol', password: 'other1' }),
+        ]);
+
+        expect(results.map(r => r.status).sort()).toEqual([200, 409]);
+    });
+
     it('rejects names containing "#" and too short passwords', async () => {
         await request(app).post('/users/register').send({ username: 'a#1', password: 'secret1' }).expect(400);
         await request(app).post('/users/register').send({ username: 'Dave', password: 'abc' }).expect(400);
@@ -113,5 +122,75 @@ describe('sessions', () => {
     ])('requires a session for %s %s', async (method, path) => {
         await request(app)[method.toLowerCase()](path).expect(401);
         await asUser('not-a-real-session', null)[method.toLowerCase()](path).expect(401);
+    });
+});
+
+describe('securing an account', () => {
+    it('adds a password while keeping the tag', async () => {
+        const bob = await loginAs('Bob');
+
+        const res = await bob.post('/users/secure', { password: 'secret1' }).expect(200);
+
+        expect(res.body).toMatchObject({ id: bob.user.id, fullTag: bob.user.fullTag, hasPassword: true });
+        const login = await request(app).post('/users/login').send({ username: 'Bob', password: 'secret1' }).expect(200);
+        expect(login.body.user.id).toBe(bob.user.id);
+        await request(app).post('/users/login').send({ username: bob.user.fullTag }).expect(403);
+    });
+
+    it('refuses an account that already has a password', async () => {
+        const bob = await loginAs('Bob');
+        await bob.post('/users/secure', { password: 'secret1' }).expect(200);
+
+        await bob.post('/users/secure', { password: 'secret2' }).expect(409);
+    });
+
+    it('refuses a username another account already protected', async () => {
+        await request(app).post('/users/register').send({ username: 'Bob', password: 'pw1234' }).expect(200);
+        const bob = await loginAs('Bob');
+
+        await bob.post('/users/secure', { password: 'secret1' }).expect(409);
+    });
+
+    // Review finding: someone who logged in with a leaked tag must lose access once the account is secured
+    it('logs out every other session of the account', async () => {
+        const bob = await loginAs('Bob');
+        const intruder = (await request(app).post('/users/login').send({ username: bob.user.fullTag }).expect(200)).body;
+
+        await bob.post('/users/secure', { password: 'secret1' }).expect(200);
+
+        await request(app).get('/users/me').set('x-session-id', intruder.sessionId).expect(401);
+        await bob.get('/users/me').expect(200);
+    });
+
+    // Review finding: two accounts with the same name securing at once must not both get a password
+    it('lets only one of two same-named accounts secure the name at the same time', async () => {
+        const first = await loginAs('Bob');
+        const second = await loginAs('Bob');
+
+        const results = await Promise.all([
+            first.post('/users/secure', { password: 'secret1' }),
+            second.post('/users/secure', { password: 'secret2' }),
+        ]);
+
+        expect(results.map(r => r.status).sort()).toEqual([200, 409]);
+    });
+
+    it('rejects a short password', async () => {
+        const bob = await loginAs('Bob');
+
+        await bob.post('/users/secure', { password: 'abc' }).expect(400);
+    });
+
+    it('requires a session', async () => {
+        await request(app).post('/users/secure').send({ password: 'secret1' }).expect(401);
+    });
+
+    it('reports whether the account has a password', async () => {
+        const bob = await loginAs('Bob');
+        expect(bob.user.hasPassword).toBe(false);
+
+        const me = await bob.get('/users/me').expect(200);
+
+        expect(me.body.hasPassword).toBe(false);
     });
 });

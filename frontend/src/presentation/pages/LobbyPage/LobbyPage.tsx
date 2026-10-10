@@ -7,6 +7,8 @@ import {DeleteConfirmationModal} from "@/presentation/components/DeleteConfirmat
 import {ArchiveConfirmationModal} from "@/presentation/components/ArchiveConfirmationModal";
 import { JoinByCodeModal } from "@/presentation/components/JoinByCodeModal";
 import { PrivateLobbyInfo } from "@/presentation/components/PrivateLobbyInfo";
+import { SecureAccountModal } from "@/presentation/components/SecureAccountModal";
+import { useLogoutFlow } from "@/core/hooks/useLogoutFlow";
 import {useNavigate} from "@tanstack/react-router";
 import {UserModel} from "@/core/models/UserModel";
 import type {Lobby} from "@/types";
@@ -17,6 +19,7 @@ import {
     useLogout,
     useDeleteLobby,
     useArchiveLobby,
+    useCurrentUser,
 } from "@/core/api/hooks";
 import {logger} from "@/utils/logger";
 
@@ -26,7 +29,8 @@ export function LobbyPage() {
     const [isPrivate, setIsPrivate] = useState(false);
     const [showJoinByCode, setShowJoinByCode] = useState(false);
     const [createdPrivateLobby, setCreatedPrivateLobby] = useState<Lobby | null>(null);
-    const [currentUser, setCurrentUser] = useState(() => UserModel.getInstance().getCurrentUser());
+    const [storedUser, setStoredUser] = useState(() => UserModel.getInstance().getCurrentUser());
+    const [showSecureAccount, setShowSecureAccount] = useState(false);
     const [deleteConfirmation, setDeleteConfirmation] = useState<{ show: boolean; lobby: Lobby | null }>({
         show: false,
         lobby: null,
@@ -42,6 +46,13 @@ export function LobbyPage() {
     const logoutMutation = useLogout();
     const deleteLobbyMutation = useDeleteLobby();
     const archiveLobbyMutation = useArchiveLobby();
+    const {data: me} = useCurrentUser();
+    // Prefer the server's copy: users stored before hasPassword existed lack it
+    const currentUser = me ?? storedUser;
+
+    useEffect(() => {
+        if (me) UserModel.getInstance().setUser(me);
+    }, [me]);
 
     // Check if user is logged in
     useEffect(() => {
@@ -166,11 +177,16 @@ export function LobbyPage() {
         try {
             await logoutMutation.mutateAsync();
             UserModel.getInstance().clearUser();
-            setCurrentUser(null);
+            setStoredUser(null);
             void navigate({to: "/"});
         } catch (error) {
             logger.error('Logout failed:', error);
         }
+    };
+    const logoutFlow = useLogoutFlow(currentUser, handleLogout);
+
+    const handleSecured = () => {
+        setStoredUser(UserModel.getInstance().getCurrentUser());
     };
 
     if (!currentUser) {
@@ -206,6 +222,32 @@ export function LobbyPage() {
                 isArchiving={archiveLobbyMutation.isPending}
             />
 
+            <SecureAccountModal
+                isOpen={showSecureAccount}
+                fullTag={currentUser.fullTag}
+                onClose={() => setShowSecureAccount(false)}
+                onSecured={handleSecured}
+            />
+
+            <DeleteConfirmationModal
+                isOpen={logoutFlow.showWarning}
+                title="Log out without a password?"
+                message="Without your tag you can't get back to your private games. Log out as"
+                itemName={currentUser.fullTag}
+                onConfirm={() => void logoutFlow.confirmLogout()}
+                onCancel={logoutFlow.cancel}
+                isDeleting={logoutMutation.isPending}
+                confirmLabel="Log out anyway"
+                confirmingLabel="Logging out..."
+                extraAction={{
+                    label: "Set password",
+                    onClick: () => {
+                        logoutFlow.cancel();
+                        setShowSecureAccount(true);
+                    },
+                }}
+            />
+
             {/* Header with User Info */}
             <div className="text-center space-y-6 animate-in fade-in duration-1000">
                 <div className="relative">
@@ -229,6 +271,17 @@ export function LobbyPage() {
                         Join a lobby or create one to start
                     </Text>
                 </div>
+
+                {currentUser.hasPassword === false && (
+                    <div className="flex flex-col sm:flex-row items-center justify-center gap-3 px-4 py-3 rounded-xl bg-orange-500/10 border border-orange-500/30">
+                        <Text size="sm" className="text-orange-200">
+                            Playing as <span className="font-semibold">{currentUser.fullTag}</span> without a password.
+                        </Text>
+                        <Button colorscheme="pinkToOrange" variant="outline" size="sm" onClick={() => setShowSecureAccount(true)}>
+                            Secure account
+                        </Button>
+                    </div>
+                )}
 
                 <div className="flex justify-center gap-8 mt-8">
                     <div className="text-center group">
@@ -408,7 +461,7 @@ export function LobbyPage() {
                     colorscheme="pinkToOrange"
                     variant="ghost"
                     size="sm"
-                    onClick={handleLogout}
+                    onClick={logoutFlow.requestLogout}
                     className="hover:scale-110 transition-transform"
                     disabled={logoutMutation.isPending}
                 >

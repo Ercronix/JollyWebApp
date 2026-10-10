@@ -18,6 +18,7 @@ export interface Game {
     createdAt: string;
     isFinished: boolean;
     winner: string | null;
+    ownerId?: string; // the lobby admin; only in GET /api/games/:id responses
 }
 
 export interface SubmitScoreResponse {
@@ -46,7 +47,8 @@ export type GameEventType =
     | 'GAME_ENDED'
     | 'WIN_CONDITION_SET'
     | 'HISTORY_SCORE_UPDATED'
-    | 'PLAYER_REMOVED';
+    | 'PLAYER_REMOVED'
+    | 'OWNER_CHANGED';
 
 export interface GameEvent {
     type: GameEventType;
@@ -63,4 +65,6 @@ export interface GameEvent {
         totalScore: number;
     };
     allPlayersSubmitted?: boolean;
+    ownerId?: string;
+    ownerName?: string;
 }

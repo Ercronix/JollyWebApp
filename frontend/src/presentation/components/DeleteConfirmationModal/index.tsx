@@ -10,6 +10,10 @@ interface DeleteConfirmationModalProps {
     onConfirm: () => void;
     onCancel: () => void;
     isDeleting?: boolean;
+    confirmLabel?: string;
+    confirmingLabel?: string;
+    // An alternative to confirming, e.g. "Set password" instead of logging out
+    extraAction?: { label: string; onClick: () => void };
 }
 
 export function DeleteConfirmationModal({
@@ -20,6 +24,9 @@ export function DeleteConfirmationModal({
                                             onConfirm,
                                             onCancel,
                                             isDeleting = false,
+                                            confirmLabel = "Delete",
+                                            confirmingLabel = "Deleting...",
+                                            extraAction,
                                         }: DeleteConfirmationModalProps) {
     if (!isOpen) return null;
 
@@ -45,6 +52,18 @@ export function DeleteConfirmationModal({
                         </Text>
                     </div>
 
+                    {extraAction && (
+                        <Button
+                            colorscheme="purpleToBlue"
+                            variant="solid"
+                            className="w-full"
+                            onClick={extraAction.onClick}
+                            disabled={isDeleting}
+                        >
+                            {extraAction.label}
+                        </Button>
+                    )}
+
                     <div className="flex gap-3">
                         <Button
                             variant="ghost"
@@ -61,7 +80,7 @@ export function DeleteConfirmationModal({
                             onClick={onConfirm}
                             disabled={isDeleting}
                         >
-                            {isDeleting ? "Deleting..." : "Delete"}
+                            {isDeleting ? confirmingLabel : confirmLabel}
                         </Button>
                     </div>
                 </div>

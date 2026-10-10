@@ -3,6 +3,7 @@
 const crypto = require('crypto');
 const Lobby = require('../models/Lobby');
 const GamesService = require('./GamesService');
+const EventService = require('./EventService');
 const OperationQueue = require('../utils/operationQueue');
 
 class LobbiesService {
@@ -17,6 +18,7 @@ class LobbiesService {
             playerCount: 0,
             players: [],
             createdBy: userId,
+            ownerId: userId,
             archived: false,
             isPrivate: isPrivate
         });
@@ -28,6 +30,7 @@ class LobbiesService {
         if (userId && username) {
             lobby.players.push({ userId, name: username });
             lobby.playerCount = 1;
+            lobby.participants.push(userId);
         }
 
         await lobby.save();
@@ -64,8 +67,56 @@ class LobbiesService {
         const lobbies = await Lobby.find(undefined, undefined, undefined);
 
         return lobbies
-            .filter(lobby => !lobby.isPrivate || this.canManageLobby(lobby, userId))
+            .filter(lobby => this.canViewLobby(lobby, userId))
             .map(lobby => ({ ...this.getLobbyResponse(lobby), archived: !!lobby.archived }));
+    }
+
+    /**
+     * Public lobbies are visible to everyone, private ones to anyone who ever played in them.
+     * createdBy and players cover lobbies from before participants were tracked.
+     */
+    canViewLobby(lobby, userId) {
+        return !lobby.isPrivate
+            || (lobby.participants ?? []).some(id => id.toString() === userId.toString())
+            || this.canManageLobby(lobby, userId);
+    }
+
+    /**
+     * Lobbies from before owners were tracked: the creator while they are still in the lobby,
+     * otherwise the first remaining player
+     */
+    getOwnerId(lobby) {
+        if (lobby.ownerId) return lobby.ownerId.toString();
+        const creator = lobby.createdBy?.toString();
+        if (lobby.players.some(p => p.userId?.toString() === creator)) return creator;
+        return (lobby.players[0]?.userId ?? lobby.createdBy)?.toString();
+    }
+
+    /**
+     * getOwnerId, but saves a derived owner of an old lobby, so it stays put when players come and go
+     */
+    async resolveOwnerId(lobby) {
+        if (lobby.ownerId) return lobby.ownerId.toString();
+        const ownerId = this.getOwnerId(lobby);
+        if (ownerId) {
+            await Lobby.updateOne({ _id: lobby._id, ownerId: null }, { ownerId });
+            lobby.ownerId = ownerId;
+        }
+        return ownerId;
+    }
+
+    /**
+     * The next admin: the earliest-joined lobby player still in the game
+     * (the admin may have removed someone from the game who is still in the lobby)
+     */
+    async pickNextOwner(lobby) {
+        const game = lobby.gameId && await GamesService.getGameById(lobby.gameId);
+        const inGame = (p) => game?.players.some(gp => gp.userId.toString() === p.userId.toString());
+        return lobby.players.find(inGame) ?? lobby.players[0];
+    }
+
+    async getLobbyByGameId(gameId) {
+        return Lobby.findOne({ gameId });
     }
 
     canManageLobby(lobby, userId) {
@@ -85,8 +136,16 @@ class LobbiesService {
                 return { lobby: this.getLobbyResponse(lobby), playerId: userId };
             }
 
+            // Pin the owner of an old lobby before the joiner changes who it would be derived as
+            if (!lobby.ownerId) {
+                lobby.ownerId = this.getOwnerId(lobby);
+            }
+
             lobby.players.push({ userId, name: username });
             lobby.playerCount = lobby.players.length;
+            if (!lobby.participants.some(id => id.toString() === userId.toString())) {
+                lobby.participants.push(userId);
+            }
 
             if (!lobby.gameId || lobby.playerCount === 1) {
                 const game = await GamesService.createGame(lobby._id, lobby.players);
@@ -116,6 +175,10 @@ class LobbiesService {
                 console.log(`[LobbiesService] Player ${userId} not in lobby ${lobbyId}`);
                 return; // Player not in lobby
             }
+            if (!lobby.ownerId) {
+                lobby.ownerId = this.getOwnerId(lobby);
+            }
+            const wasOwner = this.getOwnerId(lobby) === userId.toString();
 
             // Remove player from lobby
             lobby.players.splice(playerIndex, 1);
@@ -137,8 +200,20 @@ class LobbiesService {
                 await Lobby.findByIdAndDelete(lobbyId);
                 console.log(`[LobbiesService] Lobby ${lobbyId} deleted`);
             } else {
+                const newOwner = wasOwner ? await this.pickNextOwner(lobby) : null;
+                if (newOwner) {
+                    lobby.ownerId = newOwner.userId;
+                }
                 await lobby.save();
                 console.log(`[LobbiesService] Lobby ${lobbyId} updated`);
+
+                if (newOwner && lobby.gameId) {
+                    EventService.sendEvent(lobby.gameId.toString(), {
+                        type: 'OWNER_CHANGED',
+                        ownerId: newOwner.userId.toString(),
+                        ownerName: newOwner.name
+                    });
+                }
             }
         });
     }
@@ -246,4 +321,4 @@ class LobbiesService {
     }
 }
 
-module.exports = new LobbiesService();
+module.exports = new LobbiesService();

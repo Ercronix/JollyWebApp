@@ -1,5 +1,5 @@
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
-import {ApiClient} from "./client";
+import {ApiClient, ApiError} from "./client";
 import {UserModel} from "@/core/models/UserModel";
 
 const user = {id: "1", username: "Tim", fullTag: "Tim#4523", createdAt: "2026-01-01"};
@@ -43,6 +43,15 @@ describe("ApiClient.request", () => {
         await expect(ApiClient.submitScore("g", 7)).rejects.toThrow("Score must be divisible by 5");
     });
 
+    it("throws an ApiError carrying the status", async () => {
+        mockFetch(403, {message: "nope"});
+
+        const error = await ApiClient.login("Tim#1").catch((e: unknown) => e);
+
+        expect(error).toBeInstanceOf(ApiError);
+        expect(error).toMatchObject({status: 403, message: "nope"});
+    });
+
     it("expires the local session and redirects to login on 401", async () => {
         mockFetch(401, {message: "Not authenticated"});
 
@@ -60,6 +69,17 @@ describe("ApiClient.request", () => {
 
         expect(UserModel.getInstance().getCurrentUser()).toEqual(user);
         expect(assign).not.toHaveBeenCalled();
+    });
+
+    it("posts the password to /users/secure", async () => {
+        const fetchMock = mockFetch(200, {...user, hasPassword: true});
+
+        await expect(ApiClient.secureAccount("secret1")).resolves.toMatchObject({hasPassword: true});
+
+        const [url, init] = fetchMock.mock.calls[0];
+        expect(url).toMatch(/\/users\/secure$/);
+        expect(init.method).toBe("POST");
+        expect(JSON.parse(init.body)).toEqual({password: "secret1"});
     });
 
     it("returns an empty object for 204 responses", async () => {

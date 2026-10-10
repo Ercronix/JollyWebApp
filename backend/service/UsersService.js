@@ -30,6 +30,7 @@ function toUserResponse(user) {
         id: user._id.toString(),
         username: user.username,
         fullTag: user.fullTag,
+        hasPassword: !!user.password,
         createdAt: user.createdAt
     };
 }
@@ -184,7 +185,15 @@ module.exports.registerUser = async function(rawUsername, rawPassword) {
             password
         });
 
-        await newUser.save();
+        try {
+            await newUser.save();
+        } catch (error) {
+            // A concurrent registration of the same name hit the unique index on protected usernames
+            if (error.code === 11000) {
+                throw { status: 409, message: 'This username is already protected. Please choose a different name or login with your password.' };
+            }
+            throw error;
+        }
 
         return { user: toUserResponse(newUser), sessionId: await createSession(newUser._id) };
 
@@ -192,6 +201,49 @@ module.exports.registerUser = async function(rawUsername, rawPassword) {
         console.error('[UsersService] Registration error:', error.message);
         throw error;
     }
+};
+
+/**
+ * Adds a password to a passwordless account, keeping its tag (and so its games)
+ */
+module.exports.secureAccount = async function(userId, rawPassword, currentSessionId) {
+    const password = validatePassword(rawPassword);
+
+    const user = await User.findById(userId);
+    if (!user) {
+        throw { status: 404, message: 'Account not found' };
+    }
+    if (user.password) {
+        throw { status: 409, message: 'This account already has a password' };
+    }
+
+    // Username + password login looks accounts up by username, so it must stay unambiguous
+    const existingProtected = await User.findOne({
+        username: user.username,
+        password: mongoose.trusted({ $ne: null })
+    });
+    if (existingProtected) {
+        throw { status: 409, message: 'Another account already protects this username with a password' };
+    }
+
+    user.password = password;
+    try {
+        await user.save();
+    } catch (error) {
+        // The unique index on protected usernames catches a concurrent claim of the same name
+        if (error.code === 11000) {
+            throw { status: 409, message: 'Another account already protects this username with a password' };
+        }
+        throw error;
+    }
+
+    // Anyone who got in with the (passwordless) tag loses access now
+    await Session.deleteMany({
+        userId: user._id,
+        sessionId: mongoose.trusted({ $ne: hashSessionId(String(currentSessionId)) })
+    });
+
+    return toUserResponse(user);
 };
 
 /**

@@ -1,5 +1,7 @@
 import { describe, it, expect, beforeEach, beforeAll, afterAll } from 'vitest';
-import { app, loginAs, createLobbyWith } from './helpers.mjs';
+import { app, loginAs, createLobbyWith, requireApp } from './helpers.mjs';
+
+const Lobby = requireApp('../models/Lobby');
 
 let alice, bob, mallory, gameId;
 
@@ -37,6 +39,26 @@ describe('access control', () => {
 
     it('forbids non-players from forcing the next round', async () => {
         await mallory.post(`/admin/games/${gameId}/forceNextRound`).expect(403);
+    });
+
+    it('forbids outsiders from reading a private game', async () => {
+        const { gameId: privateGameId } = await createLobbyWith(alice, [], { isPrivate: true });
+
+        await mallory.get(`/api/games/${privateGameId}`).expect(403);
+        await mallory.get(`/api/games/${privateGameId}/events?sessionId=${mallory.sessionId}`).expect(403);
+    });
+
+    it('lets anyone read a public game', async () => {
+        await mallory.get(`/api/games/${gameId}`).expect(200);
+    });
+
+    it('lets a former participant read a private game', async () => {
+        const { lobby, gameId: privateGameId } = await createLobbyWith(alice, [], { isPrivate: true });
+        await bob.post('/api/lobbies/join-by-code', { accessCode: lobby.accessCode }).expect(200);
+
+        await bob.post(`/api/lobbies/${lobby.id}/leave`).expect(204);
+
+        await bob.get(`/api/games/${privateGameId}`).expect(200);
     });
 
     it('returns 400 for a malformed game id and 404 for an unknown one', async () => {
@@ -113,7 +135,8 @@ describe('rounds', () => {
         await alice.post(`/api/games/${gameId}/submitScore`, { score: 5 }).expect(200);
     });
 
-    it('lets a player force the next round, counting missing scores as 0', async () => {
+    // Review finding: an admin who stops responding (without leaving) must not block the game
+    it('lets any player force the next round, counting missing scores as 0', async () => {
         await alice.post(`/api/games/${gameId}/submitScore`, { score: 10 }).expect(200);
 
         await bob.post(`/admin/games/${gameId}/forceNextRound`).expect(200);
@@ -162,12 +185,12 @@ describe('editing history', () => {
 });
 
 describe('player management', () => {
-    it('adds temporary players that others can submit scores for', async () => {
+    it('adds temporary players that the admin can submit scores for', async () => {
         const res = await alice.post(`/api/games/${gameId}/addPlayer`, { playerName: 'Grandma' }).expect(200);
         const temp = res.body.players.find(p => p.name === 'Grandma');
 
         expect(temp.isTemporary).toBe(true);
-        await bob.post(`/api/games/${gameId}/submitScoreForPlayer`, { playerId: temp.userId, score: 15 }).expect(200);
+        await alice.post(`/api/games/${gameId}/submitScoreForPlayer`, { playerId: temp.userId, score: 15 }).expect(200);
     });
 
     it('gives late-joining players a zero-filled history so they can submit', async () => {
@@ -184,11 +207,13 @@ describe('player management', () => {
     });
 
     it('removes players and hands the dealer role on', async () => {
-        await alice.post(`/api/games/${gameId}/removePlayer`, { playerId: alice.user.id }).expect(200);
+        await alice.post(`/api/games/${gameId}/reorderPlayers`, { fromIndex: 1, toIndex: 0 }).expect(200);
 
-        const after = await (await bob.get(`/api/games/${gameId}`)).body;
-        expect(after.players.map(p => p.userId)).toEqual([bob.user.id]);
-        expect(after.currentDealer).toBe(bob.user.id);
+        await alice.post(`/api/games/${gameId}/removePlayer`, { playerId: bob.user.id }).expect(200);
+
+        const after = (await alice.get(`/api/games/${gameId}`)).body;
+        expect(after.players.map(p => p.userId)).toEqual([alice.user.id]);
+        expect(after.currentDealer).toBe(alice.user.id);
     });
 
     it('reorders players and makes the first one dealer', async () => {
@@ -240,5 +265,34 @@ describe('live events', () => {
 
     it('rejects unauthenticated clients', async () => {
         expect((await firstEvent(`/api/games/${gameId}/events`)).status).toBe(401);
+    });
+});
+
+describe('lobby admin', () => {
+    it('reports the owner in the game state', async () => {
+        expect((await game()).ownerId).toBe(alice.user.id);
+    });
+
+    it.each([
+        ['/api/games/:id/addPlayer', { playerName: 'Ghost' }],
+        ['/api/games/:id/removePlayer', () => ({ playerId: alice.user.id })],
+        ['/api/games/:id/submitScoreForPlayer', () => ({ playerId: alice.user.id, score: 10 })],
+    ])('forbids other players from %s', async (path, body) => {
+        const res = await bob.post(path.replace(':id', gameId), typeof body === 'function' ? body() : body).expect(403);
+
+        expect(res.body.message).toBe('Only the lobby admin can do this');
+    });
+
+    it('does not let the admin remove themselves', async () => {
+        const res = await alice.post(`/api/games/${gameId}/removePlayer`, { playerId: alice.user.id }).expect(400);
+
+        expect(res.body.message).toBe('Use Leave to leave the lobby');
+    });
+
+    it('treats the creator of a lobby from before owners were tracked as admin', async () => {
+        await Lobby.updateOne({ gameId }, { $unset: { ownerId: 1 } });
+
+        await alice.post(`/api/games/${gameId}/addPlayer`, { playerName: 'Ghost' }).expect(200);
+        expect((await game()).ownerId).toBe(alice.user.id);
     });
 });

@@ -40,6 +40,12 @@ module.exports = {
             .catch(e => sendError(res, e));
     },
 
+    secureAccountPOST(req, res) {
+        Default.secureAccountPOST(req.user, req.body, getSessionId(req))
+            .then(r => utils.writeJson(res, r))
+            .catch(e => sendError(res, e));
+    },
+
     createLobbyPOST(req, res) {
         Default.createLobbyPOST(req.user, req.body)
             .then(r => utils.writeJson(res, r, 201))
@@ -77,7 +83,7 @@ module.exports = {
     },
 
     getGameStateGET(req, res) {
-        Default.getGameStateGET(req.params.gameId)
+        Default.getGameStateGET(req.user, req.params.gameId)
             .then(r => utils.writeJson(res, r))
             .catch(e => sendError(res, e));
     },

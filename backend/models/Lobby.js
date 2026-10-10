@@ -18,6 +18,16 @@ const lobbySchema = new mongoose.Schema({
         default: 0
     },
     players: [lobbyPlayerSchema],
+    // Everyone who ever joined; never shrinks, so private games stay in their history
+    participants: [{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User'
+    }],
+    // The lobby admin; passed on when they leave. Older lobbies fall back to createdBy.
+    ownerId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User'
+    },
     createdBy: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'User'

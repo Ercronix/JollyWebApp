@@ -25,6 +25,24 @@ describe("UserModel", () => {
         expect(model.getLastFullTag()).toBe("Tim#4523");
     });
 
+    it("remembers the tag after a manual logout", () => {
+        const model = UserModel.getInstance();
+        model.setUser(user);
+
+        model.clearUser();
+
+        expect(model.getLastFullTag()).toBe("Tim#4523");
+    });
+
+    it("forgets the remembered tag on request", () => {
+        const model = UserModel.getInstance();
+        model.setUser(user);
+
+        model.forgetLastFullTag();
+
+        expect(model.getLastFullTag()).toBeNull();
+    });
+
     it("splits the display name and discriminator", () => {
         const model = UserModel.getInstance();
         model.setUser(user);

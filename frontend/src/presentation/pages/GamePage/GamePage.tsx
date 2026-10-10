@@ -10,13 +10,14 @@ import {MainLayout} from "@/presentation/layout/MainLayout";
 import {UserModel} from "@/core/models/UserModel";
 import {PlayerPointsChart} from "@/presentation/components/PlayerPointsChart";
 import {PrivateLobbyInfo} from "@/presentation/components/PrivateLobbyInfo";
-import type {Player} from "@/types";
+import type {GameEvent, Player} from "@/types";
 import { useQueryClient } from "@tanstack/react-query";
 import {
     useGameState,
     useGameEvents,
     useSubmitScore,
     useNextRound,
+    useForceNextRound,
     useResetRound,
     useReorderPlayers,
     useLeaveLobby,
@@ -75,6 +76,8 @@ export function GamePage() {
     const {data: game, isLoading} = useGameState(gameId);
     const submitScoreMutation = useSubmitScore();
     const nextRoundMutation = useNextRound();
+    const forceNextRoundMutation = useForceNextRound();
+    const [confirmForceNextRound, setConfirmForceNextRound] = useState(false);
     const resetRoundMutation = useResetRound();
     const reorderPlayersMutation = useReorderPlayers();
     const leaveLobbyMutation = useLeaveLobby();
@@ -86,7 +89,11 @@ export function GamePage() {
     const queryClient = useQueryClient();
 
     // Live updates, plus a re-sync whenever the user comes back to the tab
-    useGameEvents(gameId);
+    useGameEvents(gameId, useCallback((event: GameEvent) => {
+        toast.success(event.ownerId === currentUser?.id
+            ? 'You are now the lobby admin'
+            : `${event.ownerName ?? 'Another player'} is now the lobby admin`);
+    }, [toast, currentUser?.id]));
     useRefetchOnReturn(useCallback(() => {
         if (gameId) void queryClient.invalidateQueries({queryKey: queryKeys.game(gameId)});
     }, [queryClient, gameId]));
@@ -98,6 +105,7 @@ export function GamePage() {
         hasCurrentUserSubmitted,
         currentDealer,
         highestTotalScore,
+        isOwner,
     } = useMemo(() => deriveGameState(game, currentUser?.id), [game, currentUser?.id]);
 
     // Follow the live game state, so the modal shows updated scores
@@ -123,6 +131,16 @@ export function GamePage() {
     }, [nextRoundMutation, gameId, showError]);
 
     const handleNextRound = useCallback(() => advanceRound({silent: false}), [advanceRound]);
+
+    const handleForceNextRound = useCallback(async () => {
+        if (!gameId) return;
+        try {
+            await forceNextRoundMutation.mutateAsync(gameId);
+            setConfirmForceNextRound(false);
+        } catch (error) {
+            showError('Failed to start the next round', error);
+        }
+    }, [forceNextRoundMutation, gameId, showError]);
 
     useAutoAdvance({
         enabled: autoAdvance && !game?.isFinished,
@@ -316,16 +334,18 @@ export function GamePage() {
                         )}
                         <GameHeader lobbyName={searchParams.lobbyName}/>
                     </div>
-                        <AdminPanel
-                            isAdminMode={isAdminMode}
-                            onToggleAdminMode={handleToggleAdminMode}
-                            players={game.players}
-                            onAddPlayer={handleAddPlayer}
-                            onRemovePlayer={handleRemovePlayer}
-                            onSubmitScoreForPlayer={handleSubmitScoreForPlayer}
-                            currentRound={game.currentRound}
-                            isFinished={game.isFinished}
-                        />
+                        {isOwner && (
+                            <AdminPanel
+                                isAdminMode={isAdminMode}
+                                onToggleAdminMode={handleToggleAdminMode}
+                                players={game.players}
+                                onAddPlayer={handleAddPlayer}
+                                onRemovePlayer={handleRemovePlayer}
+                                onSubmitScoreForPlayer={handleSubmitScoreForPlayer}
+                                currentRound={game.currentRound}
+                                isFinished={game.isFinished}
+                            />
+                        )}
 
                         {/* Horizontal layout for Win Condition and Settings */}
                         <div className="flex flex-col items-center gap-2">
@@ -435,8 +455,9 @@ export function GamePage() {
                                 allPlayersSubmitted={allPlayersSubmitted}
                                 hasCurrentUserSubmitted={hasCurrentUserSubmitted}
                                 autoAdvance={autoAdvance}
-                                isPending={nextRoundMutation.isPending}
+                                isPending={nextRoundMutation.isPending || forceNextRoundMutation.isPending}
                                 onNextRound={handleNextRound}
+                                onForceNextRound={() => setConfirmForceNextRound(true)}
                             />
                         )}
 
@@ -468,6 +489,7 @@ export function GamePage() {
                                             index={index}
                                             isCurrentUser={isCurrentUser}
                                             isDealer={isDealer}
+                                            isOwner={player.userId === game.ownerId}
                                             isFinished={game.isFinished}
                                             showReorderMode={showReorderMode}
                                             onDragStart={handleDragStart}
@@ -551,6 +573,17 @@ export function GamePage() {
                             onConfirm={() => void confirmRemovePlayer()}
                             onCancel={() => setPlayerToRemove(null)}
                             isDeleting={removePlayerMutation.isPending}
+                        />
+
+                        <DeleteConfirmationModal
+                            isOpen={confirmForceNextRound}
+                            title="Skip missing scores?"
+                            message="Players without a score get 0 this round. Start the next round"
+                            onConfirm={() => void handleForceNextRound()}
+                            onCancel={() => setConfirmForceNextRound(false)}
+                            isDeleting={forceNextRoundMutation.isPending}
+                            confirmLabel="Skip"
+                            confirmingLabel="Skipping..."
                         />
                     </div>
                 </div>
