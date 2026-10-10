@@ -2,8 +2,9 @@
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {ApiClient} from './client';
-import {useEffect} from 'react';
-import type { GameEvent } from '@/types';
+import {useEffect, useRef} from 'react';
+import type { Game, GameEvent } from '@/types';
+import { mergeEventGame } from './gameEvents';
 import { logger } from '@/utils/logger';
 import { UserModel } from '@/core/models/UserModel';
 
@@ -297,13 +298,21 @@ export function useSubmitScoreForPlayer() {
 }
 
 // SSE hook for game events
-export function useGameEvents(gameId: string | undefined) {
+export function useGameEvents(gameId: string | undefined, onOwnerChanged?: (event: GameEvent) => void) {
     const queryClient = useQueryClient();
+    // A ref, so a new callback each render doesn't reopen the EventSource
+    const onOwnerChangedRef = useRef(onOwnerChanged);
+    useEffect(() => {
+        onOwnerChangedRef.current = onOwnerChanged;
+    }, [onOwnerChanged]);
 
     useEffect(() => {
         if (!gameId) return;
 
         logger.debug('Subscribing to game events for gameId:', gameId);
+
+        const setGame = (id: string, game: Game) =>
+            queryClient.setQueryData<Game>(queryKeys.game(id), cached => mergeEventGame(cached, game));
 
         const unsubscribe = ApiClient.subscribeToGameEvents(gameId, (eventData: GameEvent) => {
             logger.debug('Game event received:', eventData);
@@ -325,19 +334,24 @@ export function useGameEvents(gameId: string | undefined) {
                     if (eventData.game) {
                         logger.debug('Updating game state from SSE event:', eventData.type);
                         logger.debug('New game state:', eventData.game);
-                        queryClient.setQueryData(queryKeys.game(gameId), eventData.game);
+                        setGame(gameId, eventData.game);
                         queryClient.invalidateQueries({ queryKey: queryKeys.game(gameId) });
                     }
                     break;
 
                 case 'GAME_ENDED':
                     if (eventData.game) {
-                        queryClient.setQueryData(queryKeys.game(gameId), eventData.game);
+                        setGame(gameId, eventData.game);
                         queryClient.invalidateQueries({ queryKey: queryKeys.game(gameId) });
                     }
                     if (eventData.winner) {
                         logger.debug(`Game ended! Winner: ${eventData.winner.name}`);
                     }
+                    break;
+
+                case 'OWNER_CHANGED':
+                    queryClient.invalidateQueries({ queryKey: queryKeys.game(gameId) });
+                    onOwnerChangedRef.current?.(eventData);
                     break;
 
                 default:

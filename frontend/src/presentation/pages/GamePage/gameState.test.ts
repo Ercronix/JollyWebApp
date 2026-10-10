@@ -60,4 +60,12 @@ describe("deriveGameState", () => {
         expect(spectator.currentUserPlayer).toBeUndefined();
         expect(spectator.hasCurrentUserSubmitted).toBe(false);
     });
+
+    it("knows whether the current user is the lobby admin", () => {
+        const players = [player("a"), player("b")];
+
+        expect(deriveGameState(game(players, {ownerId: "a"}), "a").isOwner).toBe(true);
+        expect(deriveGameState(game(players, {ownerId: "a"}), "b").isOwner).toBe(false);
+        expect(deriveGameState(game(players), "a").isOwner).toBe(false);
+    });
 });

@@ -10,7 +10,7 @@ import {MainLayout} from "@/presentation/layout/MainLayout";
 import {UserModel} from "@/core/models/UserModel";
 import {PlayerPointsChart} from "@/presentation/components/PlayerPointsChart";
 import {PrivateLobbyInfo} from "@/presentation/components/PrivateLobbyInfo";
-import type {Player} from "@/types";
+import type {GameEvent, Player} from "@/types";
 import { useQueryClient } from "@tanstack/react-query";
 import {
     useGameState,
@@ -86,7 +86,11 @@ export function GamePage() {
     const queryClient = useQueryClient();
 
     // Live updates, plus a re-sync whenever the user comes back to the tab
-    useGameEvents(gameId);
+    useGameEvents(gameId, useCallback((event: GameEvent) => {
+        toast.success(event.ownerId === currentUser?.id
+            ? 'You are now the lobby admin'
+            : `${event.ownerName ?? 'Another player'} is now the lobby admin`);
+    }, [toast, currentUser?.id]));
     useRefetchOnReturn(useCallback(() => {
         if (gameId) void queryClient.invalidateQueries({queryKey: queryKeys.game(gameId)});
     }, [queryClient, gameId]));
@@ -98,6 +102,7 @@ export function GamePage() {
         hasCurrentUserSubmitted,
         currentDealer,
         highestTotalScore,
+        isOwner,
     } = useMemo(() => deriveGameState(game, currentUser?.id), [game, currentUser?.id]);
 
     // Follow the live game state, so the modal shows updated scores
@@ -316,16 +321,18 @@ export function GamePage() {
                         )}
                         <GameHeader lobbyName={searchParams.lobbyName}/>
                     </div>
-                        <AdminPanel
-                            isAdminMode={isAdminMode}
-                            onToggleAdminMode={handleToggleAdminMode}
-                            players={game.players}
-                            onAddPlayer={handleAddPlayer}
-                            onRemovePlayer={handleRemovePlayer}
-                            onSubmitScoreForPlayer={handleSubmitScoreForPlayer}
-                            currentRound={game.currentRound}
-                            isFinished={game.isFinished}
-                        />
+                        {isOwner && (
+                            <AdminPanel
+                                isAdminMode={isAdminMode}
+                                onToggleAdminMode={handleToggleAdminMode}
+                                players={game.players}
+                                onAddPlayer={handleAddPlayer}
+                                onRemovePlayer={handleRemovePlayer}
+                                onSubmitScoreForPlayer={handleSubmitScoreForPlayer}
+                                currentRound={game.currentRound}
+                                isFinished={game.isFinished}
+                            />
+                        )}
 
                         {/* Horizontal layout for Win Condition and Settings */}
                         <div className="flex flex-col items-center gap-2">
@@ -468,6 +475,7 @@ export function GamePage() {
                                             index={index}
                                             isCurrentUser={isCurrentUser}
                                             isDealer={isDealer}
+                                            isOwner={player.userId === game.ownerId}
                                             isFinished={game.isFinished}
                                             showReorderMode={showReorderMode}
                                             onDragStart={handleDragStart}

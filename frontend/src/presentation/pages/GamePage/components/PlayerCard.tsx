@@ -57,6 +57,7 @@ interface PlayerCardProps {
     index: number;
     isCurrentUser: boolean;
     isDealer: boolean;
+    isOwner?: boolean;
     isFinished: boolean;
     showReorderMode: boolean;
     onDragStart: (e: React.DragEvent, index: number) => void;
@@ -70,6 +71,7 @@ export const PlayerCard: React.FC<PlayerCardProps> = ({
                                                           index,
                                                           isCurrentUser,
                                                           isDealer,
+                                                          isOwner = false,
                                                           showReorderMode,
                                                           onDragStart,
                                                           onDragOver,
@@ -115,6 +117,11 @@ export const PlayerCard: React.FC<PlayerCardProps> = ({
                                 {player.name}
                                 {isCurrentUser && <span className="text-purple-400 text-sm">(You)</span>}
                                 {isDealer && <span className="text-yellow-400">🃏</span>}
+                                {isOwner && (
+                                    <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-orange-500/20 text-orange-300 border border-orange-500/40">
+                                        Admin
+                                    </span>
+                                )}
                                 {showReorderMode && <span className="text-gray-400 text-sm">🔗</span>}
                             </Text>
                         </div>

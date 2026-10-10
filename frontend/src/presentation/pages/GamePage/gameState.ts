@@ -7,6 +7,7 @@ export type DerivedGameState = {
     hasCurrentUserSubmitted: boolean;
     currentDealer: Player | undefined;
     highestTotalScore: number;
+    isOwner: boolean;
 };
 
 /**
@@ -25,5 +26,6 @@ export function deriveGameState(game: Game | undefined, currentUserId: string | 
         hasCurrentUserSubmitted: currentUserPlayer?.hasSubmitted ?? false,
         currentDealer: players.find(p => p.userId === game?.currentDealer),
         highestTotalScore: players.length ? Math.max(...players.map(p => p.totalScore)) : 0,
+        isOwner: !!game?.ownerId && game.ownerId === currentUserId,
     };
 }
