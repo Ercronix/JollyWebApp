@@ -22,6 +22,13 @@ function validateScore(score, label = 'Score') {
     }
 }
 
+function validateHistoryEdit(roundIndex, newScore) {
+    if (!Number.isInteger(roundIndex) || roundIndex < 0) {
+        throw { status: 400, message: 'Valid round index is required' };
+    }
+    validateScore(newScore);
+}
+
 /**
  * Loads a game and ensures the requesting user is one of its (non-temporary) players
  */
@@ -372,11 +379,7 @@ module.exports.updateHistoryScorePOST = async function(user, body, gameId) {
     try {
         const { roundIndex, newScore } = body || {};
 
-        if (!Number.isInteger(roundIndex) || roundIndex < 0) {
-            throw { status: 400, message: 'Valid round index is required' };
-        }
-
-        validateScore(newScore);
+        validateHistoryEdit(roundIndex, newScore);
 
         await getGameForPlayer(gameId, user);
         const game = await GamesService.updateHistoryScore(gameId, user.id, roundIndex, newScore);
@@ -445,6 +448,28 @@ module.exports.submitScoreForPlayerPOST = async function(user, body, gameId) {
         return await GamesService.submitScoreForPlayer(gameId, playerId, score);
     } catch (error) {
         console.error('[SubmitScoreForPlayer] Error:', error.message);
+        throw httpError(error, 400);
+    }
+};
+
+/**
+ * Correct a past round score of another player (admin mode)
+ */
+module.exports.updateHistoryScoreForPlayerPOST = async function(user, body, gameId) {
+    try {
+        const { playerId, roundIndex, newScore } = body || {};
+
+        if (typeof playerId !== 'string' || !playerId) {
+            throw { status: 400, message: 'Player ID is required' };
+        }
+
+        validateHistoryEdit(roundIndex, newScore);
+
+        await getGameForOwner(gameId, user);
+        const game = await GamesService.updateHistoryScore(gameId, playerId, roundIndex, newScore);
+        return GamesService.getGameResponse(game);
+    } catch (error) {
+        console.error('[UpdateHistoryScoreForPlayer] Error:', error.message);
         throw httpError(error, 400);
     }
 };

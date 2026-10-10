@@ -23,6 +23,7 @@ import {
     useLeaveLobby,
     useSubmitWinCondition,
     useUpdateHistoryScore,
+    useUpdateHistoryScoreForPlayer,
     useAddPlayerToGame,
     useRemovePlayerFromGame,
     useSubmitScoreForPlayer,
@@ -84,6 +85,7 @@ export function GamePage() {
     const leaveLobbyMutation = useLeaveLobby();
     const submitWinConditionMutation = useSubmitWinCondition();
     const updateHistoryScoreMutation = useUpdateHistoryScore();
+    const updateHistoryScoreForPlayerMutation = useUpdateHistoryScoreForPlayer();
     const addPlayerMutation = useAddPlayerToGame();
     const removePlayerMutation = useRemovePlayerFromGame();
     const submitScoreForPlayerMutation = useSubmitScoreForPlayer();
@@ -163,9 +165,13 @@ export function GamePage() {
     }, [searchParams.lobbyId, leaveLobbyMutation, navigate]);
 
     const handleUpdateHistoryScore = useCallback(async (roundIndex: number, newScore: number) => {
-        if (!gameId) return;
-        await updateHistoryScoreMutation.mutateAsync({gameId, roundIndex, newScore});
-    }, [gameId, updateHistoryScoreMutation]);
+        if (!gameId || !historyPlayerId) return;
+        if (historyPlayerId === currentUser?.id) {
+            await updateHistoryScoreMutation.mutateAsync({gameId, roundIndex, newScore});
+        } else {
+            await updateHistoryScoreForPlayerMutation.mutateAsync({gameId, playerId: historyPlayerId, roundIndex, newScore});
+        }
+    }, [gameId, historyPlayerId, currentUser?.id, updateHistoryScoreMutation, updateHistoryScoreForPlayerMutation]);
 
     const handleWinConditionEdit = useCallback(() => {
         setTempWinCondition(game?.winCondition?.toString() || '1000');
@@ -565,6 +571,7 @@ export function GamePage() {
                             player={historyPlayer}
                             currentUserId={currentUser.id}
                             gameId={gameId}
+                            canEditOthers={isOwner && isAdminMode}
                             onUpdateScore={handleUpdateHistoryScore}
                         />
 

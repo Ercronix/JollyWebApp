@@ -92,6 +92,9 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                         <Text size="xl" weight="bold" className="text-orange-300">
                             Admin Controls
                         </Text>
+                        <Text size="sm" className="text-gray-400 mt-1">
+                            Click on a player to correct their past scores.
+                        </Text>
                     </div>
 
                     {/* Add Player Section */}
