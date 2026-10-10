@@ -41,7 +41,7 @@ module.exports = {
     },
 
     secureAccountPOST(req, res) {
-        Default.secureAccountPOST(req.user, req.body)
+        Default.secureAccountPOST(req.user, req.body, getSessionId(req))
             .then(r => utils.writeJson(res, r))
             .catch(e => sendError(res, e));
     },

@@ -28,6 +28,8 @@ const userSchema = new mongoose.Schema({
 });
 
 userSchema.index({ username: 1, password: 1 });
+// Username + password login looks accounts up by username, so only one account may protect a name
+userSchema.index({ username: 1 }, { unique: true, partialFilterExpression: { password: { $type: 'string' } } });
 
 userSchema.methods.comparePassword = async function(candidatePassword) {
     if (!this.password) return false;

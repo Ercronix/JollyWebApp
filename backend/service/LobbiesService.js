@@ -93,6 +93,19 @@ class LobbiesService {
     }
 
     /**
+     * getOwnerId, but saves a derived owner of an old lobby, so it stays put when players come and go
+     */
+    async resolveOwnerId(lobby) {
+        if (lobby.ownerId) return lobby.ownerId.toString();
+        const ownerId = this.getOwnerId(lobby);
+        if (ownerId) {
+            await Lobby.updateOne({ _id: lobby._id, ownerId: null }, { ownerId });
+            lobby.ownerId = ownerId;
+        }
+        return ownerId;
+    }
+
+    /**
      * The next admin: the earliest-joined lobby player still in the game
      * (the admin may have removed someone from the game who is still in the lobby)
      */
@@ -121,6 +134,11 @@ class LobbiesService {
             const existingPlayer = lobby.players.find(p => p.userId.toString() === userId.toString());
             if (existingPlayer) {
                 return { lobby: this.getLobbyResponse(lobby), playerId: userId };
+            }
+
+            // Pin the owner of an old lobby before the joiner changes who it would be derived as
+            if (!lobby.ownerId) {
+                lobby.ownerId = this.getOwnerId(lobby);
             }
 
             lobby.players.push({ userId, name: username });
@@ -156,6 +174,9 @@ class LobbiesService {
             if (playerIndex === -1) {
                 console.log(`[LobbiesService] Player ${userId} not in lobby ${lobbyId}`);
                 return; // Player not in lobby
+            }
+            if (!lobby.ownerId) {
+                lobby.ownerId = this.getOwnerId(lobby);
             }
             const wasOwner = this.getOwnerId(lobby) === userId.toString();
 

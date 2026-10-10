@@ -59,6 +59,15 @@ describe('register', () => {
         await request(app).post('/users/register').send({ username: 'Carol', password: 'other1' }).expect(409);
     });
 
+    it('rejects one of two concurrent registrations of the same name with 409', async () => {
+        const results = await Promise.all([
+            request(app).post('/users/register').send({ username: 'Carol', password: 'secret1' }),
+            request(app).post('/users/register').send({ username: 'Carol', password: 'other1' }),
+        ]);
+
+        expect(results.map(r => r.status).sort()).toEqual([200, 409]);
+    });
+
     it('rejects names containing "#" and too short passwords', async () => {
         await request(app).post('/users/register').send({ username: 'a#1', password: 'secret1' }).expect(400);
         await request(app).post('/users/register').send({ username: 'Dave', password: 'abc' }).expect(400);
@@ -140,6 +149,30 @@ describe('securing an account', () => {
         const bob = await loginAs('Bob');
 
         await bob.post('/users/secure', { password: 'secret1' }).expect(409);
+    });
+
+    // Review finding: someone who logged in with a leaked tag must lose access once the account is secured
+    it('logs out every other session of the account', async () => {
+        const bob = await loginAs('Bob');
+        const intruder = (await request(app).post('/users/login').send({ username: bob.user.fullTag }).expect(200)).body;
+
+        await bob.post('/users/secure', { password: 'secret1' }).expect(200);
+
+        await request(app).get('/users/me').set('x-session-id', intruder.sessionId).expect(401);
+        await bob.get('/users/me').expect(200);
+    });
+
+    // Review finding: two accounts with the same name securing at once must not both get a password
+    it('lets only one of two same-named accounts secure the name at the same time', async () => {
+        const first = await loginAs('Bob');
+        const second = await loginAs('Bob');
+
+        const results = await Promise.all([
+            first.post('/users/secure', { password: 'secret1' }),
+            second.post('/users/secure', { password: 'secret2' }),
+        ]);
+
+        expect(results.map(r => r.status).sort()).toEqual([200, 409]);
     });
 
     it('rejects a short password', async () => {

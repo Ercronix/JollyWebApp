@@ -135,10 +135,11 @@ describe('rounds', () => {
         await alice.post(`/api/games/${gameId}/submitScore`, { score: 5 }).expect(200);
     });
 
-    it('lets the admin force the next round, counting missing scores as 0', async () => {
+    // Review finding: an admin who stops responding (without leaving) must not block the game
+    it('lets any player force the next round, counting missing scores as 0', async () => {
         await alice.post(`/api/games/${gameId}/submitScore`, { score: 10 }).expect(200);
 
-        await alice.post(`/admin/games/${gameId}/forceNextRound`).expect(200);
+        await bob.post(`/admin/games/${gameId}/forceNextRound`).expect(200);
 
         expect(await player(bob)).toMatchObject({ totalScore: 0, pointsHistory: [0] });
     });
@@ -276,7 +277,6 @@ describe('lobby admin', () => {
         ['/api/games/:id/addPlayer', { playerName: 'Ghost' }],
         ['/api/games/:id/removePlayer', () => ({ playerId: alice.user.id })],
         ['/api/games/:id/submitScoreForPlayer', () => ({ playerId: alice.user.id, score: 10 })],
-        ['/admin/games/:id/forceNextRound', {}],
     ])('forbids other players from %s', async (path, body) => {
         const res = await bob.post(path.replace(':id', gameId), typeof body === 'function' ? body() : body).expect(403);
 

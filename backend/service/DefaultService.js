@@ -37,12 +37,16 @@ async function getGameForPlayer(gameId, user) {
 }
 
 /**
- * Like getGameForPlayer, but the user must also be the lobby admin
+ * Loads a game and ensures the requesting user is the lobby admin. The admin need not be
+ * in the game: a player the previous admin removed can still be handed the role.
  */
 async function getGameForOwner(gameId, user) {
-    const game = await getGameForPlayer(gameId, user);
+    const game = await GamesService.getGameById(gameId);
+    if (!game) {
+        throw { status: 404, message: 'Game not found' };
+    }
     const lobby = await LobbiesService.getLobbyByGameId(game._id);
-    if (!lobby || LobbiesService.getOwnerId(lobby) !== user.id) {
+    if (!lobby || await LobbiesService.resolveOwnerId(lobby) !== user.id) {
         throw { status: 403, message: 'Only the lobby admin can do this' };
     }
     return game;
@@ -104,9 +108,9 @@ module.exports.registerUserPOST = async function (body) {
 /**
  * Add a password to the current (passwordless) account
  */
-module.exports.secureAccountPOST = async function (user, body) {
+module.exports.secureAccountPOST = async function (user, body, sessionId) {
     try {
-        return await UsersService.secureAccount(user.id, body?.password);
+        return await UsersService.secureAccount(user.id, body?.password, sessionId);
     } catch (error) {
         throw httpError(error, 500);
     }
@@ -204,7 +208,8 @@ module.exports.getLobbyByCodeGET = async function(accessCode) {
  */
 module.exports.forceNextRoundPOST = async function(user, gameId) {
     try {
-        await getGameForOwner(gameId, user);
+        // Any player may force it, so an unresponsive admin can't block the game
+        await getGameForPlayer(gameId, user);
         return await GamesService.nextRound(gameId, true);
     } catch (error) {
         throw httpError(error, 400);
@@ -232,7 +237,7 @@ module.exports.getCurrentUserGET = async function (sessionId) {
 module.exports.getGameStateGET = async function (user, gameId) {
     try {
         const { game, lobby } = await getGameForViewer(gameId, user);
-        return { ...GamesService.getGameResponse(game), ownerId: LobbiesService.getOwnerId(lobby) };
+        return { ...GamesService.getGameResponse(game), ownerId: await LobbiesService.resolveOwnerId(lobby) };
     } catch (error) {
         throw httpError(error, 500);
     }

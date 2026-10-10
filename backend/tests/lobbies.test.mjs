@@ -240,6 +240,30 @@ describe('owner handover', () => {
         expect((await mallory.get(`/api/games/${gameId}`).expect(200)).body.ownerId).toBe(mallory.user.id);
     });
 
+    // Review finding: the fallback owner may not be in the game, and must still be able to act as admin
+    it('lets a new admin who was removed from the game use admin actions', async () => {
+        const { lobby, gameId } = await createLobbyWith(alice, [bob]);
+        const ghost = (await alice.post(`/api/games/${gameId}/addPlayer`, { playerName: 'Ghost' }).expect(200))
+            .body.players.find(p => p.name === 'Ghost');
+        await alice.post(`/api/games/${gameId}/removePlayer`, { playerId: bob.user.id }).expect(200);
+
+        await alice.post(`/api/lobbies/${lobby.id}/leave`).expect(204);
+
+        await bob.post(`/api/games/${gameId}/submitScoreForPlayer`, { playerId: ghost.userId, score: 10 }).expect(200);
+    });
+
+    // Review finding: the derived owner of an old lobby must not change when the creator rejoins
+    it('keeps the derived admin of an old lobby when its creator rejoins', async () => {
+        const { lobby, gameId } = await createLobbyWith(alice, [bob]);
+        await alice.post(`/api/lobbies/${lobby.id}/leave`).expect(204);
+        await Lobby.updateOne({ _id: lobby.id }, { $unset: { ownerId: 1 } });
+        await bob.get(`/api/games/${gameId}`).expect(200);
+
+        await alice.post(`/api/lobbies/${lobby.id}/join`).expect(200);
+
+        expect((await bob.get(`/api/games/${gameId}`).expect(200)).body.ownerId).toBe(bob.user.id);
+    });
+
     it('keeps the owner when someone else leaves', async () => {
         const { lobby, gameId } = await createLobbyWith(alice, [bob]);
 
