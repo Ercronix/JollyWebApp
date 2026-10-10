@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { Fireworks } from "fireworks-js";
 import { Button } from "@/presentation/components/Button";
 import { Text } from "@/presentation/components/Text";
@@ -22,19 +22,26 @@ export function ScoreCalculator({
     const fireworksContainerRef = useRef<HTMLDivElement | null>(null);
     const fireworksRef = useRef<Fireworks | null>(null);
 
-    // Reset when modal opens
-    useEffect(() => {
+    // Reset when modal opens (adjusting state during render, not in an effect)
+    const [wasOpen, setWasOpen] = useState(isOpen);
+    if (isOpen !== wasOpen) {
+        setWasOpen(isOpen);
         if (isOpen) {
             setCurrentScore(0);
             setRoundWon(false);
-        } else {
-            stopFireworks();
         }
-    }, [isOpen]);
+    }
 
-    // Start / stop fireworks when roundWon changes
+    const stopFireworks = useCallback(() => {
+        if (fireworksRef.current) {
+            fireworksRef.current.stop(true);
+            fireworksRef.current = null;
+        }
+    }, []);
+
+    // Run fireworks while the modal is open and the round is won
     useEffect(() => {
-        if (!roundWon) {
+        if (!isOpen || !roundWon) {
             stopFireworks();
             return;
         }
@@ -97,14 +104,7 @@ export function ScoreCalculator({
         fireworksRef.current.start();
 
         return stopFireworks;
-    }, [roundWon]);
-
-    const stopFireworks = () => {
-        if (fireworksRef.current) {
-            fireworksRef.current.stop(true);
-            fireworksRef.current = null;
-        }
-    };
+    }, [isOpen, roundWon, stopFireworks]);
 
     if (!isOpen) return null;
 
