@@ -7,6 +7,8 @@ import {DeleteConfirmationModal} from "@/presentation/components/DeleteConfirmat
 import {ArchiveConfirmationModal} from "@/presentation/components/ArchiveConfirmationModal";
 import { JoinByCodeModal } from "@/presentation/components/JoinByCodeModal";
 import { PrivateLobbyInfo } from "@/presentation/components/PrivateLobbyInfo";
+import { SecureAccountModal } from "@/presentation/components/SecureAccountModal";
+import { useLogoutFlow } from "@/core/hooks/useLogoutFlow";
 import {useNavigate} from "@tanstack/react-router";
 import {UserModel} from "@/core/models/UserModel";
 import type {Lobby} from "@/types";
@@ -17,6 +19,7 @@ import {
     useLogout,
     useDeleteLobby,
     useArchiveLobby,
+    useCurrentUser,
 } from "@/core/api/hooks";
 import {logger} from "@/utils/logger";
 
@@ -27,6 +30,7 @@ export function LobbyPage() {
     const [showJoinByCode, setShowJoinByCode] = useState(false);
     const [createdPrivateLobby, setCreatedPrivateLobby] = useState<Lobby | null>(null);
     const [currentUser, setCurrentUser] = useState(() => UserModel.getInstance().getCurrentUser());
+    const [showSecureAccount, setShowSecureAccount] = useState(false);
     const [deleteConfirmation, setDeleteConfirmation] = useState<{ show: boolean; lobby: Lobby | null }>({
         show: false,
         lobby: null,
@@ -42,6 +46,15 @@ export function LobbyPage() {
     const logoutMutation = useLogout();
     const deleteLobbyMutation = useDeleteLobby();
     const archiveLobbyMutation = useArchiveLobby();
+    const {data: me} = useCurrentUser();
+
+    // Users stored before hasPassword existed lack it, so refresh from the server
+    useEffect(() => {
+        if (me) {
+            UserModel.getInstance().setUser(me);
+            setCurrentUser(me);
+        }
+    }, [me]);
 
     // Check if user is logged in
     useEffect(() => {
@@ -172,6 +185,11 @@ export function LobbyPage() {
             logger.error('Logout failed:', error);
         }
     };
+    const logoutFlow = useLogoutFlow(currentUser, handleLogout);
+
+    const handleSecured = () => {
+        setCurrentUser(UserModel.getInstance().getCurrentUser());
+    };
 
     if (!currentUser) {
         return (
@@ -206,6 +224,53 @@ export function LobbyPage() {
                 isArchiving={archiveLobbyMutation.isPending}
             />
 
+            <SecureAccountModal
+                isOpen={showSecureAccount}
+                fullTag={currentUser.fullTag}
+                onClose={() => setShowSecureAccount(false)}
+                onSecured={handleSecured}
+            />
+
+            {logoutFlow.showWarning && (
+                <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 animate-in fade-in duration-300">
+                    <div className="bg-gradient-to-br from-gray-900 to-gray-800 rounded-3xl border border-orange-500/30 p-8 max-w-md w-full mx-4 shadow-2xl space-y-6">
+                        <div className="text-center space-y-3">
+                            <div className="text-5xl mb-4">⚠️</div>
+                            <Text size="xl" weight="bold" className="text-white">
+                                Log out without a password?
+                            </Text>
+                            <Text size="sm" className="text-gray-300">
+                                You're <span className="text-purple-300 font-semibold">{currentUser.fullTag}</span>.
+                                Without this tag you can't get back to your private games.
+                            </Text>
+                        </div>
+                        <div className="flex flex-col gap-3">
+                            <Button
+                                colorscheme="purpleToBlue"
+                                variant="solid"
+                                onClick={() => {
+                                    logoutFlow.cancel();
+                                    setShowSecureAccount(true);
+                                }}
+                            >
+                                Set password
+                            </Button>
+                            <Button
+                                variant="ghost"
+                                className="hover:bg-white/10"
+                                onClick={() => void logoutFlow.confirmLogout()}
+                                disabled={logoutMutation.isPending}
+                            >
+                                Log out anyway
+                            </Button>
+                            <Button variant="ghost" className="hover:bg-white/10" onClick={logoutFlow.cancel}>
+                                Cancel
+                            </Button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
             {/* Header with User Info */}
             <div className="text-center space-y-6 animate-in fade-in duration-1000">
                 <div className="relative">
@@ -229,6 +294,17 @@ export function LobbyPage() {
                         Join a lobby or create one to start
                     </Text>
                 </div>
+
+                {currentUser.hasPassword === false && (
+                    <div className="flex flex-col sm:flex-row items-center justify-center gap-3 px-4 py-3 rounded-xl bg-orange-500/10 border border-orange-500/30">
+                        <Text size="sm" className="text-orange-200">
+                            Playing as <span className="font-semibold">{currentUser.fullTag}</span> without a password.
+                        </Text>
+                        <Button colorscheme="pinkToOrange" variant="outline" size="sm" onClick={() => setShowSecureAccount(true)}>
+                            Secure account
+                        </Button>
+                    </div>
+                )}
 
                 <div className="flex justify-center gap-8 mt-8">
                     <div className="text-center group">
@@ -408,7 +484,7 @@ export function LobbyPage() {
                     colorscheme="pinkToOrange"
                     variant="ghost"
                     size="sm"
-                    onClick={handleLogout}
+                    onClick={logoutFlow.requestLogout}
                     className="hover:scale-110 transition-transform"
                     disabled={logoutMutation.isPending}
                 >
