@@ -9,14 +9,14 @@ export type ContinueAsOutcome = 'ok' | 'needs-password' | 'not-found';
  * Logs back into the account this device used last, by its tag
  */
 export function useContinueAs() {
-    const loginMutation = useLogin();
+    const {mutateAsync: login, isPending} = useLogin();
     const [lastTag, setLastTag] = useState(() => UserModel.getInstance().getLastFullTag());
 
     const continueAs = useCallback(async (): Promise<ContinueAsOutcome> => {
         if (!lastTag) return 'not-found';
 
         try {
-            const response = await loginMutation.mutateAsync({username: lastTag});
+            const response = await login({username: lastTag});
             UserModel.getInstance().setUser(response.user);
             return 'ok';
         } catch (error) {
@@ -28,7 +28,7 @@ export function useContinueAs() {
             }
             throw error;
         }
-    }, [lastTag, loginMutation]);
+    }, [lastTag, login]);
 
-    return {lastTag, continueAs, isPending: loginMutation.isPending};
+    return {lastTag, continueAs, isPending};
 }

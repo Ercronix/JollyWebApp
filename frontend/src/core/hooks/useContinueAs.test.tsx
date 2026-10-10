@@ -34,6 +34,15 @@ describe("useContinueAs", () => {
         expect(renderContinueAs().result.current.lastTag).toBe("Tim#4523");
     });
 
+    it("keeps continueAs stable across renders", () => {
+        const {result, rerender} = renderContinueAs();
+        const first = result.current.continueAs;
+
+        rerender();
+
+        expect(result.current.continueAs).toBe(first);
+    });
+
     it("logs into the remembered account", async () => {
         mockFetch(200, {user, sessionId: "s"});
         const {result} = renderContinueAs();

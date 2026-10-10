@@ -231,45 +231,24 @@ export function LobbyPage() {
                 onSecured={handleSecured}
             />
 
-            {logoutFlow.showWarning && (
-                <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 animate-in fade-in duration-300">
-                    <div className="bg-gradient-to-br from-gray-900 to-gray-800 rounded-3xl border border-orange-500/30 p-8 max-w-md w-full mx-4 shadow-2xl space-y-6">
-                        <div className="text-center space-y-3">
-                            <div className="text-5xl mb-4">⚠️</div>
-                            <Text size="xl" weight="bold" className="text-white">
-                                Log out without a password?
-                            </Text>
-                            <Text size="sm" className="text-gray-300">
-                                You're <span className="text-purple-300 font-semibold">{currentUser.fullTag}</span>.
-                                Without this tag you can't get back to your private games.
-                            </Text>
-                        </div>
-                        <div className="flex flex-col gap-3">
-                            <Button
-                                colorscheme="purpleToBlue"
-                                variant="solid"
-                                onClick={() => {
-                                    logoutFlow.cancel();
-                                    setShowSecureAccount(true);
-                                }}
-                            >
-                                Set password
-                            </Button>
-                            <Button
-                                variant="ghost"
-                                className="hover:bg-white/10"
-                                onClick={() => void logoutFlow.confirmLogout()}
-                                disabled={logoutMutation.isPending}
-                            >
-                                Log out anyway
-                            </Button>
-                            <Button variant="ghost" className="hover:bg-white/10" onClick={logoutFlow.cancel}>
-                                Cancel
-                            </Button>
-                        </div>
-                    </div>
-                </div>
-            )}
+            <DeleteConfirmationModal
+                isOpen={logoutFlow.showWarning}
+                title="Log out without a password?"
+                message="Without your tag you can't get back to your private games. Log out as"
+                itemName={currentUser.fullTag}
+                onConfirm={() => void logoutFlow.confirmLogout()}
+                onCancel={logoutFlow.cancel}
+                isDeleting={logoutMutation.isPending}
+                confirmLabel="Log out anyway"
+                confirmingLabel="Logging out..."
+                extraAction={{
+                    label: "Set password",
+                    onClick: () => {
+                        logoutFlow.cancel();
+                        setShowSecureAccount(true);
+                    },
+                }}
+            />
 
             {/* Header with User Info */}
             <div className="text-center space-y-6 animate-in fade-in duration-1000">

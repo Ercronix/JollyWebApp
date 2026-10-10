@@ -6,10 +6,7 @@ import {Text} from "@/presentation/components/Text";
 import {useSecureAccount} from "@/core/api/hooks";
 import {useToast} from "@/presentation/components/Toast/useToast";
 import {logger} from "@/utils/logger";
-
-// Same limits as the backend (UsersService)
-const PASSWORD_MIN_LENGTH = 4;
-const PASSWORD_MAX_LENGTH = 72;
+import {validatePassword} from "@/core/passwords";
 
 interface SecureAccountModalProps {
     isOpen: boolean;
@@ -34,8 +31,9 @@ export function SecureAccountModal({isOpen, fullTag, onClose, onSecured}: Secure
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (password.length < PASSWORD_MIN_LENGTH || password.length > PASSWORD_MAX_LENGTH) {
-            toast.error(`Password must be between ${PASSWORD_MIN_LENGTH} and ${PASSWORD_MAX_LENGTH} characters`);
+        const passwordError = validatePassword(password);
+        if (passwordError) {
+            toast.error(passwordError);
             return;
         }
         if (password !== confirm) {

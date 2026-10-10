@@ -10,6 +10,7 @@ interface RoundStatusProps {
     autoAdvance: boolean;
     isPending: boolean;
     onNextRound: () => void;
+    onForceNextRound: () => void;
 }
 
 export const RoundStatus: React.FC<RoundStatusProps> = ({
@@ -20,6 +21,7 @@ export const RoundStatus: React.FC<RoundStatusProps> = ({
                                                             autoAdvance,
                                                             isPending,
                                                             onNextRound,
+                                                            onForceNextRound,
                                                         }) => {
     return (
         <div className="text-center space-y-4">
@@ -38,6 +40,14 @@ export const RoundStatus: React.FC<RoundStatusProps> = ({
                 <div className="mt-2">
                     <Text size="sm" className="text-green-300">✅ You've submitted! Waiting for other players...</Text>
                 </div>
+            )}
+
+            {submittedCount > 0 && !allPlayersSubmitted && (
+                <Button colorscheme="pinkToOrange" variant="ghost" size="sm"
+                        onClick={onForceNextRound}
+                        disabled={isPending}>
+                    Skip missing scores
+                </Button>
             )}
 
             {allPlayersSubmitted && !autoAdvance && (
