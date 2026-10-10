@@ -6,6 +6,8 @@ import {Text} from "@/presentation/components/Text";
 import {useNavigate} from "@tanstack/react-router";
 import {UserModel} from "@/core/models/UserModel";
 import {useLogin, useRegister} from "@/core/api/hooks";
+import {useContinueAs} from "@/core/hooks/useContinueAs";
+import type {User} from "@/types";
 import {logger} from "@/utils/logger";
 
 type AuthMode = 'quick' | 'login' | 'register';
@@ -19,6 +21,42 @@ export function LandingPage() {
     const [error, setError] = useState<string | null>(null);
     const loginMutation = useLogin();
     const registerMutation = useRegister();
+    const {lastTag, continueAs, isPending: isContinuing} = useContinueAs();
+
+    // After any successful login: resume a pending invite link, else go to the lobbies
+    const finishLogin = async (user: User) => {
+        UserModel.getInstance().setUser(user);
+
+        const pendingCode = localStorage.getItem('pendingJoinCode');
+        if (pendingCode) {
+            logger.debug('Found pending join code, redirecting to join:', pendingCode);
+            localStorage.removeItem('pendingJoinCode');
+            await navigate({ to: `/join/${pendingCode}` });
+            return;
+        }
+
+        await navigate({to: "/lobby"});
+    };
+
+    const handleContinueAs = async () => {
+        if (!lastTag) return;
+        try {
+            setError(null);
+            const outcome = await continueAs();
+            if (outcome === 'ok') {
+                await finishLogin(UserModel.getInstance().getCurrentUser()!);
+            } else if (outcome === 'needs-password') {
+                setAuthMode('login');
+                setUsername(lastTag.split('#')[0]);
+                setError('This account has a password. Log in with your name and password.');
+            } else {
+                setError(`The account ${lastTag} no longer exists.`);
+            }
+        } catch (error) {
+            logger.error('Continue as failed:', error);
+            setError(error instanceof Error ? error.message : 'Login failed');
+        }
+    };
 
     const handleQuickJoin = async () => {
         if (!username.trim()) return;
@@ -30,23 +68,11 @@ export function LandingPage() {
             const response = await loginMutation.mutateAsync({username: username.trim()});
             logger.debug('Login response:', response);
 
-            const userModel = UserModel.getInstance();
-            userModel.setUser(response.user);
-
             if (response.isNewAccount) {
                 logger.debug('New account created with tag:', response.user.fullTag);
             }
 
-            const pendingCode = localStorage.getItem('pendingJoinCode');
-            if (pendingCode) {
-                logger.debug('Found pending join code, redirecting to join:', pendingCode);
-                localStorage.removeItem('pendingJoinCode');
-
-                await navigate({ to: `/join/${pendingCode}` });
-                return;
-            }
-
-            await navigate({to: "/lobby"});
+            await finishLogin(response.user);
         } catch (error) {
             logger.error('Quick join failed:', error);
             setError(error instanceof Error ? error.message : 'Login failed');
@@ -66,19 +92,7 @@ export function LandingPage() {
             });
             logger.debug('Login response:', response);
 
-            const userModel = UserModel.getInstance();
-            userModel.setUser(response.user);
-
-            const pendingCode = localStorage.getItem('pendingJoinCode');
-            if (pendingCode) {
-                logger.debug('Found pending join code, redirecting to join:', pendingCode);
-                localStorage.removeItem('pendingJoinCode');
-
-                await navigate({ to: `/join/${pendingCode}` });
-                return;
-            }
-
-            await navigate({to: "/lobby"});
+            await finishLogin(response.user);
         } catch (error) {
             logger.error('Login failed:', error);
             setError(error instanceof Error ? error.message : 'Login failed');
@@ -101,18 +115,7 @@ export function LandingPage() {
             });
             logger.debug('Register response:', response);
 
-            const userModel = UserModel.getInstance();
-            userModel.setUser(response.user);
-
-            const pendingCode = localStorage.getItem('pendingJoinCode');
-            if (pendingCode) {
-                logger.debug('Pending join code found:', pendingCode);
-                localStorage.removeItem('pendingJoinCode');
-                await navigate({ to: `/join/${pendingCode}` });
-                return;
-            }
-
-            await navigate({to: "/lobby"});
+            await finishLogin(response.user);
         } catch (error) {
             logger.error('Registration failed:', error);
             setError(error instanceof Error ? error.message : 'Registration failed');
@@ -131,7 +134,7 @@ export function LandingPage() {
         }
     };
 
-    const isPending = loginMutation.isPending || registerMutation.isPending;
+    const isPending = loginMutation.isPending || registerMutation.isPending || isContinuing;
 
     return (
         <div className="min-h-screen flex flex-col items-center justify-center gap-12 px-4">
@@ -188,6 +191,19 @@ export function LandingPage() {
                         className="absolute inset-0 bg-gradient-to-br from-purple-500/10 via-pink-500/10 to-blue-500/10 animate-pulse"></div>
 
                     <div className="relative z-10 space-y-6">
+                        {lastTag && (
+                            <Button
+                                colorscheme="purpleToBlue"
+                                variant="outline"
+                                size="lg"
+                                className="w-full"
+                                onClick={handleContinueAs}
+                                disabled={isPending}
+                            >
+                                Continue as {lastTag}
+                            </Button>
+                        )}
+
                         {/* Mode Selector */}
                         <div className="flex gap-2 bg-white/5 rounded-xl p-2">
                             <button
@@ -231,7 +247,7 @@ export function LandingPage() {
                             </Text>
                             <div>
                                 <Text size="sm" className="text-gray-400">
-                                    {authMode === 'quick' && 'Enter a name and start playing instantly'}
+                                    {authMode === 'quick' && "You'll get a tag like Tim#1234. Remember it, because it's how you get back to your private games. You can add a password later."}
                                     {authMode === 'login' && 'Login with your tag (e.g., User#4523) or protected username (No tag needed with password)'}
                                     {authMode === 'register' && 'Claim your username with a password'}
                                 </Text>
