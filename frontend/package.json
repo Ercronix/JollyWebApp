@@ -29,7 +29,7 @@
     "tailwindcss": "^4.1.11"
   },
   "devDependencies": {
-    "@chromatic-com/storybook": "^4.1.0",
+    "@chromatic-com/storybook": "^5.4.0",
     "@eslint/js": "^10.0.1",
     "@storybook/addon-a11y": "^9.1.2",
     "@storybook/addon-docs": "^9.1.2",
