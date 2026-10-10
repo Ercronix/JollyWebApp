@@ -112,6 +112,13 @@ export class ApiClient {
         return response;
     }
 
+    static async secureAccount(password: string): Promise<User> {
+        return this.request<User>('/users/secure', {
+            method: 'POST',
+            body: JSON.stringify({ password }),
+        });
+    }
+
     static async leaveLobby(lobbyId: string): Promise<void> {
         return this.request<void>(
             `/api/lobbies/${lobbyId}/leave`,

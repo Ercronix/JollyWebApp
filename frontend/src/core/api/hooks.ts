@@ -5,6 +5,7 @@ import {ApiClient} from './client';
 import {useEffect} from 'react';
 import type { GameEvent } from '@/types';
 import { logger } from '@/utils/logger';
+import { UserModel } from '@/core/models/UserModel';
 
 // Query keys
 export const queryKeys = {
@@ -42,6 +43,18 @@ export function useRegister() {
             ApiClient.register(username, password),
         onSuccess: (data) => {
             queryClient.setQueryData(queryKeys.currentUser, data.user);
+        },
+    });
+}
+
+export function useSecureAccount() {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: (password: string) => ApiClient.secureAccount(password),
+        onSuccess: (user) => {
+            UserModel.getInstance().setUser(user);
+            queryClient.setQueryData(queryKeys.currentUser, user);
         },
     });
 }

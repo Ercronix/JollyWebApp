@@ -4,6 +4,7 @@ export type User = {
     id: string;
     username: string;
     fullTag: string;  // e.g., "Tim#4523"
+    hasPassword?: boolean;  // missing for users stored before it existed
     createdAt: string;
 };
 
@@ -53,6 +54,16 @@ export class UserModel {
     setUser(user: User): void {
         this.currentUser = user;
         this.saveToStorage();
+        // Remembered past logout, so the user can get back into this account
+        this.rememberTag(user.fullTag);
+    }
+
+    private rememberTag(fullTag: string): void {
+        try {
+            localStorage.setItem(LAST_TAG_KEY, fullTag);
+        } catch (e) {
+            logger.warn("UserModel: failed to remember tag", e);
+        }
     }
 
     getCurrentUser(): User | null {
@@ -70,13 +81,17 @@ export class UserModel {
      */
     expireSession(): void {
         if (this.currentUser) {
-            try {
-                localStorage.setItem(LAST_TAG_KEY, this.currentUser.fullTag);
-            } catch (e) {
-                logger.warn("UserModel: failed to remember tag", e);
-            }
+            this.rememberTag(this.currentUser.fullTag);
         }
         this.clearUser();
+    }
+
+    forgetLastFullTag(): void {
+        try {
+            localStorage.removeItem(LAST_TAG_KEY);
+        } catch (e) {
+            logger.warn("UserModel: failed to forget tag", e);
+        }
     }
 
     getLastFullTag(): string | null {

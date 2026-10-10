@@ -2,6 +2,7 @@ export interface User {
     id: string;
     username: string;
     fullTag: string;
+    hasPassword?: boolean;
     createdAt: string;
 }
 

@@ -71,6 +71,17 @@ describe("ApiClient.request", () => {
         expect(assign).not.toHaveBeenCalled();
     });
 
+    it("posts the password to /users/secure", async () => {
+        const fetchMock = mockFetch(200, {...user, hasPassword: true});
+
+        await expect(ApiClient.secureAccount("secret1")).resolves.toMatchObject({hasPassword: true});
+
+        const [url, init] = fetchMock.mock.calls[0];
+        expect(url).toMatch(/\/users\/secure$/);
+        expect(init.method).toBe("POST");
+        expect(JSON.parse(init.body)).toEqual({password: "secret1"});
+    });
+
     it("returns an empty object for 204 responses", async () => {
         vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response(null, {status: 204})));
 
