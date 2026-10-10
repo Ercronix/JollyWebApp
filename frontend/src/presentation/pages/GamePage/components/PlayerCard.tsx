@@ -1,81 +1,48 @@
 // src/presentation/pages/GamePage/components/PlayerCard.tsx
 import React from "react";
-import {Text} from "@/presentation/components/Text";
 import type {Player} from "@/types";
 import { motion, AnimatePresence } from "framer-motion";
 
-interface ScoreDisplayProps {
-    total: number;
-    last: number | null;
-    hasSubmitted: boolean;
-}
-
-const ScoreDisplay: React.FC<ScoreDisplayProps> = ({ total, last, hasSubmitted }) => {
-    return (
-        <div className="flex flex-col items-end justify-center min-w-[80px]">
-            {/* TOTAL SCORE */}
-            <AnimatePresence mode="popLayout">
-                <motion.div
-                    key={total}
-                    initial={{ y: -6, opacity: 0 }}
-                    animate={{ y: 0, opacity: 1 }}
-                    exit={{ y: 6, opacity: 0 }}
-                    transition={{ duration: 0.25 }}
-                    className="text-gray-300 text-lg leading-tight"
-                >
-                    <span className="mr-1 text-sm text-gray-400">Total</span>
-                    <span className="text-white font-bold text-xl">
-                        {total}
-                    </span>
-                </motion.div>
-            </AnimatePresence>
-
-            {/* LAST ROUND SCORE */}
-            {last !== null && !hasSubmitted && (
-                <motion.div
-                    initial={{ opacity: 0, scale: 0.9 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    transition={{ duration: 0.2 }}
-                    className={`font-semibold text-md leading-tight ${
-                        last > 0
-                            ? "text-green-400"
-                            : last < 0
-                                ? "text-red-400"
-                                : "text-gray-300"
-                    }`}
-                >
-                    {last > 0 ? "▲" : "▼"}
-                    {last}
-                </motion.div>
-            )}
-        </div>
-    );
-};
+const Badge: React.FC<{ className: string; children: React.ReactNode }> = ({className, children}) => (
+    <span className={`text-[11px] font-semibold px-2 py-px rounded-full ${className}`}>{children}</span>
+);
 
 interface PlayerCardProps {
     player: Player;
     index: number;
+    playerCount: number;
     isCurrentUser: boolean;
     isDealer: boolean;
     isOwner?: boolean;
     isFinished: boolean;
     showReorderMode: boolean;
-    onDragStart: (e: React.DragEvent, index: number) => void;
-    onDragOver: (e: React.DragEvent) => void;
-    onDrop: (e: React.DragEvent, index: number) => void;
+    onMove: (fromIndex: number, toIndex: number) => void;
     onClick: () => void;
 }
+
+const ArrowButton: React.FC<{ label: string; disabled: boolean; onClick: () => void; d: string }> = ({label, disabled, onClick, d}) => (
+    <button
+        type="button"
+        aria-label={label}
+        disabled={disabled}
+        onClick={onClick}
+        className="w-11 h-11 flex-none rounded-xl bg-white/10 hover:bg-white/15 flex items-center justify-center disabled:opacity-30"
+    >
+        <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <path d={d}/>
+        </svg>
+    </button>
+);
 
 export const PlayerCard: React.FC<PlayerCardProps> = ({
                                                           player,
                                                           index,
+                                                          playerCount,
                                                           isCurrentUser,
                                                           isDealer,
                                                           isOwner = false,
                                                           showReorderMode,
-                                                          onDragStart,
-                                                          onDragOver,
-                                                          onDrop,
+                                                          onMove,
                                                           onClick,
                                                       }) => {
     // Get last round score (most recent score from history)
@@ -83,67 +50,87 @@ export const PlayerCard: React.FC<PlayerCardProps> = ({
         ? player.pointsHistory[player.pointsHistory.length - 1]
         : null;
 
-    return (
-        <div
-            draggable={showReorderMode}
-            onDragStart={(e) => onDragStart(e, index)}
-            onDragOver={onDragOver}
-            onDrop={(e) => onDrop(e, index)}
-            onClick={() => !showReorderMode && onClick()}
-            className={`group relative overflow-hidden rounded-2xl backdrop-blur-xl border p-4 shadow-lg transition-all duration-300 ${
-                player.hasSubmitted
-                    ? 'bg-green-500/10 border-green-500/30 shadow-green-500/25'
-                    : isCurrentUser
-                        ? 'bg-purple-500/10 border-purple-500/30 hover:shadow-purple-500/25 ring-1 ring-purple-300/50'
-                        : 'bg-white/10 border-white/20 hover:shadow-purple-500/25'
-            } ${isDealer ? 'ring-2 ring-yellow-400 bg-yellow-500/5' : ''} ${showReorderMode ? 'cursor-move hover:scale-102' : 'cursor-pointer hover:scale-102'}`}
-        >
-            <div className="flex items-center justify-between gap-2 flex-wrap">
-                <div className="flex w-full items-center justify-between">
-                    {/* LEFT SIDE */}
-                    <div className="flex items-center gap-2">
-                        <div
-                            className={`flex items-center justify-center w-12 h-12 rounded-full border font-bold text-lg text-white ${
-                                isCurrentUser
-                                    ? "bg-purple-500/30 border-purple-200/70"
-                                    : "bg-gray-500/20 border-gray-300/30"
-                            }`}
-                        >
-                            {isCurrentUser ? "👤" : index + 1}
-                        </div>
+    const tone = player.hasSubmitted
+        ? "bg-green-500/10 border-green-400/40"
+        : isCurrentUser
+            ? "bg-violet-500/15 border-violet-400/55"
+            : isDealer
+                ? "bg-yellow-400/[0.08] border-yellow-400/45"
+                : "bg-white/[0.07] border-white/15";
 
-                        <div className="flex flex-col">
-                            <Text size="lg" weight="semibold" className="text-white flex items-center gap-2">
-                                {player.name}
-                                {isCurrentUser && <span className="text-purple-400 text-sm">(You)</span>}
-                                {isDealer && <span className="text-yellow-400">🃏</span>}
-                                {isOwner && (
-                                    <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-orange-500/20 text-orange-300 border border-orange-500/40">
-                                        Admin
-                                    </span>
-                                )}
-                                {showReorderMode && <span className="text-gray-400 text-sm">🔗</span>}
-                            </Text>
-                        </div>
-                    </div>
-                    <div className="flex items-center">
-                        <ScoreDisplay
-                            total={player.totalScore}
-                            last={lastRoundScore}
-                            hasSubmitted={player.hasSubmitted}
-                        />
-                    </div>
-                </div>
-
-                {!showReorderMode && player.hasSubmitted && (
-                    <div className="flex items-center gap-3">
-                        <div className="text-right">
-                            <Text size="xl" weight="bold" className="text-green-300">{player.currentRoundScore}</Text>
-                            <Text size="sm" className="text-green-400">{isCurrentUser ? ' points' : ' submitted'}</Text>
-                        </div>
-                    </div>
-                )}
+    const content = (
+        <>
+            <div
+                className={`w-10 h-10 flex-none rounded-full flex items-center justify-center font-bold ${
+                    isCurrentUser ? "bg-violet-600" : "bg-white/10"
+                }`}
+                aria-hidden="true"
+            >
+                {isCurrentUser ? player.name.charAt(0).toUpperCase() : index + 1}
             </div>
-        </div>
+
+            <div className="flex-1 min-w-0">
+                <div className="text-base font-semibold truncate">{player.name}</div>
+                <div className="flex flex-wrap items-center gap-1.5 mt-0.5">
+                    {isCurrentUser && <Badge className="bg-violet-400/25 text-violet-100">You</Badge>}
+                    {isDealer && <Badge className="bg-yellow-400/20 text-yellow-200">Dealer</Badge>}
+                    {isOwner && <Badge className="bg-orange-400/20 text-orange-200">Admin</Badge>}
+                    {player.isTemporary && <Badge className="bg-white/10 text-slate-300">Guest</Badge>}
+                    {!showReorderMode && player.hasSubmitted && (
+                        <span className="flex items-center gap-1 text-xs text-green-300">
+                            <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                                <path d="M5 13l4 4L19 7"/>
+                            </svg>
+                            Submitted {player.currentRoundScore > 0 ? "+" : ""}{player.currentRoundScore}
+                        </span>
+                    )}
+                </div>
+            </div>
+
+            {showReorderMode ? (
+                <div className="flex gap-2">
+                    <ArrowButton label={`Move ${player.name} up`} disabled={index === 0}
+                                 onClick={() => onMove(index, index - 1)} d="M18 15l-6-6-6 6"/>
+                    <ArrowButton label={`Move ${player.name} down`} disabled={index === playerCount - 1}
+                                 onClick={() => onMove(index, index + 1)} d="M6 9l6 6 6-6"/>
+                </div>
+            ) : (
+                <div className="flex flex-col items-end min-w-[64px]">
+                    <AnimatePresence mode="popLayout">
+                        <motion.div
+                            key={player.totalScore}
+                            initial={{y: -6, opacity: 0}}
+                            animate={{y: 0, opacity: 1}}
+                            exit={{y: 6, opacity: 0}}
+                            transition={{duration: 0.25}}
+                            className="text-xl font-bold leading-tight tabular-nums"
+                        >
+                            {player.totalScore}
+                        </motion.div>
+                    </AnimatePresence>
+                    {lastRoundScore !== null && !player.hasSubmitted ? (
+                        <div className={`text-xs tabular-nums ${
+                            lastRoundScore > 0 ? "text-green-300" : lastRoundScore < 0 ? "text-red-300" : "text-slate-400"
+                        }`}>
+                            {lastRoundScore > 0 ? "+" : ""}{lastRoundScore} last
+                        </div>
+                    ) : (
+                        <div className="text-xs text-slate-400">total</div>
+                    )}
+                </div>
+            )}
+        </>
+    );
+
+    const className = `w-full flex items-center gap-3 p-3 rounded-2xl border text-left text-white transition-colors ${tone}`;
+
+    if (showReorderMode) {
+        return <div className={className}>{content}</div>;
+    }
+
+    return (
+        <button type="button" onClick={onClick} className={`${className} hover:bg-white/[0.12] active:bg-white/[0.12]`}>
+            {content}
+        </button>
     );
 };

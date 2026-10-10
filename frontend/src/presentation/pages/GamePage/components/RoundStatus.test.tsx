@@ -7,9 +7,7 @@ const props = {
     totalPlayers: 3,
     allPlayersSubmitted: false,
     hasCurrentUserSubmitted: true,
-    autoAdvance: false,
     isPending: false,
-    onNextRound: vi.fn(),
 };
 
 // Review finding: without a way to force the round, an absent admin could block the game

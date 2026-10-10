@@ -1,33 +1,50 @@
 import React from "react";
-import {Text} from "@/presentation/components/Text";
 import {useNavigate} from "@tanstack/react-router";
 
 interface GameHeaderProps {
     lobbyName?: string;
+    accessCode?: string;
+    onOpenSettings?: () => void;
 }
 
-export const GameHeader: React.FC<GameHeaderProps> = ({lobbyName}) => {
+const iconButton = "w-11 h-11 flex-none flex items-center justify-center rounded-xl hover:bg-white/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-violet-400";
+
+export const GameHeader: React.FC<GameHeaderProps> = ({lobbyName, accessCode, onOpenSettings}) => {
     const navigate = useNavigate();
 
     return (
-        <div className="relative flex items-center justify-between w-full max-w-4xl mx-auto">
-            <button
-                onClick={() => navigate({to: "/lobby"})}
-                className="flex items-center gap-2 text-purple-200 hover:text-white transition-colors
-                focus:outline-none focus:ring-2 focus:ring-purple-400 rounded-lg p-2 z-10"
-            >
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7"/>
+        <header className="flex items-center gap-1 -mx-2">
+            <button type="button" aria-label="Back to lobbies" onClick={() => navigate({to: "/lobby"})}
+                    className={`${iconButton} text-violet-300`}>
+                <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    <path d="M15 19l-7-7 7-7"/>
                 </svg>
-                <span className="font-medium">Back</span>
             </button>
 
-            <Text as="h1" size="3xl" weight="bold"
-                  className="absolute left-1/2 -translate-x-1/2 bg-gradient-to-r from-purple-400 via-white-300 to-blue-400 bg-clip-text text-transparent text-2xl sm:text-3xl md:text-4xl lg:text-5xl text-center whitespace-nowrap">
-                {lobbyName || "Card Game"}
-            </Text>
+            <div className="flex-1 min-w-0 text-center">
+                <h1 className="text-lg sm:text-2xl font-bold text-white truncate">{lobbyName || "Card Game"}</h1>
+                {accessCode && (
+                    <div className="flex items-center justify-center gap-1 text-xs text-indigo-300">
+                        <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} aria-hidden="true">
+                            <rect x="5" y="11" width="14" height="10" rx="2"/>
+                            <path d="M8 11V7a4 4 0 018 0v4"/>
+                        </svg>
+                        <span>Private · Code {accessCode}</span>
+                    </div>
+                )}
+            </div>
 
-            <div className="w-[88px]"/>
-        </div>
+            {onOpenSettings ? (
+                <button type="button" aria-label="Game settings" onClick={onOpenSettings} className={`${iconButton} text-slate-200`}>
+                    <svg className="w-[22px] h-[22px]" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                        <circle cx="12" cy="5" r="1.8"/>
+                        <circle cx="12" cy="12" r="1.8"/>
+                        <circle cx="12" cy="19" r="1.8"/>
+                    </svg>
+                </button>
+            ) : (
+                <div className="w-11 flex-none"/>
+            )}
+        </header>
     );
 };
