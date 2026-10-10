@@ -1,6 +1,10 @@
 import type { StorybookConfig } from '@storybook/react-vite';
 import tsconfigPaths from 'vite-tsconfig-paths';
 import * as path from 'path';
+import { fileURLToPath } from 'url';
+
+// Storybook 10 loads its config as ESM, where __dirname doesn't exist
+const dirname = path.dirname(fileURLToPath(import.meta.url));
 
 const config: StorybookConfig = {
   stories: [
@@ -24,7 +28,7 @@ const config: StorybookConfig = {
         config.plugins?.push(
             /** @see https://github.com/aleclarson/vite-tsconfig-paths */
             tsconfigPaths({
-                projects: [path.resolve(path.dirname(__dirname), "tsconfig.json")],
+                projects: [path.resolve(dirname, "..", "tsconfig.json")],
             })
         );
 
