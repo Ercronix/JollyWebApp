@@ -14,6 +14,8 @@ class EventService {
         this.cleanupTimer = setInterval(() => {
             this.cleanupStaleConnections();
         }, 60000);
+        // Don't keep the process alive just for this timer (lets tests and shutdown exit)
+        this.cleanupTimer.unref();
     }
 
     cleanupStaleConnections() {
