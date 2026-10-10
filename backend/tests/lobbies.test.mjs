@@ -172,6 +172,41 @@ describe('leaving lobbies', () => {
         expect(bobInGame[0].totalScore).toBe(20);
     });
 
+    // A game played on one phone (the admin plus temporary players) must not vanish when the admin leaves
+    it('archives instead of deleting when the last player leaves a game with scores', async () => {
+        const { lobby, gameId } = await createLobbyWith(alice);
+        const grandma = (await alice.post(`/api/games/${gameId}/addPlayer`, { playerName: 'Grandma' }).expect(200))
+            .body.players.find(p => p.name === 'Grandma');
+        await alice.post(`/api/games/${gameId}/submitScore`, { score: 10 }).expect(200);
+        await alice.post(`/api/games/${gameId}/submitScoreForPlayer`, { playerId: grandma.userId, score: 20 }).expect(200);
+        await alice.post(`/api/games/${gameId}/nextRound`).expect(200);
+
+        await alice.post(`/api/lobbies/${lobby.id}/leave`).expect(204);
+
+        const history = (await alice.get('/api/lobbies/history').expect(200)).body;
+        expect(history).toEqual([expect.objectContaining({ id: lobby.id, archived: true })]);
+        const game = (await alice.get(`/api/games/${gameId}`).expect(200)).body;
+        expect(game.players.find(p => p.name === 'Grandma').totalScore).toBe(20);
+    });
+
+    it('counts a score submitted in the first round as played', async () => {
+        const { lobby } = await createLobbyWith(alice);
+        await alice.post(`/api/games/${lobby.gameId}/submitScore`, { score: 10 }).expect(200);
+
+        await alice.post(`/api/lobbies/${lobby.id}/leave`).expect(204);
+
+        expect((await alice.get('/api/lobbies/history').expect(200)).body).toHaveLength(1);
+    });
+
+    it('reports the real players still in the lobby in the game state', async () => {
+        const { lobby, gameId } = await createLobbyWith(alice, [bob]);
+        await alice.post(`/api/games/${gameId}/addPlayer`, { playerName: 'Grandma' }).expect(200);
+
+        await bob.post(`/api/lobbies/${lobby.id}/leave`).expect(204);
+
+        expect((await alice.get(`/api/games/${gameId}`).expect(200)).body.lobbyPlayerIds).toEqual([alice.user.id]);
+    });
+
     it('deletes the lobby when the last player leaves', async () => {
         const { lobby } = await createLobbyWith(alice);
 

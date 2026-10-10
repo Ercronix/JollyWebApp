@@ -68,4 +68,20 @@ describe("deriveGameState", () => {
         expect(deriveGameState(game(players, {ownerId: "a"}), "b").isOwner).toBe(false);
         expect(deriveGameState(game(players), "a").isOwner).toBe(false);
     });
+
+    it("knows when the current user is the last real player in the lobby", () => {
+        const players = [player("a"), player("t", {isTemporary: true})];
+
+        expect(deriveGameState(game(players, {lobbyPlayerIds: ["a"]}), "a").isLastLobbyPlayer).toBe(true);
+        expect(deriveGameState(game(players, {lobbyPlayerIds: ["a", "b"]}), "a").isLastLobbyPlayer).toBe(false);
+        expect(deriveGameState(game(players, {lobbyPlayerIds: ["b"]}), "a").isLastLobbyPlayer).toBe(false);
+        expect(deriveGameState(game(players), "a").isLastLobbyPlayer).toBe(false);
+    });
+
+    // Same rule as GamesService.hasScores: decides whether leaving last archives or deletes
+    it("knows whether anything has been scored", () => {
+        expect(deriveGameState(game([player("a")]), "a").hasScores).toBe(false);
+        expect(deriveGameState(game([player("a", {hasSubmitted: true})]), "a").hasScores).toBe(true);
+        expect(deriveGameState(game([player("a")], {currentRound: 2}), "a").hasScores).toBe(true);
+    });
 });

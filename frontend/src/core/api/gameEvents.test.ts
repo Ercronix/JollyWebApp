@@ -21,6 +21,10 @@ describe("mergeEventGame", () => {
         expect(merged).toMatchObject({ownerId: "a", currentRound: 2});
     });
 
+    it("keeps the cached lobby players when the event's game has none", () => {
+        expect(mergeEventGame(game({lobbyPlayerIds: ["a"]}), game()).lobbyPlayerIds).toEqual(["a"]);
+    });
+
     it("prefers the event's owner when it has one", () => {
         expect(mergeEventGame(game({ownerId: "a"}), game({ownerId: "b"})).ownerId).toBe("b");
     });

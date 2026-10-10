@@ -237,7 +237,12 @@ module.exports.getCurrentUserGET = async function (sessionId) {
 module.exports.getGameStateGET = async function (user, gameId) {
     try {
         const { game, lobby } = await getGameForViewer(gameId, user);
-        return { ...GamesService.getGameResponse(game), ownerId: await LobbiesService.resolveOwnerId(lobby) };
+        return {
+            ...GamesService.getGameResponse(game),
+            ownerId: await LobbiesService.resolveOwnerId(lobby),
+            // Real players still in the lobby (temporary players only exist in the game)
+            lobbyPlayerIds: lobby.players.map(p => p.userId.toString()),
+        };
     } catch (error) {
         throw httpError(error, 500);
     }
