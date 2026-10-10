@@ -82,6 +82,17 @@ describe("ApiClient.request", () => {
         expect(JSON.parse(init.body)).toEqual({password: "secret1"});
     });
 
+    it("posts admin history edits with the target player", async () => {
+        const fetchMock = mockFetch(200, {});
+
+        await ApiClient.updateHistoryScoreForPlayer("g1", "p2", 1, 50);
+
+        const [url, init] = fetchMock.mock.calls[0];
+        expect(url).toMatch(/\/api\/games\/g1\/updateHistoryScoreForPlayer$/);
+        expect(init.method).toBe("POST");
+        expect(JSON.parse(init.body)).toEqual({playerId: "p2", roundIndex: 1, newScore: 50});
+    });
+
     it("returns an empty object for 204 responses", async () => {
         vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response(null, {status: 204})));
 

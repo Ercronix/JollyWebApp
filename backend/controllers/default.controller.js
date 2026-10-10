@@ -184,4 +184,10 @@ module.exports = {
             .then(r => utils.writeJson(res, r))
             .catch(e => sendError(res, e));
     },
+
+    updateHistoryScoreForPlayerPOST(req, res) {
+        Default.updateHistoryScoreForPlayerPOST(req.user, req.body, req.params.gameId)
+            .then(r => utils.writeJson(res, r))
+            .catch(e => sendError(res, e));
+    },
 };

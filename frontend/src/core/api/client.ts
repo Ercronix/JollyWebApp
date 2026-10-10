@@ -262,6 +262,22 @@ export class ApiClient {
         );
     }
 
+    // Lobby admin only: corrects a past round score of another player
+    static async updateHistoryScoreForPlayer(
+        gameId: string,
+        playerId: string,
+        roundIndex: number,
+        newScore: number
+    ): Promise<Game> {
+        return this.request<Game>(
+            `/api/games/${gameId}/updateHistoryScoreForPlayer`,
+            {
+                method: 'POST',
+                body: JSON.stringify({ playerId, roundIndex, newScore }),
+            }
+        );
+    }
+
     static async addPlayerToGame(gameId: string, playerName: string): Promise<Game> {
         return this.request<Game>(
             `/api/games/${gameId}/addPlayer`,

@@ -13,6 +13,8 @@ type PlayerHistoryModalProps = {
     player: Player | null;
     currentUserId?: string;
     gameId?: string;
+    // Lobby admin in admin mode: may edit every player's history, not just their own
+    canEditOthers?: boolean;
     onUpdateScore?: (roundIndex: number, newScore: number) => Promise<void>;
 };
 
@@ -22,6 +24,7 @@ export function PlayerHistoryModal({
                                        player,
                                        currentUserId,
                                        gameId,
+                                       canEditOthers = false,
                                        onUpdateScore
                                    }: PlayerHistoryModalProps) {
     const [editingRound, setEditingRound] = useState<number | null>(null);
@@ -33,7 +36,7 @@ export function PlayerHistoryModal({
 
     const pointsHistory = player.pointsHistory || [];
     const hasHistory = pointsHistory.length > 0;
-    const canEdit = currentUserId === player.userId && !!onUpdateScore && !!gameId;
+    const canEdit = (canEditOthers || currentUserId === player.userId) && !!onUpdateScore && !!gameId;
 
     const handleEditClick = (roundIndex: number, currentScore: number) => {
         setEditingRound(roundIndex);

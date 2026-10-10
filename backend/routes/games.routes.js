@@ -21,5 +21,6 @@ router.post('/:gameId/updateHistoryScore', Default.updateHistoryScorePOST);
 router.post('/:gameId/addPlayer', Default.addPlayerToGamePOST);
 router.post('/:gameId/removePlayer', Default.removePlayerFromGamePOST);
 router.post('/:gameId/submitScoreForPlayer', Default.submitScoreForPlayerPOST);
+router.post('/:gameId/updateHistoryScoreForPlayer', Default.updateHistoryScoreForPlayerPOST);
 
 module.exports = router;
