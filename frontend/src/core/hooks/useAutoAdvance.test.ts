@@ -1,6 +1,6 @@
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
-import {renderHook} from "@testing-library/react";
-import {useAutoAdvance} from "./useAutoAdvance";
+import {act, renderHook} from "@testing-library/react";
+import {useAutoAdvance, useAutoAdvanceSetting} from "./useAutoAdvance";
 
 beforeEach(() => vi.useFakeTimers());
 afterEach(() => vi.useRealTimers());
@@ -53,5 +53,23 @@ describe("useAutoAdvance", () => {
 
         expect(first).not.toHaveBeenCalled();
         expect(second).toHaveBeenCalledOnce();
+    });
+});
+
+describe("useAutoAdvanceSetting", () => {
+    afterEach(() => localStorage.clear());
+
+    it("is on by default", () => {
+        const {result} = renderHook(() => useAutoAdvanceSetting("game-1"));
+
+        expect(result.current[0]).toBe(true);
+    });
+
+    it("remembers turning it off for that game only", () => {
+        const first = renderHook(() => useAutoAdvanceSetting("game-1"));
+        act(() => first.result.current[1](false));
+
+        expect(renderHook(() => useAutoAdvanceSetting("game-1")).result.current[0]).toBe(false);
+        expect(renderHook(() => useAutoAdvanceSetting("game-2")).result.current[0]).toBe(true);
     });
 });
