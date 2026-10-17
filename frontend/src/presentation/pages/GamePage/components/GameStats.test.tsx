@@ -2,11 +2,12 @@ import {describe, expect, it} from "vitest";
 import {render, screen} from "@testing-library/react";
 import {GameStats} from "./GameStats";
 
-// Issue #48: how long the game is running
 describe("GameStats", () => {
-    it("shows the game's running time", () => {
-        render(<GameStats currentRound={3} winCondition={1000} dealerName="Anna" elapsedMs={754_000}/>);
+    // Issue #48: the running time moved from the stats into the round times chart
+    it("no longer shows a Time tile", () => {
+        render(<GameStats currentRound={3} winCondition={1000} dealerName="Anna"/>);
 
-        expect(screen.getByText("Time").nextSibling?.textContent).toBe("12:34");
+        expect(screen.queryByText("Time")).toBeNull();
+        expect(screen.getByText("Round")).toBeTruthy();
     });
 });

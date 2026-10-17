@@ -8,7 +8,6 @@ import {PlayerHistoryModal} from "@/presentation/components/PlayerHistoryModal";
 import {Navigate, useNavigate, useSearch} from "@tanstack/react-router";
 import {MainLayout} from "@/presentation/layout/MainLayout";
 import {UserModel} from "@/core/models/UserModel";
-import {PlayerPointsChart} from "@/presentation/components/PlayerPointsChart";
 import {PrivateLobbyInfo} from "@/presentation/components/PrivateLobbyInfo";
 import type {GameEvent, Player} from "@/types";
 import { useQueryClient } from "@tanstack/react-query";
@@ -34,11 +33,11 @@ import {RoundStatus} from "./components/RoundStatus";
 import {ScoreInput} from "./components/ScoreInput";
 import {PlayerCard} from "./components/PlayerCard";
 import {GameStats} from "./components/GameStats";
+import {GameCharts} from "./components/GameCharts";
 import {AdminPanel} from "@/presentation/components/AdminPanel";
 import {Sheet} from "@/presentation/components/Sheet";
 import {useAutoAdvance, useAutoAdvanceSetting} from "@/core/hooks/useAutoAdvance";
 import {useRefetchOnReturn} from "@/core/hooks/useRefetchOnReturn";
-import {useElapsedTime} from "@/core/hooks/useElapsedTime";
 import {isScoreInput, parseScore, validateScore, validateWinCondition} from "@/core/scores";
 import {useToast} from "@/presentation/components/Toast/useToast";
 import {DeleteConfirmationModal} from "@/presentation/components/DeleteConfirmationModal";
@@ -109,8 +108,6 @@ export function GamePage() {
         isLastLobbyPlayer,
         hasScores,
     } = useMemo(() => deriveGameState(game, currentUser?.id), [game, currentUser?.id]);
-    // Games that ended before finishedAt was recorded have no known duration
-    const elapsedMs = useElapsedTime(game?.isFinished && !game.finishedAt ? undefined : game?.createdAt, game?.finishedAt);
 
     // Follow the live game state, so the modal shows updated scores
     const historyPlayer = game?.players.find(p => p.userId === historyPlayerId) ?? null;
@@ -327,7 +324,6 @@ export function GamePage() {
                     currentRound={game.currentRound}
                     winCondition={game.winCondition}
                     dealerName={currentDealer?.name}
-                    elapsedMs={elapsedMs}
                 />
 
                 {isOwner && (
@@ -391,7 +387,7 @@ export function GamePage() {
                 )}
 
                 {game.players.length > 0 && (
-                    <PlayerPointsChart players={game.players} currentRound={game.currentRound}/>
+                    <GameCharts game={game}/>
                 )}
 
                 {searchParams.accessCode && (
