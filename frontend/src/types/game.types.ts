@@ -19,6 +19,7 @@ export interface Game {
     currentRound: number;
     createdAt: string;
     finishedAt?: string | null;
+    roundEndedAt?: string[]; // when each round ended; entry i is the end of round i + 1
     isFinished: boolean;
     winner: string | null;
     ownerId?: string; // the lobby admin; only in GET /api/games/:id responses
