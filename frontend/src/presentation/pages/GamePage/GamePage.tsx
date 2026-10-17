@@ -42,7 +42,7 @@ import {isScoreInput, parseScore, validateScore, validateWinCondition} from "@/c
 import {useToast} from "@/presentation/components/Toast/useToast";
 import {DeleteConfirmationModal} from "@/presentation/components/DeleteConfirmationModal";
 import {logger} from "@/utils/logger";
-import {deriveGameState} from "./gameState";
+import {canEditOthersHistory, deriveGameState} from "./gameState";
 
 export type GameSearchParams = {
     accessCode?: string;
@@ -532,7 +532,7 @@ export function GamePage() {
                 player={historyPlayer}
                 currentUserId={currentUser.id}
                 gameId={gameId}
-                canEditOthers={isOwner && isAdminMode}
+                canEditOthers={canEditOthersHistory(historyPlayer, {isOwner, isAdminMode})}
                 onUpdateScore={handleUpdateHistoryScore}
             />
 

@@ -39,3 +39,14 @@ export function deriveGameState(game: Game | undefined, currentUserId: string | 
         hasScores: (game?.currentRound ?? 1) > 1 || players.some(p => p.hasSubmitted),
     };
 }
+
+/**
+ * Whether the current user may edit another player's past scores: the admin may always edit the
+ * guests they added (nobody else can), and real players' only in admin mode
+ */
+export function canEditOthersHistory(
+    player: Player | null | undefined,
+    {isOwner, isAdminMode}: {isOwner: boolean; isAdminMode: boolean},
+): boolean {
+    return isOwner && (isAdminMode || !!player?.isTemporary);
+}

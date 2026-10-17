@@ -1,6 +1,6 @@
 import {describe, expect, it} from "vitest";
 import type {Game, Player} from "@/types";
-import {deriveGameState} from "./gameState";
+import {canEditOthersHistory, deriveGameState} from "./gameState";
 
 const player = (userId: string, overrides: Partial<Player> = {}): Player => ({
     name: userId.toUpperCase(),
@@ -96,5 +96,24 @@ describe("deriveGameState", () => {
         expect(deriveGameState(game([player("a")]), "a").hasScores).toBe(false);
         expect(deriveGameState(game([player("a", {hasSubmitted: true})]), "a").hasScores).toBe(true);
         expect(deriveGameState(game([player("a")], {currentRound: 2}), "a").hasScores).toBe(true);
+    });
+});
+
+// Issue #50: the admin should be able to edit the past scores of the players they added
+describe("canEditOthersHistory", () => {
+    const guest = player("g", {isTemporary: true});
+
+    it("lets the admin edit a guest's history without admin mode", () => {
+        expect(canEditOthersHistory(guest, {isOwner: true, isAdminMode: false})).toBe(true);
+    });
+
+    it("needs admin mode for real players' history", () => {
+        expect(canEditOthersHistory(player("b"), {isOwner: true, isAdminMode: false})).toBe(false);
+        expect(canEditOthersHistory(player("b"), {isOwner: true, isAdminMode: true})).toBe(true);
+    });
+
+    it("never lets other players edit someone's history", () => {
+        expect(canEditOthersHistory(guest, {isOwner: false, isAdminMode: false})).toBe(false);
+        expect(canEditOthersHistory(player("b"), {isOwner: false, isAdminMode: true})).toBe(false);
     });
 });
