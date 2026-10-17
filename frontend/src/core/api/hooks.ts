@@ -217,17 +217,6 @@ export function useReorderPlayers() {
     });
 }
 
-export function useForceNextRound() {
-    const queryClient = useQueryClient();
-
-    return useMutation({
-        mutationFn: (gameId: string) => ApiClient.forceNextRound(gameId),
-        onSuccess: (_, gameId) => {
-            queryClient.invalidateQueries({ queryKey: queryKeys.game(gameId) });
-        },
-    });
-}
-
 export function useSubmitWinCondition() {
     const queryClient = useQueryClient();
 
