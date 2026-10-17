@@ -245,6 +245,71 @@ describe('player management', () => {
         expect(after.currentDealer).toBe(alice.user.id);
     });
 
+    // Regression: removing a real player deleted their scores (e.g. someone who had to go and forgot to leave)
+    it('keeps the scores of a removed player who already played', async () => {
+        await playRound([[alice, 10], [bob, 20]]);
+
+        await alice.post(`/api/games/${gameId}/removePlayer`, { playerId: bob.user.id }).expect(200);
+
+        expect(await player(bob)).toEqual(expect.objectContaining({ totalScore: 20, pointsHistory: [20], hasLeft: true }));
+    });
+
+    it('keeps a score the removed player already submitted this round', async () => {
+        await bob.post(`/api/games/${gameId}/submitScore`, { score: 15 }).expect(200);
+        await alice.post(`/api/games/${gameId}/removePlayer`, { playerId: bob.user.id }).expect(200);
+
+        await playRound([[alice, 10]]);
+
+        expect(await player(bob)).toEqual(expect.objectContaining({ totalScore: 15, pointsHistory: [15] }));
+    });
+
+    it('plays on without a removed player, scoring them 0', async () => {
+        await playRound([[alice, 10], [bob, 20]]);
+        await alice.post(`/api/games/${gameId}/removePlayer`, { playerId: bob.user.id }).expect(200);
+
+        await playRound([[alice, 5]]);
+        await playRound([[alice, 5]]);
+
+        expect(await player(bob)).toEqual(expect.objectContaining({ totalScore: 20, pointsHistory: [20, 0, 0] }));
+    });
+
+    it('does not let a removed player submit scores', async () => {
+        await playRound([[alice, 10], [bob, 20]]);
+        await alice.post(`/api/games/${gameId}/removePlayer`, { playerId: bob.user.id }).expect(200);
+
+        await bob.post(`/api/games/${gameId}/submitScore`, { score: 10 }).expect(403);
+        await alice.post(`/api/games/${gameId}/submitScoreForPlayer`, { playerId: bob.user.id, score: 10 }).expect(400);
+    });
+
+    it('never makes a removed player the dealer', async () => {
+        ({ gameId } = await createLobbyWith(alice, [bob, mallory]));
+        await playRound([[alice, 10], [bob, 20], [mallory, 30]]);
+        expect((await game()).currentDealer).toBe(bob.user.id);
+
+        await alice.post(`/api/games/${gameId}/removePlayer`, { playerId: bob.user.id }).expect(200);
+        expect((await game()).currentDealer).toBe(mallory.user.id);
+
+        await playRound([[alice, 10], [mallory, 30]]);
+        expect((await game()).currentDealer).toBe(alice.user.id);
+        await playRound([[alice, 10], [mallory, 30]]);
+        expect((await game()).currentDealer).toBe(mallory.user.id);
+    });
+
+    it('lets a removed player rejoin with their scores', async () => {
+        let lobby;
+        ({ lobby, gameId } = await createLobbyWith(alice, [bob]));
+        await playRound([[alice, 10], [bob, 20]]);
+        await alice.post(`/api/games/${gameId}/removePlayer`, { playerId: bob.user.id }).expect(200);
+        await playRound([[alice, 5]]);
+
+        await bob.post(`/api/lobbies/${lobby.id}/leave`).expect(204);
+        await bob.post(`/api/lobbies/${lobby.id}/join`).expect(200);
+
+        expect(await player(bob)).toEqual(expect.objectContaining({ totalScore: 20, pointsHistory: [20, 0], hasLeft: false }));
+        await playRound([[alice, 5], [bob, 10]]);
+        expect((await player(bob)).totalScore).toBe(30);
+    });
+
     it('reorders players and makes the first one dealer', async () => {
         const res = await alice.post(`/api/games/${gameId}/reorderPlayers`, { fromIndex: 1, toIndex: 0 }).expect(200);
 

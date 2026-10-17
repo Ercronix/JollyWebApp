@@ -63,7 +63,22 @@ class GamesService {
             }
 
             const existingPlayer = game.players.find(p => p.userId.toString() === userId.toString());
+            if (existingPlayer && !existingPlayer.hasLeft) {
+                return game;
+            }
             if (existingPlayer) {
+                existingPlayer.hasLeft = false;
+                existingPlayer.hasSubmitted = false;
+                existingPlayer.currentRoundScore = 0;
+                await game.save();
+
+                EventService.sendEvent(gameId.toString(), {
+                    type: 'PLAYER_JOINED',
+                    game: this.getGameResponse(game),
+                    player: { userId, name: existingPlayer.name, score: existingPlayer.totalScore }
+                });
+
+                console.log(`[GamesService] Player ${username} rejoined game ${gameId}`);
                 return game;
             }
             let pointsHistory = [];
@@ -216,7 +231,27 @@ class GamesService {
      * Whether userId belongs to a real (non-temporary) player of the game
      */
     isPlayer(game, userId) {
-        return game.players.some(p => !p.isTemporary && p.userId.toString() === userId.toString());
+        return game.players.some(p => !p.isTemporary && !p.hasLeft && p.userId.toString() === userId.toString());
+    }
+
+    /**
+     * Whether the player has points worth keeping when they are removed
+     */
+    hasPlayed(player) {
+        return player.hasSubmitted || player.pointsHistory.some(score => score !== 0);
+    }
+
+    /**
+     * The first player still playing at or after index, wrapping around
+     */
+    nextActivePlayer(game, index) {
+        for (let i = 0; i < game.players.length; i++) {
+            const player = game.players[(index + i) % game.players.length];
+            if (!player.hasLeft) {
+                return player;
+            }
+        }
+        return null;
     }
 
     allPlayersSubmitted(game) {
@@ -281,12 +316,14 @@ class GamesService {
             game.currentRound++;
             game.players.forEach(player => {
                 player.currentRoundScore = 0;
-                player.hasSubmitted = false;
+                player.hasSubmitted = player.hasLeft;
             });
 
             const currentDealerIndex = game.players.findIndex(p => p.userId.toString() === game.currentDealer.toString());
-            const nextDealerIndex = (currentDealerIndex + 1) % game.players.length;
-            game.currentDealer = game.players[nextDealerIndex].userId;
+            const nextDealer = this.nextActivePlayer(game, currentDealerIndex + 1);
+            if (nextDealer) {
+                game.currentDealer = nextDealer.userId;
+            }
 
             await game.save();
 
@@ -316,8 +353,9 @@ class GamesService {
             const [movedPlayer] = game.players.splice(fromIndex, 1);
             game.players.splice(toIndex, 0, movedPlayer);
 
-            if (game.players.length > 0) {
-                game.currentDealer = game.players[0].userId;
+            const firstActive = this.nextActivePlayer(game, 0);
+            if (firstActive) {
+                game.currentDealer = firstActive.userId;
             }
 
             await game.save();
@@ -344,7 +382,7 @@ class GamesService {
 
             game.players.forEach(player => {
                 player.currentRoundScore = 0;
-                player.hasSubmitted = false;
+                player.hasSubmitted = player.hasLeft;
             });
 
             await game.save();
@@ -368,7 +406,8 @@ class GamesService {
                 currentRoundScore: p.currentRoundScore,
                 hasSubmitted: p.hasSubmitted,
                 pointsHistory: p.pointsHistory || [],
-                isTemporary: p.isTemporary || false
+                isTemporary: p.isTemporary || false,
+                hasLeft: p.hasLeft || false
             })),
             currentDealer: game.currentDealer,
             currentRound: game.currentRound,
@@ -496,15 +535,25 @@ class GamesService {
                 p => p.userId.toString() === playerId.toString()
             );
 
-            if (playerIndex === -1) {
+            if (playerIndex === -1 || game.players[playerIndex].hasLeft) {
                 throw new Error('Player not found in game');
             }
 
             const removedPlayer = game.players[playerIndex];
-            game.players.splice(playerIndex, 1);
+            if (!removedPlayer.isTemporary && this.hasPlayed(removedPlayer)) {
+                // Keep a real player's scores (e.g. someone who had to go and forgot to leave);
+                // a score they already submitted this round still counts
+                removedPlayer.hasLeft = true;
+                removedPlayer.hasSubmitted = true;
+            } else {
+                game.players.splice(playerIndex, 1);
+            }
 
-            if (game.currentDealer.toString() === playerId.toString() && game.players.length > 0) {
-                game.currentDealer = game.players[0].userId;
+            if (game.currentDealer.toString() === playerId.toString()) {
+                const nextDealer = this.nextActivePlayer(game, removedPlayer.hasLeft ? playerIndex + 1 : playerIndex);
+                if (nextDealer) {
+                    game.currentDealer = nextDealer.userId;
+                }
             }
 
             await game.save();

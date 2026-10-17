@@ -67,8 +67,9 @@ export const PlayerCard: React.FC<PlayerCardProps> = ({
                     {isCurrentUser && <Badge className="bg-accent-soft text-accent">You</Badge>}
                     {isOwner && <Badge className="bg-white/[0.08] text-fg-muted">Admin</Badge>}
                     {player.isTemporary && <Badge className="bg-white/[0.08] text-fg-muted">Guest</Badge>}
+                    {player.hasLeft && <Badge className="bg-white/[0.08] text-fg-muted">Left</Badge>}
                 </div>
-                {!showReorderMode && player.hasSubmitted && (
+                {!showReorderMode && player.hasSubmitted && !player.hasLeft && (
                     <div className="flex items-center gap-1 mt-0.5 text-[13px] font-bold text-good">
                         <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={3} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                             <path d="M5 13l4 4L19 7"/>
@@ -99,7 +100,7 @@ export const PlayerCard: React.FC<PlayerCardProps> = ({
                             {player.totalScore}
                         </motion.div>
                     </AnimatePresence>
-                    {lastRoundScore !== null && !player.hasSubmitted ? (
+                    {lastRoundScore !== null && (!player.hasSubmitted || player.hasLeft) ? (
                         <div className={`text-xs font-bold tabular-nums ${
                             lastRoundScore > 0 ? "text-good" : lastRoundScore < 0 ? "text-bad" : "text-fg-muted"
                         }`}>

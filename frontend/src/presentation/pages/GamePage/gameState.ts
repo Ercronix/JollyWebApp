@@ -3,6 +3,8 @@ import type {Game, Player} from "@/types";
 export type DerivedGameState = {
     allPlayersSubmitted: boolean;
     submittedCount: number;
+    // Players still playing (removed ones keep their points but don't submit)
+    activePlayerCount: number;
     currentUserPlayer: Player | undefined;
     hasCurrentUserSubmitted: boolean;
     currentDealer: Player | undefined;
@@ -18,13 +20,15 @@ export type DerivedGameState = {
  */
 export function deriveGameState(game: Game | undefined, currentUserId: string | undefined): DerivedGameState {
     const players = game?.players ?? [];
-    const submittedCount = players.filter(p => p.hasSubmitted).length;
-    const currentUserPlayer = players.find(p => p.userId === currentUserId);
+    const activePlayers = players.filter(p => !p.hasLeft);
+    const submittedCount = activePlayers.filter(p => p.hasSubmitted).length;
+    const currentUserPlayer = activePlayers.find(p => p.userId === currentUserId);
 
     return {
         // An empty game is never "complete", otherwise auto-advance would fire
-        allPlayersSubmitted: players.length > 0 && submittedCount === players.length,
+        allPlayersSubmitted: activePlayers.length > 0 && submittedCount === activePlayers.length,
         submittedCount,
+        activePlayerCount: activePlayers.length,
         currentUserPlayer,
         hasCurrentUserSubmitted: currentUserPlayer?.hasSubmitted ?? false,
         currentDealer: players.find(p => p.userId === game?.currentDealer),

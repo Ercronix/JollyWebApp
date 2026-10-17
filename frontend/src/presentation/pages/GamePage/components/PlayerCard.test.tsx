@@ -66,3 +66,15 @@ describe("PlayerCard as a playing card", () => {
         expect(screen.queryByRole("img", {name: "Dealer"})).toBeNull();
     });
 });
+
+// Regression: an admin-removed player who scored stays in the game with their points
+describe("PlayerCard for a removed player", () => {
+    it("marks them as left instead of submitted", () => {
+        render(<PlayerCard {...props} showReorderMode={false}
+                           player={{...player, hasSubmitted: true, hasLeft: true}}/>);
+
+        expect(screen.getByText("Left")).toBeTruthy();
+        expect(screen.queryByText(/Submitted/)).toBeNull();
+        expect(screen.getByText("30")).toBeTruthy();
+    });
+});
