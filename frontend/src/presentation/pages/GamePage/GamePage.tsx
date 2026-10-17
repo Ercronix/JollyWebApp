@@ -238,10 +238,6 @@ export function GamePage() {
         }
     }, [reorderPlayersMutation, gameId, showError]);
 
-    const handleToggleAdminMode = useCallback(() => {
-        setIsAdminMode(prev => !prev);
-    }, []);
-
     const handleAddPlayer = useCallback(async (playerName: string) => {
         if (!gameId) return;
 
@@ -329,7 +325,6 @@ export function GamePage() {
                 {isOwner && (
                     <AdminPanel
                         isAdminMode={isAdminMode}
-                        onToggleAdminMode={handleToggleAdminMode}
                         players={game.players}
                         onAddPlayer={handleAddPlayer}
                         onRemovePlayer={handleRemovePlayer}
@@ -457,6 +452,18 @@ export function GamePage() {
                             className="w-5 h-5 accent-[#cdb27a] cursor-pointer"
                         />
                     </label>
+
+                    {isOwner && (
+                        <label className={`${settingRow} cursor-pointer`}>
+                            <span>Admin mode</span>
+                            <input
+                                type="checkbox"
+                                checked={isAdminMode}
+                                onChange={(e) => setIsAdminMode(e.target.checked)}
+                                className="w-5 h-5 accent-[#cdb27a] cursor-pointer"
+                            />
+                        </label>
+                    )}
 
                     {!editingWinCondition ? (
                         <button type="button" onClick={handleWinConditionEdit} disabled={allPlayersSubmitted} className={settingRow}>
