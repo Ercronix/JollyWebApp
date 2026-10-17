@@ -43,3 +43,26 @@ describe("PlayerCard reorder mode", () => {
         expect(screen.queryByRole("button", {name: "Move Bob up"})).toBeNull();
     });
 });
+
+describe("PlayerCard as a playing card", () => {
+    const cardProps = {...props, showReorderMode: false};
+
+    it("shows the seat number and the seat's suit in the corner", () => {
+        render(<PlayerCard {...cardProps} index={1}/>);
+
+        expect(screen.getByText("2")).toBeTruthy();
+        expect(screen.getByText("♥")).toBeTruthy();
+    });
+
+    it("marks the dealer with a dealer button instead of a badge", () => {
+        render(<PlayerCard {...cardProps} isDealer/>);
+
+        expect(screen.getByRole("img", {name: "Dealer"}).textContent).toBe("D");
+    });
+
+    it("shows no dealer button for other players", () => {
+        render(<PlayerCard {...cardProps}/>);
+
+        expect(screen.queryByRole("img", {name: "Dealer"})).toBeNull();
+    });
+});

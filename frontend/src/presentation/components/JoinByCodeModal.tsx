@@ -51,7 +51,7 @@ export const JoinByCodeModal: React.FC<JoinByCodeModalProps> = ({ onClose }) => 
         <Sheet isOpen onClose={onClose} title="Join private lobby">
                 <div className="space-y-4">
                     <div>
-                        <label htmlFor="join-code" className="block text-sm text-gray-300 mb-2">
+                        <label htmlFor="join-code" className="block text-sm text-ink-muted mb-2">
                             Enter the 6-character access code
                         </label>
                         <Input
@@ -71,14 +71,14 @@ export const JoinByCodeModal: React.FC<JoinByCodeModalProps> = ({ onClose }) => 
                             }}
                             placeholder="ABC123"
                             maxLength={6}
-                            className="w-full h-14 text-center text-2xl font-mono tracking-widest uppercase bg-white/10 border-white/30 text-white placeholder-gray-500"
+                            className="w-full h-14 text-center text-2xl font-mono font-bold tracking-widest uppercase"
                         />
                     </div>
 
                     {code.length === 6 && !previewCode && (
                         <Button
                             onClick={handlePreview}
-                            colorscheme="cyanToBlue"
+                            colorscheme="ink"
                             variant="outline"
                             className="w-full min-h-12"
                         >
@@ -88,18 +88,18 @@ export const JoinByCodeModal: React.FC<JoinByCodeModalProps> = ({ onClose }) => 
 
                     {isLoadingPreview && (
                         <div className="text-center py-4">
-                            <Text className="text-gray-400">Loading lobby details...</Text>
+                            <Text className="text-ink-muted">Loading lobby details...</Text>
                         </div>
                     )}
 
                     {lobbyPreview && (
-                        <div className="bg-white/5 rounded-lg p-4 border border-white/10">
-                            <Text size="sm" className="text-gray-400 mb-1">Lobby Name</Text>
-                            <Text size="lg" weight="bold" className="text-white mb-3">
+                        <div className="bg-card-muted rounded-xl p-4">
+                            <Text size="sm" className="text-ink-muted mb-1">Lobby Name</Text>
+                            <Text size="lg" weight="bold" className="font-display text-ink mb-3">
                                 {lobbyPreview.name}
                             </Text>
-                            <Text size="sm" className="text-gray-400 mb-1">Players</Text>
-                            <Text className="text-white">{lobbyPreview.playerCount} player(s)</Text>
+                            <Text size="sm" className="text-ink-muted mb-1">Players</Text>
+                            <Text className="text-ink">{lobbyPreview.playerCount} player(s)</Text>
                         </div>
                     )}
                     {lobbyPreview && (
@@ -109,7 +109,7 @@ export const JoinByCodeModal: React.FC<JoinByCodeModalProps> = ({ onClose }) => 
                                     setPreviewCode(undefined);
                                     setCode("");
                                 }}
-                                colorscheme="pinkToOrange"
+                                colorscheme="ink"
                                 variant="outline"
                                 className="flex-1 min-h-12"
                             >
@@ -117,7 +117,7 @@ export const JoinByCodeModal: React.FC<JoinByCodeModalProps> = ({ onClose }) => 
                             </Button>
                             <Button
                                 onClick={handleJoin}
-                                colorscheme="greenToBlue"
+                                colorscheme="gold"
                                 variant="solid"
                                 disabled={joinMutation.isPending}
                                 className="flex-1 min-h-12"
@@ -128,7 +128,7 @@ export const JoinByCodeModal: React.FC<JoinByCodeModalProps> = ({ onClose }) => 
                     )}
 
                     {joinMutation.isError && (
-                        <Text size="sm" className="text-red-400 text-center">
+                        <Text size="sm" className="text-suit-red font-semibold text-center">
                             Failed to join lobby. Please check the code and try again.
                         </Text>
                     )}

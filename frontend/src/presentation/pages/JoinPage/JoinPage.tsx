@@ -57,8 +57,8 @@ export function JoinPage() {
     return (
         <div className="min-h-screen flex items-center justify-center">
             <div className="text-center space-y-4">
-                <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-purple-400 mx-auto"></div>
-                <Text size="xl" className="text-white">
+                <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-gold mx-auto"></div>
+                <Text size="xl" className="font-display font-extrabold text-on-felt">
                     {isLoadingUser
                         ? 'Checking authentication...'
                         : joinMutation.isPending
@@ -67,10 +67,10 @@ export function JoinPage() {
                 </Text>
                 {joinMutation.isError && (
                     <div className="space-y-2">
-                        <Text size="sm" className="text-red-400">
+                        <Text size="sm" className="text-[#ff8c7a] font-semibold">
                             Failed to join lobby. Invalid or expired code.
                         </Text>
-                        <Text size="sm" className="text-gray-400">
+                        <Text size="sm" className="text-on-felt-muted">
                             Redirecting to lobby page...
                         </Text>
                     </div>

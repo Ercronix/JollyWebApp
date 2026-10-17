@@ -40,7 +40,7 @@ export function Sheet({isOpen, onClose, title, subtitle, children, footer, class
         <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center sm:p-4">
             <div
                 data-testid="sheet-backdrop"
-                className="absolute inset-0 bg-slate-950/70 backdrop-blur-sm"
+                className="absolute inset-0 bg-[rgba(4,18,13,0.72)] backdrop-blur-sm"
                 onClick={onClose}
             />
             <div
@@ -48,25 +48,25 @@ export function Sheet({isOpen, onClose, title, subtitle, children, footer, class
                 aria-modal="true"
                 aria-labelledby={titleId}
                 className={cn(
-                    "relative w-full sm:max-w-md max-h-[90dvh] flex flex-col bg-[#16213d] text-white",
-                    "rounded-t-3xl sm:rounded-3xl border-t sm:border border-white/15 shadow-2xl",
+                    "relative w-full sm:max-w-md max-h-[90dvh] flex flex-col bg-card text-ink",
+                    "rounded-t-[26px] sm:rounded-[26px] shadow-[0_-10px_30px_rgba(0,0,0,0.4)]",
                     "animate-sheet-up",
                     className,
                 )}
             >
                 <div className="flex justify-center pt-2 sm:hidden" aria-hidden="true">
-                    <div className="w-10 h-1 rounded-full bg-white/30"/>
+                    <div className="w-10 h-1 rounded-full bg-card-line"/>
                 </div>
                 <div className="flex items-start gap-3 pl-5 pr-2 pt-3 pb-2">
                     <div className="flex-1 min-w-0">
-                        <h2 id={titleId} className="text-xl font-bold break-words">{title}</h2>
-                        {subtitle && <div className="text-sm text-slate-300 mt-0.5">{subtitle}</div>}
+                        <h2 id={titleId} className="font-display text-[22px] font-extrabold break-words">{title}</h2>
+                        {subtitle && <div className="text-sm text-ink-muted mt-0.5">{subtitle}</div>}
                     </div>
                     <button
                         type="button"
                         onClick={onClose}
                         aria-label="Close"
-                        className="flex-none w-11 h-11 rounded-full bg-white/10 hover:bg-white/15 flex items-center justify-center"
+                        className="flex-none w-11 h-11 rounded-full bg-card-muted hover:bg-card-line/60 flex items-center justify-center"
                     >
                         <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" aria-hidden="true">
                             <path d="M6 6l12 12M18 6L6 18"/>
@@ -77,7 +77,7 @@ export function Sheet({isOpen, onClose, title, subtitle, children, footer, class
                     {children}
                 </div>
                 {footer && (
-                    <div className="px-4 pt-3 pb-[max(1rem,env(safe-area-inset-bottom))] border-t border-white/10">
+                    <div className="px-4 pt-3 pb-[max(1rem,env(safe-area-inset-bottom))] border-t border-card-line/60">
                         {footer}
                     </div>
                 )}

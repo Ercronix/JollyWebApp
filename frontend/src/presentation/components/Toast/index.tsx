@@ -6,8 +6,8 @@ const DISMISS_AFTER_MS = 5000;
 type ToastItem = {id: number; kind: ToastKind; message: string};
 
 const kindStyles: Record<ToastKind, string> = {
-    error: "border-red-500/40 bg-red-950/80 text-red-100",
-    success: "border-green-500/40 bg-green-950/80 text-green-100",
+    error: "border-[#e3c2c6] bg-danger-soft text-suit-red",
+    success: "border-win/30 bg-win-soft text-win",
 };
 
 export const ToastProvider: React.FC<{children: React.ReactNode}> = ({children}) => {
@@ -45,7 +45,7 @@ export const ToastProvider: React.FC<{children: React.ReactNode}> = ({children})
                     <div
                         key={toast.id}
                         role={toast.kind === "error" ? "alert" : "status"}
-                        className={`pointer-events-auto flex items-start gap-3 rounded-xl border px-4 py-3 shadow-2xl backdrop-blur-xl ${kindStyles[toast.kind]}`}
+                        className={`pointer-events-auto flex items-start gap-3 rounded-xl border px-4 py-3 font-semibold shadow-[0_10px_24px_rgba(0,0,0,0.4)] ${kindStyles[toast.kind]}`}
                     >
                         <span className="flex-1 text-sm">{toast.message}</span>
                         <button

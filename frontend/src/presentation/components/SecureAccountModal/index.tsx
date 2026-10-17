@@ -57,7 +57,7 @@ export function SecureAccountModal({isOpen, fullTag, onClose, onSecured}: Secure
         <Sheet isOpen onClose={secureAccount.isPending ? () => {} : close} title="Secure your account">
             <form onSubmit={handleSubmit} className="space-y-5 px-1">
                 <div>
-                    <Text size="sm" className="text-gray-300">
+                    <Text size="sm" className="text-ink-muted">
                         Add a password to {fullTag}. You keep your tag and all your games, and can log in with your
                         name and password from any device.
                     </Text>
@@ -71,7 +71,7 @@ export function SecureAccountModal({isOpen, fullTag, onClose, onSecured}: Secure
                         placeholder="Password"
                         autoComplete="new-password"
                         aria-label="Password"
-                        className="h-12 text-white bg-white/5 border-white/30 text-center"
+                        className="h-12 text-center"
                         disabled={secureAccount.isPending}
                     />
                     <Input
@@ -81,17 +81,17 @@ export function SecureAccountModal({isOpen, fullTag, onClose, onSecured}: Secure
                         placeholder="Repeat password"
                         autoComplete="new-password"
                         aria-label="Repeat password"
-                        className="h-12 text-white bg-white/5 border-white/30 text-center"
+                        className="h-12 text-center"
                         disabled={secureAccount.isPending}
                     />
                 </div>
 
                 <div className="flex gap-3">
-                    <Button type="button" variant="ghost" className="flex-1 min-h-12 text-slate-200 hover:bg-white/10" onClick={close}
+                    <Button type="button" colorscheme="ink" variant="ghost" className="flex-1 min-h-12" onClick={close}
                             disabled={secureAccount.isPending}>
                         Cancel
                     </Button>
-                    <Button type="submit" colorscheme="purpleToBlue" variant="solid" className="flex-1 min-h-12"
+                    <Button type="submit" colorscheme="gold" variant="solid" className="flex-1 min-h-12"
                             disabled={!password || !confirm || secureAccount.isPending}>
                         {secureAccount.isPending ? "Saving..." : "Set password"}
                     </Button>

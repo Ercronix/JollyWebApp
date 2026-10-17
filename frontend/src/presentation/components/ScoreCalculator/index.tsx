@@ -141,15 +141,15 @@ export function ScoreCalculator({
                 title="Score calculator"
                 footer={
                     <div className="flex gap-2">
-                        <Button onClick={handleReset} colorscheme="cyanToBlue" variant="outline" size="md" className="min-h-12">
+                        <Button onClick={handleReset} colorscheme="ink" variant="outline" size="md" className="min-h-12">
                             Reset
                         </Button>
-                        <Button onClick={onClose} colorscheme="pinkToOrange" variant="outline" size="md" className="min-h-12">
+                        <Button onClick={onClose} colorscheme="ink" variant="outline" size="md" className="min-h-12">
                             Cancel
                         </Button>
                         <Button
                             onClick={handleSubmit}
-                            colorscheme="greenToBlue"
+                            colorscheme="gold"
                             variant="solid"
                             size="md"
                             className="flex-1 min-h-12"
@@ -162,15 +162,15 @@ export function ScoreCalculator({
             >
                 <div className="space-y-4">
                     {/* Current Score */}
-                    <div className="bg-white/10 rounded-2xl p-4 text-center border border-white/20" aria-live="polite">
-                        <Text size="3xl" weight="bold" className="text-white tabular-nums">
+                    <div className="bg-white rounded-2xl p-4 text-center border border-card-line" aria-live="polite">
+                        <Text size="3xl" className="font-display font-extrabold text-ink tabular-nums">
                             {totalScore}
                         </Text>
                     </div>
 
                     {/* Add Points */}
                     <div className="space-y-2">
-                        <Text size="sm" weight="semibold" className="text-white text-center">
+                        <Text size="sm" weight="semibold" className="text-ink-muted text-center">
                             Add Points
                         </Text>
 
@@ -179,7 +179,7 @@ export function ScoreCalculator({
                                 <Button
                                     key={value}
                                     onClick={() => addPoints(value)}
-                                    colorscheme="greenToBlue"
+                                    colorscheme="ink"
                                     variant="solid"
                                     size="md"
                                     className="min-h-12 text-lg"
@@ -194,8 +194,8 @@ export function ScoreCalculator({
                                 <Button
                                     key={value}
                                     onClick={() => addPoints(value)}
-                                    colorscheme="purpleToBlue"
-                                    variant="solid"
+                                    colorscheme="danger"
+                                    variant="outline"
                                     size="md"
                                     className="min-h-12 text-lg"
                                 >
@@ -206,15 +206,15 @@ export function ScoreCalculator({
                     </div>
 
                     {/* Round Won */}
-                    <label className="flex items-center gap-3 min-h-14 px-4 rounded-xl bg-white/5 border border-white/10 cursor-pointer">
+                    <label className="flex items-center gap-3 min-h-14 px-4 rounded-xl bg-card-muted cursor-pointer">
                         <input
                             type="checkbox"
                             checked={roundWon}
                             onChange={(e) => setRoundWon(e.target.checked)}
-                            className="w-5 h-5 accent-green-500"
+                            className="w-5 h-5 accent-felt"
                         />
-                        <span className="flex-1 text-white font-semibold">Round won</span>
-                        <span className="text-sm text-gray-400">+50 points</span>
+                        <span className="flex-1 text-ink font-semibold">Round won</span>
+                        <span className="text-sm text-ink-muted">+50 points</span>
                     </label>
                 </div>
             </Sheet>

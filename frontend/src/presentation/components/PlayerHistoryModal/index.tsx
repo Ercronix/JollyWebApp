@@ -92,13 +92,13 @@ export function PlayerHistoryModal({
             subtitle={`Total ${player.totalScore} · ${pointsHistory.length} ${pointsHistory.length === 1 ? "round" : "rounds"}`}
         >
             {canEdit && canEditOthers && currentUserId !== player.userId && (
-                <p className="mb-2 px-3 py-2 rounded-xl bg-orange-500/10 border border-orange-500/35 text-[13px] text-orange-100">
+                <p className="mb-2 px-3 py-2 rounded-xl bg-gold-soft text-[13px] text-gold-ink">
                     Admin mode: you can correct this player's scores.
                 </p>
             )}
 
             {!hasHistory ? (
-                <Text className="text-slate-400 text-center py-8">No rounds completed yet</Text>
+                <Text className="text-ink-muted text-center py-8">No rounds completed yet</Text>
             ) : (
                 <ol>
                     {pointsHistory.map((points, index) => {
@@ -106,10 +106,10 @@ export function PlayerHistoryModal({
                         const inputId = `history-round-${index}`;
 
                         return (
-                            <li key={index} className="border-b border-white/[0.08]">
+                            <li key={index} className="border-b border-dashed border-card-line/80">
                                 {isEditing ? (
                                     <div className="flex flex-col gap-2 py-3">
-                                        <label htmlFor={inputId} className="text-sm text-slate-200">Round {index + 1}</label>
+                                        <label htmlFor={inputId} className="text-sm font-semibold text-ink">Round {index + 1}</label>
                                         <div className="flex gap-2">
                                             <Input
                                                 id={inputId}
@@ -117,39 +117,39 @@ export function PlayerHistoryModal({
                                                 inputMode="numeric"
                                                 value={editValue}
                                                 onChange={(e) => handleInputChange(e.target.value)}
-                                                className="flex-1 min-w-0 h-12 text-center text-lg font-bold text-white bg-white/[0.06] border border-violet-400 focus:border-violet-300"
+                                                className="flex-1 min-w-0 h-12 text-center font-display text-xl font-extrabold border-2 border-felt"
                                                 autoFocus
                                             />
                                             <button
                                                 type="button"
                                                 aria-label="Toggle minus"
                                                 onClick={() => handleInputChange(toggleSign(editValue))}
-                                                className="w-12 h-12 flex-none rounded-xl border border-white/20 bg-white/[0.06] text-xl font-bold"
+                                                className="w-12 h-12 flex-none rounded-xl border border-card-line bg-card-muted text-ink text-xl font-bold"
                                             >
                                                 ±
                                             </button>
-                                            <Button size="md" colorscheme="pinkToOrange" variant="outline" className="h-12"
+                                            <Button size="md" colorscheme="ink" variant="outline" className="h-12"
                                                     onClick={handleCancelEdit} disabled={isSubmitting}>
                                                 Cancel
                                             </Button>
-                                            <Button size="md" colorscheme="purpleToBlue" variant="solid" className="h-12"
+                                            <Button size="md" colorscheme="gold" variant="solid" className="h-12"
                                                     onClick={() => handleSaveEdit(index)} disabled={isSubmitting}>
                                                 Save
                                             </Button>
                                         </div>
-                                        {error && <p role="alert" className="text-[13px] text-red-300">{error}</p>}
+                                        {error && <p role="alert" className="text-[13px] font-semibold text-suit-red">{error}</p>}
                                     </div>
                                 ) : (
                                     <div className="flex items-center gap-3 min-h-14">
-                                        <span className="w-20 text-sm text-slate-400">Round {index + 1}</span>
-                                        <span className={`flex-1 text-[17px] font-bold tabular-nums ${points >= 0 ? "text-green-300" : "text-red-300"}`}>
+                                        <span className="w-20 text-sm text-ink-muted">Round {index + 1}</span>
+                                        <span className={`flex-1 font-display text-[19px] font-extrabold tabular-nums ${points >= 0 ? "text-win" : "text-suit-red"}`}>
                                             {points >= 0 ? "+" : ""}{points}
                                         </span>
                                         {canEdit && (
                                             <button
                                                 type="button"
                                                 onClick={() => handleEditClick(index, points)}
-                                                className="min-h-11 px-4 rounded-xl border border-blue-300/40 bg-blue-500/15 hover:bg-blue-500/25 text-blue-100 text-sm font-semibold"
+                                                className="min-h-11 px-4 rounded-xl border border-card-line hover:bg-card-muted text-ink text-sm font-bold"
                                             >
                                                 Edit
                                             </button>
@@ -164,17 +164,17 @@ export function PlayerHistoryModal({
 
             {hasHistory && (
                 <div className="grid grid-cols-3 gap-2 mt-4 text-center">
-                    <div className="p-2.5 rounded-xl bg-white/[0.06]">
-                        <div className="text-xs text-slate-400">Rounds</div>
-                        <div className="text-lg font-bold">{pointsHistory.length}</div>
+                    <div className="p-2.5 rounded-xl bg-card-muted">
+                        <div className="text-xs text-ink-muted">Rounds</div>
+                        <div className="font-display text-xl font-extrabold">{pointsHistory.length}</div>
                     </div>
-                    <div className="p-2.5 rounded-xl bg-white/[0.06]">
-                        <div className="text-xs text-slate-400">Average</div>
-                        <div className="text-lg font-bold tabular-nums">{average}</div>
+                    <div className="p-2.5 rounded-xl bg-card-muted">
+                        <div className="text-xs text-ink-muted">Average</div>
+                        <div className="font-display text-xl font-extrabold tabular-nums">{average}</div>
                     </div>
-                    <div className="p-2.5 rounded-xl bg-white/[0.06]">
-                        <div className="text-xs text-slate-400">Best</div>
-                        <div className="text-lg font-bold text-green-300 tabular-nums">{Math.max(...pointsHistory)}</div>
+                    <div className="p-2.5 rounded-xl bg-card-muted">
+                        <div className="text-xs text-ink-muted">Best</div>
+                        <div className="font-display text-xl font-extrabold text-win tabular-nums">{Math.max(...pointsHistory)}</div>
                     </div>
                 </div>
             )}
