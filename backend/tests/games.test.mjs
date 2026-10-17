@@ -161,6 +161,19 @@ describe('ending the game', () => {
         await alice.post(`/api/games/${gameId}/submitScore`, { score: 10 }).expect(400);
     });
 
+    // Issue #48: the game timer needs to know when the game ended
+    it('records when the game ended', async () => {
+        await alice.post(`/api/games/${gameId}/submitWinCondition`, { winCondition: 100 }).expect(200);
+        expect((await game()).finishedAt).toBeNull();
+
+        const before = Date.now();
+        await playRound([[alice, 100], [bob, 50]]);
+
+        const { createdAt, finishedAt } = await game();
+        expect(new Date(finishedAt).getTime()).toBeGreaterThanOrEqual(before);
+        expect(new Date(finishedAt).getTime()).toBeGreaterThanOrEqual(new Date(createdAt).getTime());
+    });
+
     it.each([99, 10001, 150.5])('rejects win condition %j', async (winCondition) => {
         await alice.post(`/api/games/${gameId}/submitWinCondition`, { winCondition }).expect(400);
     });

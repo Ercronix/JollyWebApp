@@ -289,6 +289,7 @@ class GamesService {
             if (winner) {
                 game.isFinished = true;
                 game.winner = winner.userId;
+                game.finishedAt = new Date();
 
                 game.players.forEach(player => {
                     player.currentRoundScore = 0;
@@ -412,6 +413,7 @@ class GamesService {
             currentDealer: game.currentDealer,
             currentRound: game.currentRound,
             createdAt: game.createdAt,
+            finishedAt: game.finishedAt || null,
             isFinished: game.isFinished,
             winner: game.winner,
             winCondition: game.winCondition || this.POINTS_GOAL // Include winCondition in response

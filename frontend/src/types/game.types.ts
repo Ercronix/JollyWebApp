@@ -18,6 +18,7 @@ export interface Game {
     currentDealer: string;
     currentRound: number;
     createdAt: string;
+    finishedAt?: string | null;
     isFinished: boolean;
     winner: string | null;
     ownerId?: string; // the lobby admin; only in GET /api/games/:id responses

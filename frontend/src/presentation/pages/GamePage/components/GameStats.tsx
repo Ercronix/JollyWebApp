@@ -1,9 +1,12 @@
 import React from "react";
+import {formatDuration} from "@/core/duration";
 
 interface GameStatsProps {
     currentRound: number;
     winCondition: number;
     dealerName?: string;
+    // How long the game has been running (or ran, once finished)
+    elapsedMs?: number | null;
 }
 
 const Tile: React.FC<{ label: string; children: React.ReactNode; className?: string }> = ({label, children, className = ""}) => (
@@ -13,10 +16,11 @@ const Tile: React.FC<{ label: string; children: React.ReactNode; className?: str
     </div>
 );
 
-export const GameStats: React.FC<GameStatsProps> = ({currentRound, winCondition, dealerName}) => (
-    <div className="grid grid-cols-3 gap-2 text-fg">
+export const GameStats: React.FC<GameStatsProps> = ({currentRound, winCondition, dealerName, elapsedMs}) => (
+    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-fg">
         <Tile label="Round">{currentRound}</Tile>
         <Tile label="Goal" className="text-accent">{winCondition || 1000}</Tile>
         <Tile label="Dealer">{dealerName || "N/A"}</Tile>
+        <Tile label="Time">{elapsedMs == null ? "–" : formatDuration(elapsedMs)}</Tile>
     </div>
 );

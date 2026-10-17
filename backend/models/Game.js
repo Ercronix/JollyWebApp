@@ -69,6 +69,10 @@ const gameSchema = new mongoose.Schema({
         type: Date,
         default: Date.now
     },
+    finishedAt: {
+        type: Date,
+        default: null
+    },
     winCondition: {
         type: Number,
         default: 1000
