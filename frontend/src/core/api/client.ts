@@ -232,15 +232,6 @@ export class ApiClient {
         });
     }
 
-    static async forceNextRound(gameId: string): Promise<NextRoundResponse> {
-        return this.request<NextRoundResponse>(
-            `/admin/games/${gameId}/forceNextRound`,
-            {
-                method: 'POST',
-            }
-        );
-    }
-
     static async submitWinCondition(gameId: string, winCondition: number): Promise<SubmitWinConditionResponse> {
         return this.request<SubmitWinConditionResponse>(
             `/api/games/${gameId}/submitWinCondition`,

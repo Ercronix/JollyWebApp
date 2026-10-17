@@ -1,5 +1,5 @@
-import {describe, expect, it, vi} from "vitest";
-import {fireEvent, render, screen} from "@testing-library/react";
+import {describe, expect, it} from "vitest";
+import {render, screen} from "@testing-library/react";
 import {RoundStatus} from "./RoundStatus";
 
 const props = {
@@ -7,23 +7,13 @@ const props = {
     totalPlayers: 3,
     allPlayersSubmitted: false,
     hasCurrentUserSubmitted: true,
-    isPending: false,
 };
 
-// Review finding: without a way to force the round, an absent admin could block the game
 describe("RoundStatus", () => {
-    it("lets players skip missing scores while waiting", () => {
-        const onForceNextRound = vi.fn();
-        render(<RoundStatus {...props} onForceNextRound={onForceNextRound}/>);
-
-        fireEvent.click(screen.getByRole("button", {name: "Skip missing scores"}));
-
-        expect(onForceNextRound).toHaveBeenCalledOnce();
-    });
-
-    it("hides the skip button once everyone submitted", () => {
-        render(<RoundStatus {...props} submittedCount={3} allPlayersSubmitted onForceNextRound={vi.fn()}/>);
+    it("offers no way to skip missing scores while waiting", () => {
+        render(<RoundStatus {...props}/>);
 
         expect(screen.queryByRole("button", {name: "Skip missing scores"})).toBeNull();
+        expect(screen.getByText("Submitted · waiting · 1 of 3")).toBeTruthy();
     });
 });

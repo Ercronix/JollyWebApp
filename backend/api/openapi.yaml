@@ -245,27 +245,6 @@ paths:
                 type: string
                 x-content-type: text/event-stream
       x-swagger-router-controller: Default
-  /admin/games/{gameId}/forceNextRound:
-    post:
-      summary: Force next round (Admin)
-      operationId: forceNextRoundPOST
-      parameters:
-      - name: gameId
-        in: path
-        required: true
-        style: simple
-        explode: false
-        schema:
-          type: string
-          format: uuid
-      responses:
-        "200":
-          description: Forced next round
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/NextRoundResponse"
-      x-swagger-router-controller: Default
 components:
   schemas:
     User:

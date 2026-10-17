@@ -70,12 +70,6 @@ module.exports = {
             .catch(e => sendError(res, e));
     },
 
-    forceNextRoundPOST(req, res) {
-        Default.forceNextRoundPOST(req.user, req.params.gameId)
-            .then(r => utils.writeJson(res, r))
-            .catch(e => sendError(res, e));
-    },
-
     getCurrentUserGET(req, res) {
         Default.getCurrentUserGET(getSessionId(req))
             .then(r => utils.writeJson(res, r))

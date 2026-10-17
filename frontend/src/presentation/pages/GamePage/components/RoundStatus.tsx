@@ -5,8 +5,6 @@ interface RoundStatusProps {
     totalPlayers: number;
     allPlayersSubmitted: boolean;
     hasCurrentUserSubmitted: boolean;
-    isPending: boolean;
-    onForceNextRound: () => void;
 }
 
 export const RoundStatus: React.FC<RoundStatusProps> = ({
@@ -14,8 +12,6 @@ export const RoundStatus: React.FC<RoundStatusProps> = ({
                                                             totalPlayers,
                                                             allPlayersSubmitted,
                                                             hasCurrentUserSubmitted,
-                                                            isPending,
-                                                            onForceNextRound,
                                                         }) => {
     if (submittedCount === 0) return null;
 
@@ -29,12 +25,6 @@ export const RoundStatus: React.FC<RoundStatusProps> = ({
                         : `${hasCurrentUserSubmitted ? "Submitted · waiting" : "Waiting for scores"} · ${submittedCount} of ${totalPlayers}`}
                 </span>
             </div>
-            {!allPlayersSubmitted && (
-                <button type="button" onClick={onForceNextRound} disabled={isPending}
-                        className="min-h-11 px-1 text-sm font-semibold text-orange-300 hover:text-orange-200 disabled:opacity-50">
-                    Skip missing scores
-                </button>
-            )}
         </div>
     );
 };
