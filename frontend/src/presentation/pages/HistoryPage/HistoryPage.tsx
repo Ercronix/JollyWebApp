@@ -6,6 +6,7 @@ import { PlayerPointsChart } from "@/presentation/components/PlayerPointsChart";
 import { UserModel } from "@/core/models/UserModel";
 import { useToast } from "@/presentation/components/Toast/useToast";
 import { logger } from "@/utils/logger";
+import { formatDuration } from "@/core/duration";
 import type { Lobby } from "@/types";
 import type { Player } from "@/types/game.types";
 
@@ -277,6 +278,14 @@ export function LobbyCard({ lobby, onDelete }: LobbyCardProps) {
                     })}
                   </span>
                                 </div>
+                                {game.finishedAt && (
+                                    <div className="flex justify-between text-sm">
+                                        <span className="text-fg-muted">Duration</span>
+                                        <span className="text-fg tabular-nums">
+                                            {formatDuration(new Date(game.finishedAt).getTime() - new Date(game.createdAt).getTime())}
+                                        </span>
+                                    </div>
+                                )}
                                 <div className="flex justify-between text-sm">
                                     <span className="text-fg-muted">Players</span>
                                     <span className="text-fg">{game.players.length}</span>

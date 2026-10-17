@@ -41,4 +41,22 @@ describe("PlayerPointsChart", () => {
         const tooltip = container.querySelector("rect")!;
         expect(Number(tooltip.getAttribute("x")) + Number(tooltip.getAttribute("width"))).toBeLessThanOrEqual(chartWidth);
     });
+
+    // Issue #48: per-round times
+    it("shows how long the round took in the tooltip", () => {
+        const {container} = render(<PlayerPointsChart currentRound={3} players={[player("a", "Anna", [10, 20])]}
+                                                      roundDurations={[250_000, 60_000]}/>);
+
+        fireEvent.mouseEnter(container.querySelectorAll("circle")[0]);
+
+        expect(screen.getByText("Round 1 · 4:10")).toBeTruthy();
+    });
+
+    it("shows just the round without round times", () => {
+        const {container} = render(<PlayerPointsChart currentRound={3} players={[player("a", "Anna", [10, 20])]}/>);
+
+        fireEvent.mouseEnter(container.querySelectorAll("circle")[0]);
+
+        expect(screen.getByText("Round 1")).toBeTruthy();
+    });
 });

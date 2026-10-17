@@ -69,6 +69,15 @@ const gameSchema = new mongoose.Schema({
         type: Date,
         default: Date.now
     },
+    finishedAt: {
+        type: Date,
+        default: null
+    },
+    // When each round ended: entry i is the end of round i + 1
+    roundEndedAt: {
+        type: [Date],
+        default: []
+    },
     winCondition: {
         type: Number,
         default: 1000
