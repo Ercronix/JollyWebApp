@@ -14,7 +14,7 @@ type PlayerHistoryModalProps = {
     player: Player | null;
     currentUserId?: string;
     gameId?: string;
-    // Lobby admin in admin mode: may edit every player's history, not just their own
+    // Lobby admin: may edit this player's history too, not just their own (see canEditOthersHistory)
     canEditOthers?: boolean;
     onUpdateScore?: (roundIndex: number, newScore: number) => Promise<void>;
 };
