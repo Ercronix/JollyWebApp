@@ -223,7 +223,7 @@ class GamesService {
         return game.players.every(p => p.hasSubmitted);
     }
 
-    async nextRound(gameId, force = false) {
+    async nextRound(gameId) {
         return this.queueOperation(gameId, async () => {
             const game = await Game.findById(gameId);
             if (!game) {
@@ -234,7 +234,7 @@ class GamesService {
                 return { game, message: 'Game has already ended' };
             }
 
-            if (!force && !this.allPlayersSubmitted(game)) {
+            if (!this.allPlayersSubmitted(game)) {
                 throw new Error('Not all players have submitted their scores');
             }
 

@@ -7,7 +7,8 @@ on:
 
 concurrency:
   group: ci-${{ github.ref }}
-  cancel-in-progress: true
+  # Only cancel superseded PR runs: cancelling a main run could stop a deploy halfway
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   backend:
@@ -17,8 +18,8 @@ jobs:
       run:
         working-directory: backend
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
         with:
           node-version: 22
           cache: npm
@@ -41,8 +42,8 @@ jobs:
       run:
         working-directory: frontend
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
         with:
           node-version: 22
           cache: npm
@@ -53,3 +54,32 @@ jobs:
       - run: npm run typecheck
       - run: npm test
       - run: npm run build
+
+  # Deploys main to the home server through a self-hosted runner there (setup: docs/deployment.md).
+  # Never runs for pull requests, so code from forks can't reach the server through this job.
+  deploy:
+    name: Deploy to production
+    needs: [backend, frontend]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: [self-hosted, jolly-deploy]
+    environment: production
+    concurrency:
+      group: deploy
+      cancel-in-progress: false
+    env:
+      DEPLOY_DIR: ${{ vars.DEPLOY_DIR }}
+    steps:
+      # No actions/checkout: the deploy runs in the existing checkout, which holds .env and backups/
+      - name: Update the checkout
+        run: |
+          test -n "$DEPLOY_DIR" || { echo "Set the DEPLOY_DIR repository variable"; exit 1; }
+          cd "$DEPLOY_DIR"
+          test "$(git branch --show-current)" = main || { echo "$DEPLOY_DIR is not on main"; exit 1; }
+          git fetch origin main
+          # Fails instead of discarding local changes or commits on the server
+          git merge --ff-only "$GITHUB_SHA"
+      - name: Rebuild and restart
+        working-directory: ${{ vars.DEPLOY_DIR }}
+        run: docker compose up -d --build --remove-orphans --wait --wait-timeout 300
+      - name: Remove dangling images
+        run: docker image prune -f

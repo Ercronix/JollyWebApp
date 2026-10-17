@@ -217,17 +217,6 @@ export function useReorderPlayers() {
     });
 }
 
-export function useForceNextRound() {
-    const queryClient = useQueryClient();
-
-    return useMutation({
-        mutationFn: (gameId: string) => ApiClient.forceNextRound(gameId),
-        onSuccess: (_, gameId) => {
-            queryClient.invalidateQueries({ queryKey: queryKeys.game(gameId) });
-        },
-    });
-}
-
 export function useSubmitWinCondition() {
     const queryClient = useQueryClient();
 
@@ -247,6 +236,19 @@ export function useUpdateHistoryScore() {
         mutationFn: ({ gameId, roundIndex, newScore }: { gameId: string; roundIndex: number; newScore: number }) =>
             ApiClient.updateHistoryScore(gameId, roundIndex, newScore),
         onSuccess: (_, variables) => {
+            queryClient.invalidateQueries({ queryKey: queryKeys.game(variables.gameId) });
+        },
+    });
+}
+
+export function useUpdateHistoryScoreForPlayer() {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: ({ gameId, playerId, roundIndex, newScore }: { gameId: string; playerId: string; roundIndex: number; newScore: number }) =>
+            ApiClient.updateHistoryScoreForPlayer(gameId, playerId, roundIndex, newScore),
+        onSuccess: (data, variables) => {
+            queryClient.setQueryData(queryKeys.game(variables.gameId), data);
             queryClient.invalidateQueries({ queryKey: queryKeys.game(variables.gameId) });
         },
     });

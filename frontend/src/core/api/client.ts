@@ -76,7 +76,7 @@ export class ApiClient {
         }
 
         if (!response.ok) {
-            const error = await response.json().catch(() => ({ message: 'Unknown error' }));
+            const error = await response.json().catch(() => ({}));
             throw new ApiError(error.message || `HTTP ${response.status}`, response.status);
         }
 
@@ -232,15 +232,6 @@ export class ApiClient {
         });
     }
 
-    static async forceNextRound(gameId: string): Promise<NextRoundResponse> {
-        return this.request<NextRoundResponse>(
-            `/admin/games/${gameId}/forceNextRound`,
-            {
-                method: 'POST',
-            }
-        );
-    }
-
     static async submitWinCondition(gameId: string, winCondition: number): Promise<SubmitWinConditionResponse> {
         return this.request<SubmitWinConditionResponse>(
             `/api/games/${gameId}/submitWinCondition`,
@@ -258,6 +249,22 @@ export class ApiClient {
             {
                 method: 'POST',
                 body: JSON.stringify({ roundIndex, newScore }),
+            }
+        );
+    }
+
+    // Lobby admin only: corrects a past round score of another player
+    static async updateHistoryScoreForPlayer(
+        gameId: string,
+        playerId: string,
+        roundIndex: number,
+        newScore: number
+    ): Promise<Game> {
+        return this.request<Game>(
+            `/api/games/${gameId}/updateHistoryScoreForPlayer`,
+            {
+                method: 'POST',
+                body: JSON.stringify({ playerId, roundIndex, newScore }),
             }
         );
     }

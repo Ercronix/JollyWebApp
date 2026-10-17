@@ -17,12 +17,12 @@ import {
     useGameEvents,
     useSubmitScore,
     useNextRound,
-    useForceNextRound,
     useResetRound,
     useReorderPlayers,
     useLeaveLobby,
     useSubmitWinCondition,
     useUpdateHistoryScore,
+    useUpdateHistoryScoreForPlayer,
     useAddPlayerToGame,
     useRemovePlayerFromGame,
     useSubmitScoreForPlayer,
@@ -35,8 +35,7 @@ import {ScoreInput} from "./components/ScoreInput";
 import {PlayerCard} from "./components/PlayerCard";
 import {GameStats} from "./components/GameStats";
 import {AdminPanel} from "@/presentation/components/AdminPanel";
-import {useStoredFlag} from "@/core/hooks/useStoredFlag";
-import {useAutoAdvance} from "@/core/hooks/useAutoAdvance";
+import {useAutoAdvance, useAutoAdvanceSetting} from "@/core/hooks/useAutoAdvance";
 import {useRefetchOnReturn} from "@/core/hooks/useRefetchOnReturn";
 import {isScoreInput, parseScore, validateScore, validateWinCondition} from "@/core/scores";
 import {useToast} from "@/presentation/components/Toast/useToast";
@@ -66,7 +65,7 @@ export function GamePage() {
     const [calculatorOpen, setCalculatorOpen] = useState(false);
     const [historyPlayerId, setHistoryPlayerId] = useState<string | null>(null);
     const [playerToRemove, setPlayerToRemove] = useState<Player | null>(null);
-    const [autoAdvance, setAutoAdvance] = useStoredFlag(`autoAdvance:${gameId}`);
+    const [autoAdvance, setAutoAdvance] = useAutoAdvanceSetting(gameId);
     const [editingWinCondition, setEditingWinCondition] = useState(false);
     const [tempWinCondition, setTempWinCondition] = useState<string>('');
     const [showSettings, setShowSettings] = useState(false);
@@ -76,14 +75,13 @@ export function GamePage() {
     const {data: game, isLoading} = useGameState(gameId);
     const submitScoreMutation = useSubmitScore();
     const nextRoundMutation = useNextRound();
-    const forceNextRoundMutation = useForceNextRound();
     const [confirmLeave, setConfirmLeave] = useState(false);
-    const [confirmForceNextRound, setConfirmForceNextRound] = useState(false);
     const resetRoundMutation = useResetRound();
     const reorderPlayersMutation = useReorderPlayers();
     const leaveLobbyMutation = useLeaveLobby();
     const submitWinConditionMutation = useSubmitWinCondition();
     const updateHistoryScoreMutation = useUpdateHistoryScore();
+    const updateHistoryScoreForPlayerMutation = useUpdateHistoryScoreForPlayer();
     const addPlayerMutation = useAddPlayerToGame();
     const removePlayerMutation = useRemovePlayerFromGame();
     const submitScoreForPlayerMutation = useSubmitScoreForPlayer();
@@ -135,16 +133,6 @@ export function GamePage() {
 
     const handleNextRound = useCallback(() => advanceRound({silent: false}), [advanceRound]);
 
-    const handleForceNextRound = useCallback(async () => {
-        if (!gameId) return;
-        try {
-            await forceNextRoundMutation.mutateAsync(gameId);
-            setConfirmForceNextRound(false);
-        } catch (error) {
-            showError('Failed to start the next round', error);
-        }
-    }, [forceNextRoundMutation, gameId, showError]);
-
     useAutoAdvance({
         enabled: autoAdvance && !game?.isFinished,
         ready: allPlayersSubmitted,
@@ -163,9 +151,13 @@ export function GamePage() {
     }, [searchParams.lobbyId, leaveLobbyMutation, navigate]);
 
     const handleUpdateHistoryScore = useCallback(async (roundIndex: number, newScore: number) => {
-        if (!gameId) return;
-        await updateHistoryScoreMutation.mutateAsync({gameId, roundIndex, newScore});
-    }, [gameId, updateHistoryScoreMutation]);
+        if (!gameId || !historyPlayerId) return;
+        if (historyPlayerId === currentUser?.id) {
+            await updateHistoryScoreMutation.mutateAsync({gameId, roundIndex, newScore});
+        } else {
+            await updateHistoryScoreForPlayerMutation.mutateAsync({gameId, playerId: historyPlayerId, roundIndex, newScore});
+        }
+    }, [gameId, historyPlayerId, currentUser?.id, updateHistoryScoreMutation, updateHistoryScoreForPlayerMutation]);
 
     const handleWinConditionEdit = useCallback(() => {
         setTempWinCondition(game?.winCondition?.toString() || '1000');
@@ -458,9 +450,8 @@ export function GamePage() {
                                 allPlayersSubmitted={allPlayersSubmitted}
                                 hasCurrentUserSubmitted={hasCurrentUserSubmitted}
                                 autoAdvance={autoAdvance}
-                                isPending={nextRoundMutation.isPending || forceNextRoundMutation.isPending}
+                                isPending={nextRoundMutation.isPending}
                                 onNextRound={handleNextRound}
-                                onForceNextRound={() => setConfirmForceNextRound(true)}
                             />
                         )}
 
@@ -565,6 +556,7 @@ export function GamePage() {
                             player={historyPlayer}
                             currentUserId={currentUser.id}
                             gameId={gameId}
+                            canEditOthers={isOwner && isAdminMode}
                             onUpdateScore={handleUpdateHistoryScore}
                         />
 
@@ -590,17 +582,6 @@ export function GamePage() {
                             isDeleting={leaveLobbyMutation.isPending}
                             confirmLabel="Leave"
                             confirmingLabel="Leaving..."
-                        />
-
-                        <DeleteConfirmationModal
-                            isOpen={confirmForceNextRound}
-                            title="Skip missing scores?"
-                            message="Players without a score get 0 this round. Start the next round"
-                            onConfirm={() => void handleForceNextRound()}
-                            onCancel={() => setConfirmForceNextRound(false)}
-                            isDeleting={forceNextRoundMutation.isPending}
-                            confirmLabel="Skip"
-                            confirmingLabel="Skipping..."
                         />
                     </div>
                 </div>

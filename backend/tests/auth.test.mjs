@@ -139,7 +139,6 @@ describe('sessions', () => {
         ['POST', '/api/lobbies'],
         ['GET', '/api/games/000000000000000000000000'],
         ['POST', '/api/games/000000000000000000000000/submitScore'],
-        ['POST', '/admin/games/000000000000000000000000/forceNextRound'],
     ])('requires a session for %s %s', async (method, path) => {
         await request(app)[method.toLowerCase()](path).expect(401);
         await asUser('not-a-real-session', null)[method.toLowerCase()](path).expect(401);

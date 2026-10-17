@@ -1,4 +1,5 @@
 import {useEffect, useRef} from "react";
+import {useStoredFlag} from "./useStoredFlag";
 
 type Options = {
     enabled: boolean;
@@ -24,4 +25,11 @@ export function useAutoAdvance({enabled, ready, onAdvance, delayMs = 1500}: Opti
         const timer = setTimeout(() => onAdvanceRef.current(), delayMs);
         return () => clearTimeout(timer);
     }, [enabled, ready, delayMs]);
+}
+
+/**
+ * The player's auto-advance choice for a game, remembered per game. On until turned off.
+ */
+export function useAutoAdvanceSetting(gameId: string | undefined) {
+    return useStoredFlag(`autoAdvance:${gameId}`, true);
 }

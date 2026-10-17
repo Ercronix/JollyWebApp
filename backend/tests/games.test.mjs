@@ -33,12 +33,9 @@ describe('access control', () => {
         ['addPlayer', { playerName: 'Ghost' }],
         ['removePlayer', { playerId: 'x' }],
         ['submitScoreForPlayer', { playerId: 'x', score: 10 }],
+        ['updateHistoryScoreForPlayer', { playerId: 'x', roundIndex: 0, newScore: 10 }],
     ])('forbids non-players from %s', async (action, body) => {
         await mallory.post(`/api/games/${gameId}/${action}`, body).expect(403);
-    });
-
-    it('forbids non-players from forcing the next round', async () => {
-        await mallory.post(`/admin/games/${gameId}/forceNextRound`).expect(403);
     });
 
     it('forbids outsiders from reading a private game', async () => {
@@ -135,13 +132,13 @@ describe('rounds', () => {
         await alice.post(`/api/games/${gameId}/submitScore`, { score: 5 }).expect(200);
     });
 
-    // Review finding: an admin who stops responding (without leaving) must not block the game
-    it('lets any player force the next round, counting missing scores as 0', async () => {
+    it('offers no way to skip players who have not submitted', async () => {
         await alice.post(`/api/games/${gameId}/submitScore`, { score: 10 }).expect(200);
 
-        await bob.post(`/admin/games/${gameId}/forceNextRound`).expect(200);
+        await bob.post(`/admin/games/${gameId}/forceNextRound`).expect(404);
+        await bob.post(`/api/games/${gameId}/nextRound`).expect(400);
 
-        expect(await player(bob)).toMatchObject({ totalScore: 0, pointsHistory: [0] });
+        expect((await game()).currentRound).toBe(1);
     });
 
     it('resets the submissions of the current round', async () => {
@@ -181,6 +178,38 @@ describe('editing history', () => {
 
     it('rejects rounds that have not been played', async () => {
         await alice.post(`/api/games/${gameId}/updateHistoryScore`, { roundIndex: 0, newScore: 30 }).expect(400);
+    });
+
+    it('lets the admin correct another player\'s round score and total', async () => {
+        await playRound([[alice, 10], [bob, 20]]);
+        await playRound([[alice, 10], [bob, 20]]);
+
+        await alice.post(`/api/games/${gameId}/updateHistoryScoreForPlayer`, { playerId: bob.user.id, roundIndex: 0, newScore: 50 }).expect(200);
+
+        expect(await player(bob)).toMatchObject({ totalScore: 70, pointsHistory: [50, 20] });
+        expect(await player(alice)).toMatchObject({ totalScore: 20, pointsHistory: [10, 10] });
+    });
+
+    it('lets the admin correct a temporary player\'s score', async () => {
+        const temp = (await alice.post(`/api/games/${gameId}/addPlayer`, { playerName: 'Grandma' }).expect(200)).body
+            .players.find(p => p.name === 'Grandma');
+        await alice.post(`/api/games/${gameId}/submitScoreForPlayer`, { playerId: temp.userId, score: 15 }).expect(200);
+        await playRound([[alice, 10], [bob, 20]]);
+
+        await alice.post(`/api/games/${gameId}/updateHistoryScoreForPlayer`, { playerId: temp.userId, roundIndex: 0, newScore: 25 }).expect(200);
+
+        expect((await game()).players.find(p => p.userId === temp.userId)).toMatchObject({ totalScore: 25, pointsHistory: [25] });
+    });
+
+    it.each([
+        [{ roundIndex: 0, newScore: 7 }],
+        [{ roundIndex: -1, newScore: 10 }],
+        [{ roundIndex: 5, newScore: 10 }],
+        [{ playerId: 'unknown', roundIndex: 0, newScore: 10 }],
+    ])('rejects admin history edits with %j', async (body) => {
+        await playRound([[alice, 10], [bob, 20]]);
+
+        await alice.post(`/api/games/${gameId}/updateHistoryScoreForPlayer`, { playerId: bob.user.id, ...body }).expect(400);
     });
 });
 
@@ -277,6 +306,7 @@ describe('lobby admin', () => {
         ['/api/games/:id/addPlayer', { playerName: 'Ghost' }],
         ['/api/games/:id/removePlayer', () => ({ playerId: alice.user.id })],
         ['/api/games/:id/submitScoreForPlayer', () => ({ playerId: alice.user.id, score: 10 })],
+        ['/api/games/:id/updateHistoryScoreForPlayer', () => ({ playerId: alice.user.id, roundIndex: 0, newScore: 10 })],
     ])('forbids other players from %s', async (path, body) => {
         const res = await bob.post(path.replace(':id', gameId), typeof body === 'function' ? body() : body).expect(403);
 
