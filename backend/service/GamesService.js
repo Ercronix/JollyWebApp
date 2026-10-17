@@ -273,6 +273,12 @@ class GamesService {
                 throw new Error('Not all players have submitted their scores');
             }
 
+            const endedAt = new Date();
+            if (!game.roundEndedAt) {
+                game.roundEndedAt = [];
+            }
+            game.roundEndedAt.push(endedAt);
+
             // Add current round scores to points history and update total scores
             game.players.forEach(player => {
                 if (!player.pointsHistory) {
@@ -289,7 +295,7 @@ class GamesService {
             if (winner) {
                 game.isFinished = true;
                 game.winner = winner.userId;
-                game.finishedAt = new Date();
+                game.finishedAt = endedAt;
 
                 game.players.forEach(player => {
                     player.currentRoundScore = 0;
@@ -414,6 +420,7 @@ class GamesService {
             currentRound: game.currentRound,
             createdAt: game.createdAt,
             finishedAt: game.finishedAt || null,
+            roundEndedAt: game.roundEndedAt || [],
             isFinished: game.isFinished,
             winner: game.winner,
             winCondition: game.winCondition || this.POINTS_GOAL // Include winCondition in response
