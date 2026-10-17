@@ -111,7 +111,7 @@ class LobbiesService {
      */
     async pickNextOwner(lobby) {
         const game = lobby.gameId && await GamesService.getGameById(lobby.gameId);
-        const inGame = (p) => game?.players.some(gp => gp.userId.toString() === p.userId.toString());
+        const inGame = (p) => game?.players.some(gp => !gp.hasLeft && gp.userId.toString() === p.userId.toString());
         return lobby.players.find(inGame) ?? lobby.players[0];
     }
 

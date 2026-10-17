@@ -26,6 +26,19 @@ const game = (players: Player[], overrides: Partial<Game> = {}): Game => ({
 });
 
 describe("deriveGameState", () => {
+    // Regression: an admin-removed player who scored stays in the game (hasLeft) but no longer plays
+    it("leaves removed players out of the submissions and the current user", () => {
+        const state = deriveGameState(
+            game([player("a", {hasSubmitted: true}), player("b"), player("c", {hasSubmitted: true, hasLeft: true})]),
+            "c",
+        );
+
+        expect(state.submittedCount).toBe(1);
+        expect(state.activePlayerCount).toBe(2);
+        expect(state.allPlayersSubmitted).toBe(false);
+        expect(state.currentUserPlayer).toBeUndefined();
+    });
+
     it("counts submissions and finds the current user and dealer", () => {
         const state = deriveGameState(
             game([player("a", {hasSubmitted: true}), player("b")], {currentDealer: "b"}),

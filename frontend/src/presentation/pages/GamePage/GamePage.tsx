@@ -100,6 +100,7 @@ export function GamePage() {
     const {
         allPlayersSubmitted,
         submittedCount,
+        activePlayerCount,
         currentUserPlayer,
         hasCurrentUserSubmitted,
         currentDealer,
@@ -342,7 +343,7 @@ export function GamePage() {
                 {!game.isFinished && !hasCurrentUserSubmitted && (
                     <RoundStatus
                         submittedCount={submittedCount}
-                        totalPlayers={game.players.length}
+                        totalPlayers={activePlayerCount}
                         allPlayersSubmitted={allPlayersSubmitted}
                         hasCurrentUserSubmitted={hasCurrentUserSubmitted}
                     />
@@ -428,7 +429,7 @@ export function GamePage() {
                             <>
                                 <RoundStatus
                                     submittedCount={submittedCount}
-                                    totalPlayers={game.players.length}
+                                    totalPlayers={activePlayerCount}
                                     allPlayersSubmitted={allPlayersSubmitted}
                                     hasCurrentUserSubmitted={hasCurrentUserSubmitted}
                                     className="justify-center"

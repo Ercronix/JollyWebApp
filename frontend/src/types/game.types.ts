@@ -7,6 +7,8 @@ export interface Player {
     pointsHistory?: number[];
     createdAt: string;
     isTemporary?: boolean;
+    // Removed by the admin after scoring: kept for their points, no longer plays
+    hasLeft?: boolean;
 }
 
 export interface Game {

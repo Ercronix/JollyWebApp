@@ -32,6 +32,11 @@ const playerSchema = new mongoose.Schema({
     isTemporary: {
         type: Boolean,
         default: false
+    },
+    // Removed by the admin after scoring: kept for their points, scores 0 from then on
+    hasLeft: {
+        type: Boolean,
+        default: false
     }
 }, { _id: false });
 
@@ -70,4 +75,4 @@ const gameSchema = new mongoose.Schema({
     }
 });
 
-module.exports = mongoose.model('Game', gameSchema);
+module.exports = mongoose.model('Game', gameSchema);

@@ -144,7 +144,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                                 </div>
 
                             <div className="space-y-2">
-                                {players.map((player) => (
+                                {players.filter(player => !player.hasLeft).map((player) => (
                                     <div
                                         key={player.userId}
                                         className="py-1 pl-3 pr-1 rounded-[14px] bg-surface-2 text-fg"

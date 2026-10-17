@@ -275,6 +275,18 @@ describe('owner handover', () => {
         expect((await mallory.get(`/api/games/${gameId}`).expect(200)).body.ownerId).toBe(mallory.user.id);
     });
 
+    it('skips removed players who keep their scores in the game', async () => {
+        const { lobby, gameId } = await createLobbyWith(alice, [bob, mallory]);
+        for (const client of [alice, bob, mallory]) {
+            await client.post(`/api/games/${gameId}/submitScore`, { score: 10 }).expect(200);
+        }
+        await alice.post(`/api/games/${gameId}/removePlayer`, { playerId: bob.user.id }).expect(200);
+
+        await alice.post(`/api/lobbies/${lobby.id}/leave`).expect(204);
+
+        expect((await mallory.get(`/api/games/${gameId}`).expect(200)).body.ownerId).toBe(mallory.user.id);
+    });
+
     // Review finding: the fallback owner may not be in the game, and must still be able to act as admin
     it('lets a new admin who was removed from the game use admin actions', async () => {
         const { lobby, gameId } = await createLobbyWith(alice, [bob]);
