@@ -24,7 +24,10 @@ module.exports = {
 
     game: {
         pointsGoal: 1000,
-        maxPlayers: 8
+        maxPlayers: 8,
+        // Games nobody touched for this long are archived (or deleted, if unplayed)
+        staleAfterHours: 72,
+        staleCheckIntervalMs: 60 * 60 * 1000
     },
 
     cors: {

@@ -65,7 +65,8 @@ Key details:
 - `app.js` builds the Express app (middleware, routes, error handler) without connecting or listening; `server.js` connects to MongoDB and listens on port 3501. Tests import `app.js`.
 - CORS is open in `NODE_ENV=development`, and otherwise restricted to the `allowedOrigins` list in `app.js`.
 - When the last real player leaves a lobby (temporary players don't count), a game with scores (`GamesService.hasScores`) is archived as is, so it stays in history; an unplayed one is deleted with its lobby.
-- Game constants (points goal 1000, max 8 players) live in `config/index.js`.
+- Games nobody touched for 72h (neither the game's nor the lobby's `updatedAt` changed) are archived by `LobbiesService.archiveStaleLobbies`, which `server.js` runs at startup and hourly; unplayed ones are deleted with their lobby instead.
+- Game constants (points goal 1000, max 8 players, the 72h stale limit) live in `config/index.js`.
 - **Concurrency**: read-modify-write operations on a game or lobby must run through `OperationQueue` (`utils/operationQueue.js`), via `GamesService.queueOperation` or `LobbiesService.queue`. Queues are keyed by the id's string form and only serialize within one process.
 
 ## Frontend architecture

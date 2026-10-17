@@ -1,7 +1,10 @@
 'use strict';
 
 const crypto = require('crypto');
+const mongoose = require('mongoose');
+const config = require('../config');
 const Lobby = require('../models/Lobby');
+const Game = require('../models/Game');
 const GamesService = require('./GamesService');
 const EventService = require('./EventService');
 const OperationQueue = require('../utils/operationQueue');
@@ -228,6 +231,49 @@ class LobbiesService {
                 }
             }
         });
+    }
+
+    /**
+     * Archives played games that nobody touched (lobby or game) for config.game.staleAfterHours,
+     * and deletes unplayed ones with their lobby, as when their last player leaves
+     */
+    async archiveStaleLobbies(now = new Date()) {
+        // Documents from before updatedAt existed start counting now, rather than from createdAt
+        const noUpdatedAt = { updatedAt: mongoose.trusted({ $exists: false }) };
+        await Lobby.updateMany(noUpdatedAt, { $set: { updatedAt: now } }, { timestamps: false });
+        await Game.updateMany(noUpdatedAt, { $set: { updatedAt: now } }, { timestamps: false });
+
+        const cutoff = new Date(now.getTime() - config.game.staleAfterHours * 60 * 60 * 1000);
+        const isStale = (doc) => !doc || doc.updatedAt < cutoff;
+        const candidates = await Lobby.find({
+            archived: mongoose.trusted({ $ne: true }),
+            updatedAt: mongoose.trusted({ $lt: cutoff })
+        }).select('_id');
+
+        for (const { _id } of candidates) {
+            await this.queue.run(_id, async () => {
+                const lobby = await Lobby.findById(_id);
+                if (!lobby || lobby.archived || !isStale(lobby)) {
+                    return;
+                }
+                const game = lobby.gameId && await GamesService.getGameById(lobby.gameId);
+                if (!isStale(game)) {
+                    return;
+                }
+
+                if (game && GamesService.hasScores(game)) {
+                    lobby.archived = true;
+                    await lobby.save();
+                    console.log(`[LobbiesService] Lobby ${_id} untouched since ${lobby.updatedAt.toISOString()}, archived`);
+                } else {
+                    if (game) {
+                        await GamesService.deleteGame(game._id);
+                    }
+                    await Lobby.findByIdAndDelete(_id);
+                    console.log(`[LobbiesService] Unplayed lobby ${_id} untouched since ${lobby.updatedAt.toISOString()}, deleted`);
+                }
+            });
+        }
     }
 
     async deleteLobby(lobbyId, userId) {

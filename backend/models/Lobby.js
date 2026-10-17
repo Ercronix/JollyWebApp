@@ -47,6 +47,6 @@ const lobbySchema = new mongoose.Schema({
     accessCode: {
         type: String, unique: true, sparse: true
     },
-});
+}, { timestamps: { createdAt: false } }); // updatedAt: when the lobby was last touched, for auto-archiving
 
 module.exports = mongoose.model('Lobby', lobbySchema);
