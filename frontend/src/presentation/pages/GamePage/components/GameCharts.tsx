@@ -4,11 +4,12 @@ import {roundDurations} from "@/core/roundTimes";
 import {useElapsedTime} from "@/core/hooks/useElapsedTime";
 import {PlayerPointsChart} from "@/presentation/components/PlayerPointsChart";
 import {RoundTimesChart} from "@/presentation/components/RoundTimesChart";
+import {PointsOverTimeChart} from "@/presentation/components/PointsOverTimeChart";
 
-const PAGES = ["Points history", "Round times"];
+const PAGES = ["Points history", "Round times", "Points over time"];
 
 /**
- * The points history and the round times as two pages you swipe between
+ * The points history, the round times and the points over time as pages you swipe between
  */
 export const GameCharts: React.FC<{ game: Game }> = ({game}) => {
     const scroller = useRef<HTMLDivElement>(null);
@@ -61,6 +62,9 @@ export const GameCharts: React.FC<{ game: Game }> = ({game}) => {
                 </div>
                 <div className="flex w-full shrink-0 snap-start">
                     <RoundTimesChart durations={durations}/>
+                </div>
+                <div className="flex w-full shrink-0 snap-start">
+                    <PointsOverTimeChart players={game.players} durations={durations}/>
                 </div>
             </div>
 

@@ -1,19 +1,9 @@
 import { useState } from 'react';
 import type { Player } from '../../../types';
-import { suitForSeat } from '@/core/suits';
+import { playerColor } from './playerColors';
+import { PlayerLegend } from './PlayerLegend';
+import { scoreAxis } from './scoreAxis';
 import { formatDuration } from '@/core/duration';
-
-// Calm tones on the dark panel: ivory, coral, champagne, sky, then softer tints for seats 5 to 8
-const PLAYER_COLORS = [
-    '#f3f0e8',
-    '#e5737f',
-    '#cdb27a',
-    '#8ab4d8',
-    '#b79ce6',
-    '#e9a3bd',
-    '#8fcca5',
-    '#d9c49b',
-];
 
 interface PlayerPointsGraphProps {
     players: Player[];
@@ -47,37 +37,9 @@ export function PlayerPointsChart({ players, currentRound, roundDurations }: Pla
     const chartWidth = width - padding.left - padding.right;
     const chartHeight = height - padding.top - padding.bottom;
 
-    function getScoreStep(maxScore: number) {
-        if (maxScore <= 300) return 50;
-        if (maxScore <= 800) return 100;
-        if (maxScore <= 1500) return 200;
-        return 500;
-    }
-
-
     /* ---------- Score domain ---------- */
-    const allScores: number[] = [0];
+    const { minScore, maxScore, step } = scoreAxis(players);
 
-    players.forEach(player => {
-        let cumulative = 0;
-        // Use pointsHistory length to determine actual rounds played
-        player.pointsHistory?.forEach(p => {
-            cumulative += p;
-            allScores.push(cumulative);
-        });
-
-        // Always include the player's total score to ensure it's in range
-        allScores.push(player.totalScore);
-    });
-
-    const rawMinScore = Math.min(...allScores, 0);
-    const rawMaxScore = Math.max(...allScores, 100);
-
-    const paddedMax = rawMaxScore + 50;
-    const step = getScoreStep(paddedMax);
-
-    const minScore = Math.floor(rawMinScore / step) * step;
-    const maxScore = Math.ceil(paddedMax / step) * step;
     /* ---------- Scales ---------- */
     // Use the actual maximum rounds from player histories
     const maxHistoryRounds = Math.max(
@@ -168,7 +130,7 @@ export function PlayerPointsChart({ players, currentRound, roundDurations }: Pla
 
                 {/* Lines */}
                 {players.map((player, index) => {
-                    const color = PLAYER_COLORS[index % PLAYER_COLORS.length];
+                    const color = playerColor(index);
                     let cumulative = 0;
 
                     // Start from round 0 with score 0
@@ -282,19 +244,7 @@ export function PlayerPointsChart({ players, currentRound, roundDurations }: Pla
                 )}
             </svg>
 
-            {/* Legend: each player's suit, as on their card */}
-            <ul aria-label="Players" className="flex flex-wrap gap-x-3.5 gap-y-1.5 justify-center mt-1">
-                {players.map((player, i) => (
-                    <li key={player.userId} className="flex items-center gap-1.5 text-[13px] font-medium text-fg">
-                        <span
-                            aria-hidden="true"
-                            className="w-3 h-[3px] rounded-full"
-                            style={{ backgroundColor: PLAYER_COLORS[i % PLAYER_COLORS.length] }}
-                        />
-                        <span>{suitForSeat(i).symbol} {player.name}</span>
-                    </li>
-                ))}
-            </ul>
+            <PlayerLegend players={players}/>
         </figure>
     );
 }

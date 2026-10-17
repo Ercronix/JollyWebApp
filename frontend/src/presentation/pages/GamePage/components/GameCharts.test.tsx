@@ -27,11 +27,13 @@ describe("GameCharts", () => {
         HTMLElement.prototype.scrollTo = originalScrollTo;
     });
 
-    it("shows the points history and the round times side by side", () => {
+    it("shows the points history, the round times and the points over time side by side", () => {
         render(<GameCharts game={game}/>);
 
         expect(screen.getByText("Points History")).toBeTruthy();
         expect(screen.getByText("Round Times")).toBeTruthy();
+        expect(screen.getByText("Points Over Time")).toBeTruthy();
+        expect(screen.getByRole("button", {name: "Points over time"})).toBeTruthy();
     });
 
     it("labels the page dots and marks the first as current", () => {

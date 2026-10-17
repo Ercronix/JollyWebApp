@@ -2,17 +2,9 @@ import {useState} from 'react';
 import type {RoundDurations} from '@/core/roundTimes';
 import {roundTimeStats} from '@/core/roundTimes';
 import {formatDuration} from '@/core/duration';
+import {axisLabel, minuteAxis} from './minuteAxis';
 
 const MINUTE = 60_000;
-// Axis steps in minutes; the smallest one that needs at most 4 steps above zero wins
-const STEPS = [1, 2, 5, 10, 15, 30, 60, 120, 240];
-
-function axisLabel(minutes: number) {
-    if (minutes < 60) return `${minutes}m`;
-    const rest = minutes % 60;
-    return `${Math.floor(minutes / 60)}h${rest ? `${rest}m` : ''}`;
-}
-
 interface RoundTimesChartProps {
     // Null when the game's round times weren't recorded
     durations: RoundDurations | null;
@@ -66,9 +58,7 @@ export function RoundTimesChart({durations}: RoundTimesChartProps) {
     const chartHeight = height - padding.top - padding.bottom;
 
     /* ---------- Scales ---------- */
-    const maxMinutes = Math.max(...bars.map(b => b.ms), MINUTE) / MINUTE;
-    const step = STEPS.find(s => Math.ceil(maxMinutes / s) <= 4) ?? STEPS[STEPS.length - 1];
-    const maxY = Math.ceil(maxMinutes / step) * step;
+    const {step, max: maxY} = minuteAxis(Math.max(0, ...bars.map(b => b.ms)));
 
     const scaleY = (ms: number) => padding.top + chartHeight - (ms / MINUTE / maxY) * chartHeight;
     const slot = chartWidth / Math.max(bars.length, 1);
