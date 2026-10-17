@@ -8,7 +8,6 @@ import {PlayerHistoryModal} from "@/presentation/components/PlayerHistoryModal";
 import {Navigate, useNavigate, useSearch} from "@tanstack/react-router";
 import {MainLayout} from "@/presentation/layout/MainLayout";
 import {UserModel} from "@/core/models/UserModel";
-import {PlayerPointsChart} from "@/presentation/components/PlayerPointsChart";
 import {PrivateLobbyInfo} from "@/presentation/components/PrivateLobbyInfo";
 import type {GameEvent, Player} from "@/types";
 import { useQueryClient } from "@tanstack/react-query";
@@ -34,6 +33,7 @@ import {RoundStatus} from "./components/RoundStatus";
 import {ScoreInput} from "./components/ScoreInput";
 import {PlayerCard} from "./components/PlayerCard";
 import {GameStats} from "./components/GameStats";
+import {GameCharts} from "./components/GameCharts";
 import {AdminPanel} from "@/presentation/components/AdminPanel";
 import {Sheet} from "@/presentation/components/Sheet";
 import {useAutoAdvance, useAutoAdvanceSetting} from "@/core/hooks/useAutoAdvance";
@@ -382,7 +382,7 @@ export function GamePage() {
                 )}
 
                 {game.players.length > 0 && (
-                    <PlayerPointsChart players={game.players} currentRound={game.currentRound}/>
+                    <GameCharts game={game}/>
                 )}
 
                 {searchParams.accessCode && (

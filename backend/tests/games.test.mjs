@@ -161,6 +161,19 @@ describe('ending the game', () => {
         await alice.post(`/api/games/${gameId}/submitScore`, { score: 10 }).expect(400);
     });
 
+    // Issue #48: the game timer needs to know when the game ended
+    it('records when the game ended', async () => {
+        await alice.post(`/api/games/${gameId}/submitWinCondition`, { winCondition: 100 }).expect(200);
+        expect((await game()).finishedAt).toBeNull();
+
+        const before = Date.now();
+        await playRound([[alice, 100], [bob, 50]]);
+
+        const { createdAt, finishedAt } = await game();
+        expect(new Date(finishedAt).getTime()).toBeGreaterThanOrEqual(before);
+        expect(new Date(finishedAt).getTime()).toBeGreaterThanOrEqual(new Date(createdAt).getTime());
+    });
+
     it.each([99, 10001, 150.5])('rejects win condition %j', async (winCondition) => {
         await alice.post(`/api/games/${gameId}/submitWinCondition`, { winCondition }).expect(400);
     });
@@ -389,5 +402,38 @@ describe('lobby admin', () => {
 
         await alice.post(`/api/games/${gameId}/addPlayer`, { playerName: 'Ghost' }).expect(200);
         expect((await game()).ownerId).toBe(alice.user.id);
+    });
+});
+
+describe('round times', () => {
+    // Issue #48: per-round times need to know when each round ended
+    it('records when each round ends', async () => {
+        expect((await game()).roundEndedAt).toEqual([]);
+        const before = Date.now();
+
+        await playRound([[alice, 10], [bob, 20]]);
+        await playRound([[alice, 10], [bob, 20]]);
+
+        const { createdAt, roundEndedAt } = await game();
+        expect(roundEndedAt).toHaveLength(2);
+        const times = roundEndedAt.map(t => new Date(t).getTime());
+        expect(times[0]).toBeGreaterThanOrEqual(Math.max(before, new Date(createdAt).getTime()));
+        expect(times[1]).toBeGreaterThanOrEqual(times[0]);
+    });
+
+    it('records the final round at the moment the game ends', async () => {
+        await alice.post(`/api/games/${gameId}/submitWinCondition`, { winCondition: 100 }).expect(200);
+
+        await playRound([[alice, 100], [bob, 50]]);
+
+        const { roundEndedAt, finishedAt } = await game();
+        expect(roundEndedAt).toEqual([finishedAt]);
+    });
+
+    it('does not record a round end when the round is reset', async () => {
+        await alice.post(`/api/games/${gameId}/submitScore`, { score: 10 }).expect(200);
+        await bob.post(`/api/games/${gameId}/resetRound`).expect(200);
+
+        expect((await game()).roundEndedAt).toEqual([]);
     });
 });
