@@ -15,7 +15,7 @@ export default defineConfig({
   plugins: [tailwindcss(), tanstackRouter({
     target: 'react',
     autoCodeSplitting: true
-  }), react()],
+  }), react({compiler:true})],
   resolve: {
     tsconfigPaths: true
   },
