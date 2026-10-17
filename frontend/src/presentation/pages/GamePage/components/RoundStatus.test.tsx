@@ -1,4 +1,4 @@
-import {describe, expect, it, vi} from "vitest";
+import {describe, expect, it} from "vitest";
 import {render, screen} from "@testing-library/react";
 import {RoundStatus} from "./RoundStatus";
 
@@ -7,9 +7,6 @@ const props = {
     totalPlayers: 3,
     allPlayersSubmitted: false,
     hasCurrentUserSubmitted: true,
-    autoAdvance: false,
-    isPending: false,
-    onNextRound: vi.fn(),
 };
 
 describe("RoundStatus", () => {
@@ -17,6 +14,6 @@ describe("RoundStatus", () => {
         render(<RoundStatus {...props}/>);
 
         expect(screen.queryByRole("button", {name: "Skip missing scores"})).toBeNull();
-        expect(screen.getByText("⏳ Waiting for scores (1/3)")).toBeTruthy();
+        expect(screen.getByText("Submitted · waiting · 1 of 3")).toBeTruthy();
     });
 });

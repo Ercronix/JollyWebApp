@@ -6,8 +6,8 @@ const DISMISS_AFTER_MS = 5000;
 type ToastItem = {id: number; kind: ToastKind; message: string};
 
 const kindStyles: Record<ToastKind, string> = {
-    error: "border-red-500/40 bg-red-950/80 text-red-100",
-    success: "border-green-500/40 bg-green-950/80 text-green-100",
+    error: "border-bad/30 bg-[#2a1c1e] text-bad",
+    success: "border-good/30 bg-[#18281f] text-good",
 };
 
 export const ToastProvider: React.FC<{children: React.ReactNode}> = ({children}) => {
@@ -40,18 +40,18 @@ export const ToastProvider: React.FC<{children: React.ReactNode}> = ({children})
     return (
         <ToastContext.Provider value={api}>
             {children}
-            <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-[100] flex flex-col gap-2 w-[calc(100%-2rem)] max-w-md pointer-events-none">
+            <div className="fixed top-[max(1rem,env(safe-area-inset-top))] left-1/2 -translate-x-1/2 z-[100] flex flex-col gap-2 w-[calc(100%-2rem)] max-w-md pointer-events-none">
                 {toasts.map(toast => (
                     <div
                         key={toast.id}
                         role={toast.kind === "error" ? "alert" : "status"}
-                        className={`pointer-events-auto flex items-start gap-3 rounded-xl border px-4 py-3 shadow-2xl backdrop-blur-xl ${kindStyles[toast.kind]}`}
+                        className={`pointer-events-auto flex items-start gap-3 rounded-xl border px-4 py-3 font-semibold shadow-[0_10px_24px_rgba(0,0,0,0.4)] ${kindStyles[toast.kind]}`}
                     >
                         <span className="flex-1 text-sm">{toast.message}</span>
                         <button
                             onClick={() => dismiss(toast.id)}
                             aria-label="Dismiss"
-                            className="text-current opacity-70 hover:opacity-100"
+                            className="-m-2 w-11 h-11 flex-none flex items-center justify-center text-current opacity-70 hover:opacity-100"
                         >
                             ✕
                         </button>

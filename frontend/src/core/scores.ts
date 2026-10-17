@@ -39,3 +39,10 @@ export function validateWinCondition(value: number): string | null {
     }
     return null;
 }
+
+/**
+ * Flips the sign of a score input, for the ± button (mobile number keyboards have no minus key)
+ */
+export function toggleSign(value: string): string {
+    return value.startsWith("-") ? value.slice(1) : `-${value}`;
+}

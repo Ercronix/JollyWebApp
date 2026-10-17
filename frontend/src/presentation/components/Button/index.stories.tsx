@@ -19,7 +19,7 @@ type Story = StoryObj<typeof meta>;
 export const Solid: Story = {
     args: {
         variant: "solid",
-        colorscheme: "primary",
+        colorscheme: "accent",
         children: "Button",
     },
 };
@@ -27,7 +27,7 @@ export const Solid: Story = {
 export const Outline: Story = {
     args: {
         variant: "outline",
-        colorscheme: "primary",
+        colorscheme: "accent",
         children: "Button",
     },
 };
@@ -35,7 +35,7 @@ export const Outline: Story = {
 export const Ghost: Story = {
     args: {
         variant: 'ghost',
-        colorscheme: 'primary',
+        colorscheme: 'accent',
         children: 'Button',
     },
     parameters: {
@@ -45,59 +45,20 @@ export const Ghost: Story = {
     },
 };
 
-// 🌈 Gradient Variants
-export const PurpleToBlue: Story = {
+// Colorschemes
+export const Subtle: Story = {
     args: {
-        variant: "solid",
-        colorscheme: "purpleToBlue",
-        children: "Purple to Blue",
+        variant: "outline",
+        colorscheme: "subtle",
+        children: "Cancel",
     },
+    decorators: [(Story) => <div className="p-6 bg-ground"><Story/></div>],
 };
 
-export const CyanToBlue: Story = {
+export const Danger: Story = {
     args: {
         variant: "solid",
-        colorscheme: "cyanToBlue",
-        children: "Cyan to Blue",
-    },
-};
-
-export const GreenToBlue: Story = {
-    args: {
-        variant: "solid",
-        colorscheme: "greenToBlue",
-        children: "Green to Blue",
-    },
-};
-
-export const PurpleToPink: Story = {
-    args: {
-        variant: "solid",
-        colorscheme: "purpleToPink",
-        children: "Purple to Pink",
-    },
-};
-
-export const PinkToOrange: Story = {
-    args: {
-        variant: "solid",
-        colorscheme: "pinkToOrange",
-        children: "Pink to Orange",
-    },
-};
-
-export const TealToLime: Story = {
-    args: {
-        variant: "solid",
-        colorscheme: "tealToLime",
-        children: "Teal to Lime",
-    },
-};
-
-export const RedToYellow: Story = {
-    args: {
-        variant: "solid",
-        colorscheme: "redToYellow",
-        children: "Red to Yellow",
+        colorscheme: "danger",
+        children: "Delete",
     },
 };

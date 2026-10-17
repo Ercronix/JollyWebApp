@@ -5,16 +5,20 @@ import {type ComponentProps, forwardRef } from "react";
 const inputStyles = cva([
     "w-full",
     "border",
-    "border-gray-200",
-    "p-2",
-    "rounded-lg",
+    "border-line-strong",
+    "bg-ground",
+    "text-fg",
+    "px-3.5",
+    "py-2",
+    "rounded-xl",
     "transition-all",
     "duration-100",
     "outline-none",
-    "focus:outline-primary-500 ",
-    "focus:border-transparent",
-    "placeholder:text-gray-400",
-    "placeholder:text-sm",
+    "focus:border-accent",
+    "focus:ring-2",
+    "focus:ring-accent/30",
+    "placeholder:text-fg-muted/70",
+    "disabled:opacity-60",
 ]);
 
 type InputProps = ComponentProps<"input"> & VariantProps<typeof inputStyles>;

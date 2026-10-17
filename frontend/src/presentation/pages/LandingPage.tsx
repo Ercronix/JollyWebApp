@@ -137,66 +137,69 @@ export function LandingPage() {
     const isPending = loginMutation.isPending || registerMutation.isPending || isContinuing;
 
     return (
-        <div className="min-h-screen flex flex-col items-center justify-center gap-12 px-4">
+        <div className="min-h-[calc(100dvh-6rem)] flex flex-col items-center justify-center gap-6 sm:gap-12 py-4">
             {/* Hero Section */}
-            <div className="text-center space-y-6 animate-in fade-in duration-1000">
-                <div className="relative">
-                    <Text
-                        as="h1"
-                        size="3xl"
-                        weight="bold"
-                        className="bg-gradient-to-r from-purple-300 via-pink-300 to-blue-300 bg-clip-text text-transparent text-5xl md:text-6xl lg:text-7xl"
-                    >
-                        JollyTracker
-                    </Text>
-                    <div
-                        className="absolute inset-0 bg-gradient-to-r from-purple-300 via-pink-300 to-blue-300 opacity-20 blur-2xl"></div>
+            <div className="text-center flex flex-col items-center gap-3 sm:gap-6">
+                {/* A small fan of cards, one per suit */}
+                <div aria-hidden="true" className="relative w-[200px] h-[112px]">
+                    {[
+                        {symbol: "♠", red: false, left: 30, top: 14, rotate: "-rotate-[18deg]"},
+                        {symbol: "♥", red: true, left: 62, top: 4, rotate: "-rotate-6"},
+                        {symbol: "♦", red: true, left: 94, top: 4, rotate: "rotate-6"},
+                        {symbol: "♣", red: false, left: 126, top: 14, rotate: "rotate-[18deg]"},
+                    ].map(card => (
+                        <div
+                            key={card.symbol}
+                            className={`absolute w-16 h-[90px] rounded-[10px] bg-ivory shadow-[0_8px_18px_rgba(0,0,0,0.4)] flex items-center justify-center text-[30px] ${card.rotate} ${card.red ? "text-ivory-red" : "text-ivory-ink"}`}
+                            style={{left: card.left, top: card.top}}
+                        >
+                            {card.symbol}
+                        </div>
+                    ))}
                 </div>
 
                 <Text
+                    as="h1"
+                    className="font-extrabold tracking-tighter text-fg text-[36px] leading-none sm:text-6xl lg:text-7xl"
+                >
+                    JollyTracker
+                </Text>
+
+                <Text
                     size="xl"
-                    className="text-gray-300 animate-in slide-in-from-bottom-4 duration-1000 delay-300 max-w-2xl"
+                    className="text-fg-muted text-[15px] sm:text-xl max-w-[310px] sm:max-w-2xl leading-relaxed"
                 >
                     Join friends for epic card game battles. Track scores, manage rounds, and have endless fun!
                 </Text>
 
                 <div
-                    className="flex justify-center gap-8 mt-8 animate-in slide-in-from-bottom-4 duration-1000 delay-500">
-                    <div className="text-center group">
-                        <div className="text-3xl font-bold text-white group-hover:text-purple-300 transition-colors">
-                            🃏
-                        </div>
-                        <div className="text-sm text-gray-400 mt-2">Multiple Games</div>
+                    className="hidden sm:flex justify-center gap-8 mt-4">
+                    <div className="text-center">
+                        <div className="text-3xl text-fg" aria-hidden="true">♠</div>
+                        <div className="text-sm text-fg-muted mt-2">Multiple Games</div>
                     </div>
-                    <div className="text-center group">
-                        <div className="text-3xl font-bold text-white group-hover:text-pink-300 transition-colors">
-                            📊
-                        </div>
-                        <div className="text-sm text-gray-400 mt-2">Score Tracking</div>
+                    <div className="text-center">
+                        <div className="text-3xl text-bad" aria-hidden="true">♥</div>
+                        <div className="text-sm text-fg-muted mt-2">Score Tracking</div>
                     </div>
-                    <div className="text-center group">
-                        <div className="text-3xl font-bold text-white group-hover:text-blue-300 transition-colors">
-                            👥
-                        </div>
-                        <div className="text-sm text-gray-400 mt-2">Multiplayer</div>
+                    <div className="text-center">
+                        <div className="text-3xl text-accent" aria-hidden="true">♦</div>
+                        <div className="text-sm text-fg-muted mt-2">Multiplayer</div>
                     </div>
                 </div>
             </div>
 
             {/* Auth Section */}
-            <div className="w-full max-w-md space-y-6 animate-in slide-in-from-bottom-8 duration-1000 delay-700">
+            <div className="w-full max-w-md space-y-6">
                 <div
-                    className="rounded-3xl bg-white/10 backdrop-blur-xl border border-white/20 p-4 shadow-2xl hover:shadow-purple-500/25 transition-all duration-500 hover:scale-105 relative overflow-hidden">
-                    <div
-                        className="absolute inset-0 bg-gradient-to-br from-purple-500/10 via-pink-500/10 to-blue-500/10 animate-pulse"></div>
-
-                    <div className="relative z-10 space-y-6">
+                    className="rounded-[22px] bg-surface border border-line text-fg p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.03),0_8px_20px_rgba(0,0,0,0.25)]">
+                    <div className="space-y-5">
                         {lastTag && (
                             <Button
-                                colorscheme="purpleToBlue"
+                                colorscheme="subtle"
                                 variant="outline"
                                 size="lg"
-                                className="w-full"
+                                className="w-full min-h-[52px]"
                                 onClick={handleContinueAs}
                                 disabled={isPending}
                             >
@@ -205,33 +208,33 @@ export function LandingPage() {
                         )}
 
                         {/* Mode Selector */}
-                        <div className="flex gap-2 bg-white/5 rounded-xl p-2">
+                        <div className="flex gap-1 bg-ground rounded-[14px] p-1">
                             <button
                                 onClick={() => setAuthMode('quick')}
-                                className={`flex-1 py-2 px-4 rounded-lg transition-all duration-300 ${
+                                className={`flex-1 min-h-11 px-2 rounded-[10px] text-[15px] font-bold transition-colors duration-300 ${
                                     authMode === 'quick'
-                                        ? 'bg-gradient-to-r from-purple-500 to-blue-500 text-white'
-                                        : 'text-gray-400 hover:text-white'
+                                        ? 'bg-surface-2 text-fg shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]'
+                                        : 'text-fg-muted hover:text-fg'
                                 }`}
                             >
                                 Quick Join
                             </button>
                             <button
                                 onClick={() => setAuthMode('login')}
-                                className={`flex-1 py-2 px-4 rounded-lg transition-all duration-300 ${
+                                className={`flex-1 min-h-11 px-2 rounded-[10px] text-[15px] font-bold transition-colors duration-300 ${
                                     authMode === 'login'
-                                        ? 'bg-gradient-to-r from-purple-500 to-blue-500 text-white'
-                                        : 'text-gray-400 hover:text-white'
+                                        ? 'bg-surface-2 text-fg shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]'
+                                        : 'text-fg-muted hover:text-fg'
                                 }`}
                             >
                                 Login
                             </button>
                             <button
                                 onClick={() => setAuthMode('register')}
-                                className={`flex-1 py-2 px-4 rounded-lg transition-all duration-300 ${
+                                className={`flex-1 min-h-11 px-2 rounded-[10px] text-[15px] font-bold transition-colors duration-300 ${
                                     authMode === 'register'
-                                        ? 'bg-gradient-to-r from-purple-500 to-blue-500 text-white'
-                                        : 'text-gray-400 hover:text-white'
+                                        ? 'bg-surface-2 text-fg shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]'
+                                        : 'text-fg-muted hover:text-fg'
                                 }`}
                             >
                                 Register
@@ -240,20 +243,18 @@ export function LandingPage() {
 
                         {/* Title */}
                         <div className="text-center space-y-2">
-                            <Text size="xl" weight="semibold" className="text-white">
+                            <Text size="xl" className="font-extrabold text-fg">
                                 {authMode === 'quick' && 'Quick Join'}
                                 {authMode === 'login' && 'Welcome Back!'}
                                 {authMode === 'register' && 'Create Protected Account'}
                             </Text>
                             <div>
-                                <Text size="sm" className="text-gray-400">
+                                <Text size="sm" className="text-fg-muted leading-relaxed">
                                     {authMode === 'quick' && "You'll get a tag like Tim#1234. Remember it, because it's how you get back to your private games. You can add a password later."}
                                     {authMode === 'login' && 'Log in with your name and password, or with your tag (e.g. Tim#4523) if you have no password'}
                                     {authMode === 'register' && 'Protect your account with a password, so you can always get back to your games'}
                                 </Text>
                             </div>
-                            <div
-                                className="w-24 h-1 bg-gradient-to-r from-purple-400 to-blue-400 mx-auto rounded-full"></div>
                         </div>
 
                         {/* Form */}
@@ -271,7 +272,13 @@ export function LandingPage() {
                                                 : 'Choose your username...'
                                     }
                                     maxLength={authMode === 'register' ? 20 : 25}
-                                    className="text-white bg-white/5 border-white/30 focus:border-purple-400 focus:ring-purple-400/50 placeholder-gray-400 transition-all duration-300 hover:bg-white/10 text-center text-lg py-3"
+                                    aria-label={authMode === 'login' ? 'Username or tag' : 'Your name'}
+                                    autoComplete={authMode === 'quick' ? 'nickname' : 'username'}
+                                    autoCapitalize="words"
+                                    autoCorrect="off"
+                                    spellCheck={false}
+                                    enterKeyHint="go"
+                                    className="h-[52px] text-center text-lg"
                                     disabled={isPending}
                                 />
                             </div>
@@ -284,23 +291,26 @@ export function LandingPage() {
                                         onChange={(e) => setPassword(e.target.value)}
                                         onKeyDown={handleKeyPress}
                                         placeholder={authMode === 'register' ? 'Create a password...' : 'Password (optional for tags)...'}
-                                        className="text-white bg-white/5 border-white/30 focus:border-purple-400 focus:ring-purple-400/50 placeholder-gray-400 transition-all duration-300 hover:bg-white/10 text-center text-lg py-3"
+                                        aria-label="Password"
+                                        autoComplete={authMode === 'register' ? 'new-password' : 'current-password'}
+                                        enterKeyHint="go"
+                                        className="h-[52px] text-center text-lg"
                                         disabled={isPending}
                                     />
                                 </div>
                             )}
 
                             {error && (
-                                <Text size="sm" className="text-red-400 text-center">
+                                <Text size="sm" className="text-bad font-semibold text-center">
                                     {error}
                                 </Text>
                             )}
 
                             <Button
-                                colorscheme="purpleToBlue"
+                                colorscheme="accent"
                                 variant="solid"
                                 size="lg"
-                                className="w-full text-lg py-4 hover:scale-105 transition-transform duration-300 disabled:opacity-50 disabled:scale-100"
+                                className="w-full min-h-14 text-[17px] font-extrabold"
                                 onClick={
                                     authMode === 'quick'
                                         ? handleQuickJoin
@@ -317,7 +327,7 @@ export function LandingPage() {
                                 {isPending ? (
                                     <span className="flex items-center justify-center gap-2">
                                         <div
-                                            className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                                            className="w-5 h-5 border-2 border-accent-ink/30 border-t-accent-ink rounded-full animate-spin"></div>
                                         {authMode === 'register' ? 'Creating Account...' : 'Joining...'}
                                     </span>
                                 ) : (
@@ -332,8 +342,8 @@ export function LandingPage() {
 
                         {/* Info Text */}
                         {username.trim() && (
-                            <div className="text-center animate-in fade-in duration-500">
-                                <Text size="sm" className="text-purple-300">
+                            <div className="text-center">
+                                <Text size="sm" className="text-accent">
                                     {authMode === 'quick' && `You'll be assigned a unique tag like ${username}#1234`}
                                     {authMode === 'register' && `You'll log in with "${username}" and your password`}
                                 </Text>

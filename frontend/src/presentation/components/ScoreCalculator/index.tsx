@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { Fireworks } from "fireworks-js";
 import { Button } from "@/presentation/components/Button";
 import { Text } from "@/presentation/components/Text";
+import { Sheet } from "@/presentation/components/Sheet";
 
 interface ScoreCalculatorProps {
     isOpen: boolean;
@@ -134,63 +135,69 @@ export function ScoreCalculator({
                 className="fixed inset-0 pointer-events-none z-[55]"
             />
 
-            {/* Backdrop */}
-            <div
-                className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40 animate-in fade-in duration-200"
-                onClick={onClose}
-            />
-
-            {/* Modal */}
-            <div className="fixed inset-0 flex items-center justify-center z-50 p-4 pointer-events-none overflow-y-auto">
-                <div
-                    className="bg-gradient-to-br from-purple-900/95 to-blue-900/95 backdrop-blur-xl border border-white/20 rounded-3xl shadow-2xl max-w-md w-full p-6 space-y-6 pointer-events-auto animate-in zoom-in-95 duration-300"
-                    onClick={(e) => e.stopPropagation()}
-                >
-                    {/* Header */}
-                    <div className="text-center space-y-2">
-                        <Text size="xl" weight="bold" className="text-white">
-                            Score Calculator
-                        </Text>
-                        <div className="w-24 h-1 bg-gradient-to-r from-purple-400 to-blue-400 mx-auto rounded-full" />
+            <Sheet
+                isOpen={isOpen}
+                onClose={onClose}
+                title="Score calculator"
+                footer={
+                    <div className="flex gap-2">
+                        <Button onClick={handleReset} colorscheme="subtle" variant="outline" size="md" className="min-h-12">
+                            Reset
+                        </Button>
+                        <Button onClick={onClose} colorscheme="subtle" variant="outline" size="md" className="min-h-12">
+                            Cancel
+                        </Button>
+                        <Button
+                            onClick={handleSubmit}
+                            colorscheme="accent"
+                            variant="solid"
+                            size="md"
+                            className="flex-1 min-h-12"
+                            disabled={totalScore % 5 !== 0}
+                        >
+                            Submit {totalScore}
+                        </Button>
                     </div>
-
+                }
+            >
+                <div className="space-y-4">
                     {/* Current Score */}
-                    <div className="bg-white/10 rounded-2xl p-4 sm:p-6 text-center border border-white/20">
-                        <Text size="3xl" weight="bold" className="text-white">
+                    <div className="bg-ground rounded-2xl p-4 text-center border border-line-strong" aria-live="polite">
+                        <Text size="3xl" className="font-extrabold text-fg tabular-nums">
                             {totalScore}
                         </Text>
                     </div>
 
                     {/* Add Points */}
-                    <div className="space-y-4">
-                        <Text size="sm" weight="semibold" className="text-white text-center">
+                    <div className="space-y-2">
+                        <Text size="sm" weight="semibold" className="text-fg-muted text-center">
                             Add Points
                         </Text>
 
-                        <div className="grid grid-cols-3 gap-3">
+                        <div className="grid grid-cols-3 gap-2">
                             {[5, 10, 15, 25, 30, 75].map(value => (
                                 <Button
                                     key={value}
                                     onClick={() => addPoints(value)}
-                                    colorscheme="greenToBlue"
+                                    colorscheme="subtle"
                                     variant="solid"
                                     size="md"
-                                    className="hover:scale-110 transition-transform"
+                                    className="min-h-12 text-lg"
                                 >
                                     +{value}
                                 </Button>
                             ))}
                         </div>
 
-                        <div className="grid grid-cols-3 gap-3">
+                        <div className="grid grid-cols-3 gap-2">
                             {[-5, -10, -25].map(value => (
                                 <Button
                                     key={value}
                                     onClick={() => addPoints(value)}
-                                    colorscheme="purpleToBlue"
-                                    variant="solid"
+                                    colorscheme="danger"
+                                    variant="outline"
                                     size="md"
-                                    className="hover:scale-110 transition-transform"
+                                    className="min-h-12 text-lg"
                                 >
                                     {value}
                                 </Button>
@@ -199,60 +206,18 @@ export function ScoreCalculator({
                     </div>
 
                     {/* Round Won */}
-                    <div className="bg-white/5 rounded-xl p-4 border border-white/10">
-                        <label className="flex items-center gap-3 cursor-pointer">
-                            <input
-                                type="checkbox"
-                                checked={roundWon}
-                                onChange={(e) => setRoundWon(e.target.checked)}
-                                className="w-5 h-5"
-                            />
-                            <div>
-                                <Text weight="semibold" className="text-white">
-                                    Round Won 🏆
-                                </Text>
-                                <Text size="sm" className="text-gray-400">
-                                    +50 points
-                                </Text>
-                            </div>
-                        </label>
-                    </div>
-
-                    {/* Actions */}
-                    <div className="flex gap-2 flex-col sm:flex-row">
-                        <div className="flex gap-2">
-                        <Button
-                            onClick={handleReset}
-                            colorscheme="cyanToBlue"
-                            variant="outline"
-                            size="md"
-                            className="flex-1 hover:scale-105 transition-transform"
-                        >
-                            Reset
-                        </Button>
-                        <Button
-                            onClick={onClose}
-                            colorscheme="pinkToOrange"
-                            variant="outline"
-                            size="md"
-                            className="flex-1 hover:scale-105 transition-transform"
-                        >
-                            Cancel
-                        </Button>
-                        </div>
-                        <Button
-                            onClick={handleSubmit}
-                            colorscheme="greenToBlue"
-                            variant="solid"
-                            size="md"
-                            className="flex-1 hover:scale-105"
-                            disabled={totalScore % 5 !== 0}
-                        >
-                            ✓ Submit
-                        </Button>
-                    </div>
+                    <label className="flex items-center gap-3 min-h-14 px-4 rounded-xl bg-surface-2 cursor-pointer">
+                        <input
+                            type="checkbox"
+                            checked={roundWon}
+                            onChange={(e) => setRoundWon(e.target.checked)}
+                            className="w-5 h-5 accent-[#cdb27a]"
+                        />
+                        <span className="flex-1 text-fg font-semibold">Round won</span>
+                        <span className="text-sm text-fg-muted">+50 points</span>
+                    </label>
                 </div>
-            </div>
+            </Sheet>
         </>
     );
 }

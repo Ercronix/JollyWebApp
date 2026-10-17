@@ -1,5 +1,5 @@
 import {describe, expect, it} from "vitest";
-import {isScoreInput, parseScore, validateScore, validateWinCondition} from "./scores";
+import {isScoreInput, parseScore, toggleSign, validateScore, validateWinCondition} from "./scores";
 
 describe("isScoreInput", () => {
     it.each(["", "-", "5", "-25", "120"])("allows %j while typing", (value) => {
@@ -47,5 +47,12 @@ describe("validateWinCondition", () => {
 
     it.each([NaN, 99, 10001, 150.5])("rejects %j", (value) => {
         expect(validateWinCondition(value)).toBe("Win condition must be a whole number between 100 and 10000");
+    });
+});
+
+// Mobile number keyboards have no minus key, so score inputs get a ± button
+describe("toggleSign", () => {
+    it.each([["35", "-35"], ["-35", "35"], ["", "-"], ["-", ""]])("turns %j into %j", (value, expected) => {
+        expect(toggleSign(value)).toBe(expected);
     });
 });

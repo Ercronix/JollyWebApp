@@ -19,4 +19,20 @@ describe("MainLayout", () => {
         expect(before).toHaveLength(15);
         expect(particleStyles(container)).toEqual(before);
     });
+
+    // Regression: the root clipped the oversized background blobs with overflow: hidden, which the
+    // browser can still scroll, so focusing the score input on a phone shifted the page sideways.
+    it("clips the background without making the page scrollable sideways", () => {
+        const {container} = render(<MainLayout><p>page</p></MainLayout>);
+        const root = container.firstElementChild as HTMLElement;
+
+        expect(root.classList).toContain("overflow-clip");
+        expect(root.classList).not.toContain("overflow-hidden");
+    });
+
+    it("can hide the footer, for pages with a bottom action bar", () => {
+        const {container} = render(<MainLayout hideFooter><p>page</p></MainLayout>);
+
+        expect(container.querySelector("footer")).toBeNull();
+    });
 });
