@@ -2,16 +2,16 @@ import { useState } from 'react';
 import type { Player } from '../../../types';
 import { suitForSeat } from '@/core/suits';
 
-// Picked to stand out on the felt: cream, coral, gold, sky, then lighter tints for seats 5 to 8
+// Calm tones on the dark panel: ivory, coral, champagne, sky, then softer tints for seats 5 to 8
 const PLAYER_COLORS = [
-    '#fffdf8',
-    '#ff8c7a',
-    '#f2b544',
-    '#8cc8ff',
-    '#c9a7ff',
-    '#ffb3d1',
-    '#9be8c0',
-    '#ffd9a0',
+    '#f3f0e8',
+    '#e5737f',
+    '#cdb27a',
+    '#8ab4d8',
+    '#b79ce6',
+    '#e9a3bd',
+    '#8fcca5',
+    '#d9c49b',
 ];
 
 interface PlayerPointsGraphProps {
@@ -115,9 +115,9 @@ export function PlayerPointsChart({ players, currentRound }: PlayerPointsGraphPr
     })();
 
     return (
-        <figure className="m-0 w-full px-2.5 pt-3 pb-3.5 sm:p-4 rounded-[18px] bg-black/25 border border-on-felt/10">
+        <figure className="m-0 w-full px-2.5 pt-3.5 pb-3.5 sm:p-4 rounded-[18px] bg-surface border border-line">
             <figcaption className="px-1 mb-1">
-                <h2 className="font-display text-xl sm:text-2xl font-extrabold text-on-felt">
+                <h2 className="text-[17px] sm:text-xl font-extrabold text-fg">
                     Points History
                 </h2>
             </figcaption>
@@ -133,13 +133,13 @@ export function PlayerPointsChart({ players, currentRound }: PlayerPointsGraphPr
                             y1={line.y}
                             x2={width - padding.right}
                             y2={line.y}
-                            stroke="rgba(243,239,228,0.16)"
+                            stroke="rgba(255,255,255,0.07)"
                             strokeDasharray="3 3"
                         />
                         <text
                             x={padding.left - 12}
                             y={line.y + 5}
-                            fill="#c9d8cf"
+                            fill="#9aa39d"
                             fontSize={isMobile ? "18" : "15"}
                             textAnchor="end"
                         >
@@ -154,7 +154,7 @@ export function PlayerPointsChart({ players, currentRound }: PlayerPointsGraphPr
                         key={i}
                         x={label.x}
                         y={height - padding.bottom + 30}
-                        fill="#c9d8cf"
+                        fill="#9aa39d"
                         fontSize={isMobile ? "18" : "15"}
                         textAnchor="middle"
                     >
@@ -190,7 +190,7 @@ export function PlayerPointsChart({ players, currentRound }: PlayerPointsGraphPr
                             <path
                                 d={path}
                                 stroke={color}
-                                strokeWidth={isMobile ? 4 : 3.5}
+                                strokeWidth={3}
                                 fill="none"
                                 strokeLinecap="round"
                                 strokeLinejoin="round"
@@ -207,9 +207,9 @@ export function PlayerPointsChart({ players, currentRound }: PlayerPointsGraphPr
                                         key={p.round}
                                         cx={x}
                                         cy={y}
-                                        r={isMobile ? 6 : 6}
+                                        r={5}
                                         fill={color}
-                                        stroke="#0f3b2e"
+                                        stroke="#1a2520"
                                         strokeWidth={isMobile ? 2 : 2.5}
                                         style={{ cursor: 'pointer' }}
                                         onMouseEnter={() =>
@@ -252,12 +252,13 @@ export function PlayerPointsChart({ players, currentRound }: PlayerPointsGraphPr
                             width={tooltip.width}
                             height={isMobile ? 62 : 58}
                             rx={8}
-                            fill="#fffdf8"
+                            fill="#222f29"
+                            stroke="rgba(255,255,255,0.12)"
                         />
                         <text
                             x={tooltip.x + 10}
                             y={hoveredPoint.y - 24}
-                            fill="#1b1d1c"
+                            fill="#ece9e2"
                             fontSize={isMobile ? 18 : 15}
                             fontWeight={600}
                         >
@@ -266,7 +267,7 @@ export function PlayerPointsChart({ players, currentRound }: PlayerPointsGraphPr
                         <text
                             x={tooltip.x + 10}
                             y={hoveredPoint.y - 2}
-                            fill="#4b504d"
+                            fill="#9aa39d"
                             fontSize={isMobile ? 17 : 14}
                         >
                             {hoveredPoint.playerName}: {hoveredPoint.score} pts
@@ -278,10 +279,10 @@ export function PlayerPointsChart({ players, currentRound }: PlayerPointsGraphPr
             {/* Legend: each player's suit, as on their card */}
             <ul aria-label="Players" className="flex flex-wrap gap-x-3.5 gap-y-1.5 justify-center mt-1">
                 {players.map((player, i) => (
-                    <li key={player.userId} className="flex items-center gap-1.5 text-sm font-semibold text-on-felt">
+                    <li key={player.userId} className="flex items-center gap-1.5 text-[13px] font-medium text-fg">
                         <span
                             aria-hidden="true"
-                            className="w-3.5 h-1 rounded-full"
+                            className="w-3 h-[3px] rounded-full"
                             style={{ backgroundColor: PLAYER_COLORS[i % PLAYER_COLORS.length] }}
                         />
                         <span>{suitForSeat(i).symbol} {player.name}</span>

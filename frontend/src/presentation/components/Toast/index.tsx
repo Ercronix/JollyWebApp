@@ -6,8 +6,8 @@ const DISMISS_AFTER_MS = 5000;
 type ToastItem = {id: number; kind: ToastKind; message: string};
 
 const kindStyles: Record<ToastKind, string> = {
-    error: "border-[#e3c2c6] bg-danger-soft text-suit-red",
-    success: "border-win/30 bg-win-soft text-win",
+    error: "border-bad/30 bg-[#2a1c1e] text-bad",
+    success: "border-good/30 bg-[#18281f] text-good",
 };
 
 export const ToastProvider: React.FC<{children: React.ReactNode}> = ({children}) => {

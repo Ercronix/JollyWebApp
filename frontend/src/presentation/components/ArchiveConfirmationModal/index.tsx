@@ -30,7 +30,7 @@ export function ArchiveConfirmationModal({
             footer={
                 <div className="flex gap-2">
                     <Button
-                        colorscheme="ink"
+                        colorscheme="subtle"
                         variant="ghost"
                         className="flex-1 min-h-12"
                         onClick={onCancel}
@@ -39,7 +39,7 @@ export function ArchiveConfirmationModal({
                         Cancel
                     </Button>
                     <Button
-                        colorscheme="gold"
+                        colorscheme="accent"
                         variant="solid"
                         className="flex-1 min-h-12"
                         onClick={onConfirm}
@@ -50,9 +50,9 @@ export function ArchiveConfirmationModal({
                 </div>
             }
         >
-            <Text size="sm" className="text-ink-muted px-1">
+            <Text size="sm" className="text-fg-muted px-1">
                 {message}{" "}
-                {itemName && <span className="text-ink font-semibold break-words">{itemName}</span>}
+                {itemName && <span className="text-fg font-semibold break-words">{itemName}</span>}
                 ?
             </Text>
         </Sheet>

@@ -2,32 +2,34 @@
 @custom-variant hover (&:hover);
 
 @theme {
-    /* Card table: felt ground, cream cards, gold for the main action */
-    --font-sans: "Figtree", ui-sans-serif, system-ui, sans-serif;
-    --font-display: "Bricolage Grotesque", ui-sans-serif, system-ui, sans-serif;
+    /* Refined dark: quiet dark surfaces, one champagne accent, white only for
+       small accents and actual playing cards */
+    --font-sans: "Manrope", ui-sans-serif, system-ui, sans-serif;
 
-    --color-felt: #0f3b2e;
-    --color-felt-light: #18563f;
-    --color-felt-dark: #0a291f;
-    --color-felt-bar: #08221a;
-    --color-on-felt: #f3efe4;
-    --color-on-felt-muted: #c9d8cf;
+    --color-ground: #0f1814;
+    --color-ground-top: #16231d;
+    --color-ground-deep: #0b110e;
+    --color-surface: #1a2520;
+    --color-surface-2: #222f29;
+    --color-line: rgba(255, 255, 255, 0.07);
+    --color-line-strong: rgba(255, 255, 255, 0.12);
 
-    --color-card: #fffdf8;
-    --color-card-muted: #efe9da;
-    --color-card-line: #c9c4b6;
-    --color-ink: #1b1d1c;
-    --color-ink-muted: #5f645f;
+    --color-fg: #ece9e2;
+    --color-fg-muted: #9aa39d;
 
-    --color-gold: #f2b544;
-    --color-gold-dark: #b9831f;
-    --color-gold-soft: #fbe6bd;
-    --color-gold-ink: #6e500f;
+    --color-accent: #cdb27a;
+    --color-accent-ink: #241d0e;
+    --color-accent-soft: rgba(205, 178, 122, 0.16);
 
-    --color-suit-red: #b3142c;
-    --color-danger-soft: #fbeef0;
-    --color-win: #11603d;
-    --color-win-soft: #dcefe3;
+    /* Playing cards and the few white accents */
+    --color-ivory: #f3f0e8;
+    --color-ivory-ink: #151a17;
+    --color-ivory-red: #b23a4a;
+
+    --color-good: #8fcca5;
+    --color-good-soft: rgba(143, 204, 165, 0.14);
+    --color-bad: #e5737f;
+    --color-bad-soft: rgba(229, 115, 127, 0.1);
 
     --animate-sheet-up: sheet-up 220ms ease-out;
 
@@ -39,7 +41,7 @@
 
 html,
 body {
-    background-color: #0a291f;
+    background-color: #0b110e;
     margin: 0;
     padding: 0;
     height: 100%;
@@ -48,7 +50,7 @@ body {
 body {
     font-family: var(--font-sans);
     font-variant-numeric: tabular-nums;
-    color: var(--color-on-felt);
+    color: var(--color-fg);
     -webkit-tap-highlight-color: transparent;
     -webkit-text-size-adjust: 100%;
     overscroll-behavior-y: none;

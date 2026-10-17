@@ -74,26 +74,26 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                     aria-pressed={isAdminMode}
                     className={`w-full justify-center min-h-12 flex items-center gap-3 px-4 rounded-[14px] transition-colors duration-300 ${
                         isAdminMode
-                            ? "bg-gold/15 border-2 border-gold"
-                            : "bg-black/20 border border-on-felt/20 hover:bg-black/30"
+                            ? "bg-accent/10 border border-accent"
+                            : "bg-surface border border-line hover:bg-surface-2"
                     }`}
                 >
-                    <svg className="w-5 h-5 text-on-felt" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg className="w-5 h-5 text-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
                     </svg>
-                    <Text className="text-on-felt font-bold">
+                    <Text className="w-auto text-fg font-semibold">
                         {isAdminMode ? "Admin Mode Active" : "Enable Admin Mode"}
                     </Text>
                 </button>
             </div>
 
             {isAdminMode && (
-                <div className="p-3.5 rounded-[18px] bg-black/30 border border-gold/40 space-y-4">
-                    <div className="text-center">
-                        <Text size="xl" className="block font-display font-extrabold text-gold">
+                <div className="p-3.5 rounded-[18px] bg-surface border border-line space-y-4">
+                    <div>
+                        <Text size="xl" className="block text-lg font-extrabold text-fg">
                             Admin Controls
                         </Text>
-                        <Text size="sm" className="block text-on-felt-muted mt-0.5">
+                        <Text size="sm" className="block text-fg-muted mt-0.5">
                             Click on a player to correct their past scores.
                         </Text>
                     </div>
@@ -102,15 +102,15 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                     <div className="space-y-3">
                         <button
                             onClick={() => setShowAddPlayer(!showAddPlayer)}
-                            className="w-full min-h-12 flex items-center justify-between px-4 rounded-xl border border-dashed border-on-felt/40 hover:bg-on-felt/5 transition-colors"
+                            className="w-full min-h-12 flex items-center justify-between px-4 rounded-xl border border-dashed border-white/20 hover:bg-white/5 transition-colors"
                         >
-                            <Text className="text-on-felt font-bold">
+                            <Text className="text-fg font-semibold">
                                 {showAddPlayer ? "Cancel" : "+ Add new player"}
                             </Text>
                         </button>
 
                         {showAddPlayer && (
-                            <div className="p-3 rounded-xl bg-card space-y-3">
+                            <div className="p-3 rounded-xl bg-surface-2 space-y-3">
                                 <Input
                                     type="text"
                                     value={newPlayerName}
@@ -122,7 +122,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                                 />
                                 <Button
                                     size="md"
-                                    colorscheme="gold"
+                                    colorscheme="accent"
                                     variant="solid"
                                     onClick={handleAddPlayer}
                                     disabled={!newPlayerName.trim()}
@@ -137,35 +137,33 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                     {/* Score Entry for Each Player */}
                     {!isFinished && (
                         <div className="space-y-3">
-                            <div className="flex items-center gap-2 justify-center">
-                                <div className="h-px flex-1 bg-gold/40" />
-                                <Text size="sm" className="w-auto text-gold font-bold">
+                            <div className="flex items-center gap-2">
+                                <Text size="sm" className="w-auto text-fg-muted font-bold">
                                     Round {currentRound} Scores
                                 </Text>
-                                <div className="h-px flex-1 bg-gold/40" />
-                            </div>
+                                </div>
 
                             <div className="space-y-2">
                                 {players.map((player) => (
                                     <div
                                         key={player.userId}
-                                        className="py-1.5 pl-3 pr-1.5 rounded-xl bg-card text-ink"
+                                        className="py-1 pl-3 pr-1 rounded-[14px] bg-surface-2 text-fg"
                                     >
                                         <div className="flex items-center justify-between gap-3">
-                                            <Text className="text-ink font-bold flex-1">
+                                            <Text className="text-fg font-bold flex-1">
                                                 {player.name}
                                                 {player.hasSubmitted && (
-                                                    <span className="ml-2 text-win">
+                                                    <span className="ml-2 text-good">
                                                         ✓ {player.currentRoundScore}
                                                     </span>
                                                 )}
                                             </Text>
                                             <button
                                                 onClick={() => onRemovePlayer(player.userId)}
-                                                className="w-11 h-11 flex-none flex items-center justify-center rounded-[10px] bg-danger-soft hover:bg-[#f7dfe3] border border-[#e3c2c6] transition-colors"
+                                                className="w-11 h-11 flex-none flex items-center justify-center rounded-xl bg-bad-soft hover:bg-bad/15 border border-bad/30 transition-colors"
                                                 aria-label={`Remove ${player.name}`}
                                             >
-                                                <svg className="w-4 h-4 text-suit-red" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <svg className="w-4 h-4 text-bad" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                                                 </svg>
                                             </button>
@@ -188,13 +186,13 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                                                     type="button"
                                                     aria-label="Toggle minus"
                                                     onClick={() => handleScoreInput(player.userId, toggleSign(playerScores[player.userId] || ''))}
-                                                    className="w-11 h-11 flex-none rounded-[10px] border border-card-line bg-card-muted text-ink text-xl font-bold"
+                                                    className="w-11 h-11 flex-none rounded-xl border border-line-strong text-fg text-xl font-bold"
                                                 >
                                                     ±
                                                 </button>
                                                 <Button
                                                     size="sm"
-                                                    colorscheme="ink"
+                                                    colorscheme="accent"
                                                     variant="solid"
                                                     className="h-11"
                                                     onClick={() => handleSubmitScore(player.userId)}

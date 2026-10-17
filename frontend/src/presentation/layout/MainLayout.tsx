@@ -18,15 +18,15 @@ const PARTICLES = Array.from({ length: 15 }, () => ({
 export function MainLayout({ children, hideFooter = false }: MainLayoutProps) {
     return (
         <div className="min-h-dvh flex flex-col relative overflow-clip">
-            {/* Felt table background */}
-            <div className="absolute inset-0 bg-[radial-gradient(ellipse_120%_80%_at_50%_30%,var(--color-felt-light)_0%,var(--color-felt)_55%,var(--color-felt-dark)_100%)]"/>
+            {/* Quiet dark background, a little lighter at the top */}
+            <div className="absolute inset-0 bg-[linear-gradient(180deg,var(--color-ground-top)_0%,var(--color-ground)_45%,var(--color-ground-deep)_100%)]"/>
 
             {/* Floating particles */}
             <div className="absolute inset-0 overflow-hidden pointer-events-none">
                 {PARTICLES.map((style, i) => (
                     <div
                         key={i}
-                        className="absolute w-1 h-1 bg-on-felt/10 rounded-full animate-pulse"
+                        className="absolute w-1 h-1 bg-fg/[0.06] rounded-full animate-pulse"
                         style={style}
                     ></div>
                 ))}
@@ -38,7 +38,7 @@ export function MainLayout({ children, hideFooter = false }: MainLayoutProps) {
                     {children}
                 </main>
                 {!hideFooter && (
-                    <footer className="border-t border-on-felt/10 text-center pt-4 pb-[max(1rem,env(safe-area-inset-bottom))] text-xs text-on-felt-muted">
+                    <footer className="border-t border-line text-center pt-4 pb-[max(1rem,env(safe-area-inset-bottom))] text-xs text-fg-muted">
                         © {new Date().getFullYear()} JollyApp
                     </footer>
                 )}

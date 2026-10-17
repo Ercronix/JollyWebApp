@@ -19,7 +19,7 @@ type Story = StoryObj<typeof meta>;
 export const Solid: Story = {
     args: {
         variant: "solid",
-        colorscheme: "gold",
+        colorscheme: "accent",
         children: "Button",
     },
 };
@@ -27,7 +27,7 @@ export const Solid: Story = {
 export const Outline: Story = {
     args: {
         variant: "outline",
-        colorscheme: "gold",
+        colorscheme: "accent",
         children: "Button",
     },
 };
@@ -35,7 +35,7 @@ export const Outline: Story = {
 export const Ghost: Story = {
     args: {
         variant: 'ghost',
-        colorscheme: 'gold',
+        colorscheme: 'accent',
         children: 'Button',
     },
     parameters: {
@@ -45,23 +45,14 @@ export const Ghost: Story = {
     },
 };
 
-// Colorschemes, each on the background it's meant for
-export const Felt: Story = {
+// Colorschemes
+export const Subtle: Story = {
     args: {
         variant: "outline",
-        colorscheme: "felt",
-        children: "On the felt",
+        colorscheme: "subtle",
+        children: "Cancel",
     },
-    decorators: [(Story) => <div className="p-6 bg-felt"><Story/></div>],
-};
-
-export const Ink: Story = {
-    args: {
-        variant: "solid",
-        colorscheme: "ink",
-        children: "On a card",
-    },
-    decorators: [(Story) => <div className="p-6 bg-card"><Story/></div>],
+    decorators: [(Story) => <div className="p-6 bg-ground"><Story/></div>],
 };
 
 export const Danger: Story = {

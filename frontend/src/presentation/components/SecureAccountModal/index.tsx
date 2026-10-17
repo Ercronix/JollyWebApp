@@ -57,7 +57,7 @@ export function SecureAccountModal({isOpen, fullTag, onClose, onSecured}: Secure
         <Sheet isOpen onClose={secureAccount.isPending ? () => {} : close} title="Secure your account">
             <form onSubmit={handleSubmit} className="space-y-5 px-1">
                 <div>
-                    <Text size="sm" className="text-ink-muted">
+                    <Text size="sm" className="text-fg-muted">
                         Add a password to {fullTag}. You keep your tag and all your games, and can log in with your
                         name and password from any device.
                     </Text>
@@ -87,11 +87,11 @@ export function SecureAccountModal({isOpen, fullTag, onClose, onSecured}: Secure
                 </div>
 
                 <div className="flex gap-3">
-                    <Button type="button" colorscheme="ink" variant="ghost" className="flex-1 min-h-12" onClick={close}
+                    <Button type="button" colorscheme="subtle" variant="ghost" className="flex-1 min-h-12" onClick={close}
                             disabled={secureAccount.isPending}>
                         Cancel
                     </Button>
-                    <Button type="submit" colorscheme="gold" variant="solid" className="flex-1 min-h-12"
+                    <Button type="submit" colorscheme="accent" variant="solid" className="flex-1 min-h-12"
                             disabled={!password || !confirm || secureAccount.isPending}>
                         {secureAccount.isPending ? "Saving..." : "Set password"}
                     </Button>

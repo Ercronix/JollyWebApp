@@ -285,7 +285,7 @@ export function GamePage() {
         return (
             <MainLayout hideFooter>
                 <div className="flex items-center justify-center min-h-[60dvh]">
-                    <Text size="lg" className="text-on-felt-muted">Loading game...</Text>
+                    <Text size="lg" className="text-fg-muted">Loading game...</Text>
                 </div>
             </MainLayout>
         );
@@ -295,7 +295,7 @@ export function GamePage() {
         return (
             <MainLayout hideFooter>
                 <div className="flex items-center justify-center min-h-[60dvh]">
-                    <Text size="lg" className="text-[#ff8c7a] font-semibold">Game not found</Text>
+                    <Text size="lg" className="text-bad font-semibold">Game not found</Text>
                 </div>
             </MainLayout>
         );
@@ -303,7 +303,7 @@ export function GamePage() {
 
     const canSubmit = !game.isFinished && !hasCurrentUserSubmitted && !!currentUserPlayer && !showReorderMode;
     const showNextRound = !game.isFinished && allPlayersSubmitted && !autoAdvance;
-    const settingRow = "w-full min-h-12 flex items-center justify-between gap-3 px-4 rounded-xl bg-card-muted hover:bg-card-line/50 text-left text-ink text-[15px] font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed";
+    const settingRow = "w-full min-h-12 flex items-center justify-between gap-3 px-4 rounded-xl bg-surface-2 hover:bg-[#2a3832] text-left text-fg text-[15px] font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed";
 
     return (
         <MainLayout hideFooter>
@@ -349,18 +349,18 @@ export function GamePage() {
                 )}
 
                 {showReorderMode && (
-                    <div className="flex items-center gap-3 p-3 rounded-2xl bg-black/25 border border-gold/40">
-                        <Text size="sm" className="flex-1 text-on-felt">
+                    <div className="flex items-center gap-3 p-3 rounded-2xl bg-surface border border-accent/40">
+                        <Text size="sm" className="flex-1 text-fg">
                             Use the arrows to change the turn order. The first player deals next.
                         </Text>
                         <button type="button" onClick={() => setShowReorderMode(false)}
-                                className="min-h-11 px-4 rounded-xl bg-gold text-ink font-bold">
+                                className="min-h-11 px-4 rounded-xl bg-accent text-accent-ink font-bold">
                             Done
                         </button>
                     </div>
                 )}
 
-                <ol className="flex flex-col gap-2.5">
+                <ol className="flex flex-col gap-2">
                     {game.players.map((player: Player, index: number) => (
                         <li key={player.userId}>
                             <PlayerCard
@@ -380,7 +380,7 @@ export function GamePage() {
                 </ol>
 
                 {!showReorderMode && (
-                    <Text size="sm" className="text-center text-on-felt-muted">
+                    <Text size="sm" className="text-center text-fg-muted">
                         Tap a player to see their rounds
                     </Text>
                 )}
@@ -396,7 +396,7 @@ export function GamePage() {
                     />
                 )}
 
-                <Button colorscheme="felt" variant="outline" size="md"
+                <Button colorscheme="subtle" variant="outline" size="md"
                         onClick={() => isLastLobbyPlayer ? setConfirmLeave(true) : void handleLeaveLobby()}
                         disabled={leaveLobbyMutation.isPending}
                         className="min-h-12 w-full">
@@ -406,7 +406,7 @@ export function GamePage() {
 
             {/* Bottom action bar: the round's main action, within thumb reach */}
             {(canSubmit || showNextRound || (hasCurrentUserSubmitted && !game.isFinished)) && (
-                <div className="fixed inset-x-0 bottom-0 z-40 bg-felt-bar/95 backdrop-blur-md border-t border-on-felt/15">
+                <div className="fixed inset-x-0 bottom-0 z-40 bg-ground-deep/95 backdrop-blur-md border-t border-line">
                     <div className="max-w-2xl mx-auto px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
                         {canSubmit ? (
                             <ScoreInput
@@ -421,7 +421,7 @@ export function GamePage() {
                         ) : showNextRound ? (
                             <button type="button" onClick={handleNextRound}
                                     disabled={nextRoundMutation.isPending}
-                                    className="w-full min-h-[52px] rounded-full bg-gold text-ink font-display text-lg font-extrabold shadow-[0_5px_0_var(--color-gold-dark)] disabled:opacity-50">
+                                    className="w-full min-h-[52px] rounded-[14px] bg-accent text-accent-ink text-lg font-extrabold disabled:opacity-50">
                                 Next Round
                             </button>
                         ) : (
@@ -433,7 +433,7 @@ export function GamePage() {
                                     hasCurrentUserSubmitted={hasCurrentUserSubmitted}
                                     className="justify-center"
                                 />
-                                <p className="flex items-center justify-center gap-2 min-h-11 text-[#a7e3bf] font-bold">
+                                <p className="flex items-center justify-center gap-2 min-h-11 text-good font-bold">
                                     <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                                         <path d="M5 13l4 4L19 7"/>
                                     </svg>
@@ -453,18 +453,18 @@ export function GamePage() {
                             type="checkbox"
                             checked={autoAdvance}
                             onChange={(e) => setAutoAdvance(e.target.checked)}
-                            className="w-5 h-5 accent-felt cursor-pointer"
+                            className="w-5 h-5 accent-[#cdb27a] cursor-pointer"
                         />
                     </label>
 
                     {!editingWinCondition ? (
                         <button type="button" onClick={handleWinConditionEdit} disabled={allPlayersSubmitted} className={settingRow}>
                             <span>Win condition</span>
-                            <span className="font-display text-gold-ink font-extrabold tabular-nums">{game.winCondition || 1000}</span>
+                            <span className="text-accent font-extrabold tabular-nums">{game.winCondition || 1000}</span>
                         </button>
                     ) : (
-                        <div className="p-3 rounded-xl bg-card-muted space-y-2">
-                            <label htmlFor="win-condition" className="block text-ink text-sm font-semibold">Win condition</label>
+                        <div className="p-3 rounded-xl bg-surface-2 space-y-2">
+                            <label htmlFor="win-condition" className="block text-fg text-sm font-semibold">Win condition</label>
                             <div className="flex items-center gap-2">
                                 <Input
                                     id="win-condition"
@@ -476,11 +476,11 @@ export function GamePage() {
                                     min="100"
                                     max="10000"
                                     step="50"
-                                    className="flex-1 min-w-0 h-12 text-center font-display font-extrabold"
+                                    className="flex-1 min-w-0 h-12 text-center font-extrabold"
                                 />
-                                <Button size="md" colorscheme="ink" variant="outline" className="h-12"
+                                <Button size="md" colorscheme="subtle" variant="outline" className="h-12"
                                         onClick={handleWinConditionCancel}>Cancel</Button>
-                                <Button size="md" colorscheme="gold" variant="solid" className="h-12"
+                                <Button size="md" colorscheme="accent" variant="solid" className="h-12"
                                         onClick={handleWinConditionSubmit}
                                         disabled={submitWinConditionMutation.isPending}>Save</Button>
                             </div>
@@ -504,7 +504,7 @@ export function GamePage() {
                             setShowSettings(false);
                         }}
                         disabled={submitWinConditionMutation.isPending || resetRoundMutation.isPending}
-                        className={`${settingRow} bg-danger-soft hover:bg-[#f7dfe3] border border-[#e3c2c6] text-suit-red`}
+                        className={`${settingRow} bg-bad-soft hover:bg-bad/15 border border-bad/30 text-bad`}
                     >
                         <span>Reset round</span>
                         <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">

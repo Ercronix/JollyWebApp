@@ -51,7 +51,7 @@ export const JoinByCodeModal: React.FC<JoinByCodeModalProps> = ({ onClose }) => 
         <Sheet isOpen onClose={onClose} title="Join private lobby">
                 <div className="space-y-4">
                     <div>
-                        <label htmlFor="join-code" className="block text-sm text-ink-muted mb-2">
+                        <label htmlFor="join-code" className="block text-sm text-fg-muted mb-2">
                             Enter the 6-character access code
                         </label>
                         <Input
@@ -78,7 +78,7 @@ export const JoinByCodeModal: React.FC<JoinByCodeModalProps> = ({ onClose }) => 
                     {code.length === 6 && !previewCode && (
                         <Button
                             onClick={handlePreview}
-                            colorscheme="ink"
+                            colorscheme="subtle"
                             variant="outline"
                             className="w-full min-h-12"
                         >
@@ -88,18 +88,18 @@ export const JoinByCodeModal: React.FC<JoinByCodeModalProps> = ({ onClose }) => 
 
                     {isLoadingPreview && (
                         <div className="text-center py-4">
-                            <Text className="text-ink-muted">Loading lobby details...</Text>
+                            <Text className="text-fg-muted">Loading lobby details...</Text>
                         </div>
                     )}
 
                     {lobbyPreview && (
-                        <div className="bg-card-muted rounded-xl p-4">
-                            <Text size="sm" className="text-ink-muted mb-1">Lobby Name</Text>
-                            <Text size="lg" weight="bold" className="font-display text-ink mb-3">
+                        <div className="bg-surface-2 rounded-xl p-4">
+                            <Text size="sm" className="text-fg-muted mb-1">Lobby Name</Text>
+                            <Text size="lg" weight="bold" className="text-fg mb-3">
                                 {lobbyPreview.name}
                             </Text>
-                            <Text size="sm" className="text-ink-muted mb-1">Players</Text>
-                            <Text className="text-ink">{lobbyPreview.playerCount} player(s)</Text>
+                            <Text size="sm" className="text-fg-muted mb-1">Players</Text>
+                            <Text className="text-fg">{lobbyPreview.playerCount} player(s)</Text>
                         </div>
                     )}
                     {lobbyPreview && (
@@ -109,7 +109,7 @@ export const JoinByCodeModal: React.FC<JoinByCodeModalProps> = ({ onClose }) => 
                                     setPreviewCode(undefined);
                                     setCode("");
                                 }}
-                                colorscheme="ink"
+                                colorscheme="subtle"
                                 variant="outline"
                                 className="flex-1 min-h-12"
                             >
@@ -117,7 +117,7 @@ export const JoinByCodeModal: React.FC<JoinByCodeModalProps> = ({ onClose }) => 
                             </Button>
                             <Button
                                 onClick={handleJoin}
-                                colorscheme="gold"
+                                colorscheme="accent"
                                 variant="solid"
                                 disabled={joinMutation.isPending}
                                 className="flex-1 min-h-12"
@@ -128,7 +128,7 @@ export const JoinByCodeModal: React.FC<JoinByCodeModalProps> = ({ onClose }) => 
                     )}
 
                     {joinMutation.isError && (
-                        <Text size="sm" className="text-suit-red font-semibold text-center">
+                        <Text size="sm" className="text-bad font-semibold text-center">
                             Failed to join lobby. Please check the code and try again.
                         </Text>
                     )}

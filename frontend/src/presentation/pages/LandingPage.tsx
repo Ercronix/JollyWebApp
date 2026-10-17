@@ -150,7 +150,7 @@ export function LandingPage() {
                     ].map(card => (
                         <div
                             key={card.symbol}
-                            className={`absolute w-16 h-[90px] rounded-[10px] bg-card shadow-[0_6px_14px_rgba(0,0,0,0.35)] flex items-center justify-center text-[30px] ${card.rotate} ${card.red ? "text-suit-red" : "text-ink"}`}
+                            className={`absolute w-16 h-[90px] rounded-[10px] bg-ivory shadow-[0_8px_18px_rgba(0,0,0,0.4)] flex items-center justify-center text-[30px] ${card.rotate} ${card.red ? "text-ivory-red" : "text-ivory-ink"}`}
                             style={{left: card.left, top: card.top}}
                         >
                             {card.symbol}
@@ -160,14 +160,14 @@ export function LandingPage() {
 
                 <Text
                     as="h1"
-                    className="font-display font-extrabold tracking-tight text-on-felt text-[42px] leading-none sm:text-6xl lg:text-7xl"
+                    className="font-extrabold tracking-tighter text-fg text-[36px] leading-none sm:text-6xl lg:text-7xl"
                 >
                     JollyTracker
                 </Text>
 
                 <Text
                     size="xl"
-                    className="text-[#d6e2da] text-base sm:text-xl max-w-[320px] sm:max-w-2xl leading-relaxed"
+                    className="text-fg-muted text-[15px] sm:text-xl max-w-[310px] sm:max-w-2xl leading-relaxed"
                 >
                     Join friends for epic card game battles. Track scores, manage rounds, and have endless fun!
                 </Text>
@@ -175,16 +175,16 @@ export function LandingPage() {
                 <div
                     className="hidden sm:flex justify-center gap-8 mt-4">
                     <div className="text-center">
-                        <div className="text-3xl text-on-felt" aria-hidden="true">♠</div>
-                        <div className="text-sm text-on-felt-muted mt-2">Multiple Games</div>
+                        <div className="text-3xl text-fg" aria-hidden="true">♠</div>
+                        <div className="text-sm text-fg-muted mt-2">Multiple Games</div>
                     </div>
                     <div className="text-center">
-                        <div className="text-3xl text-[#ff8c7a]" aria-hidden="true">♥</div>
-                        <div className="text-sm text-on-felt-muted mt-2">Score Tracking</div>
+                        <div className="text-3xl text-bad" aria-hidden="true">♥</div>
+                        <div className="text-sm text-fg-muted mt-2">Score Tracking</div>
                     </div>
                     <div className="text-center">
-                        <div className="text-3xl text-gold" aria-hidden="true">♦</div>
-                        <div className="text-sm text-on-felt-muted mt-2">Multiplayer</div>
+                        <div className="text-3xl text-accent" aria-hidden="true">♦</div>
+                        <div className="text-sm text-fg-muted mt-2">Multiplayer</div>
                     </div>
                 </div>
             </div>
@@ -192,14 +192,14 @@ export function LandingPage() {
             {/* Auth Section */}
             <div className="w-full max-w-md space-y-6">
                 <div
-                    className="rounded-[22px] bg-card text-ink p-4 shadow-[0_12px_30px_rgba(0,0,0,0.4)]">
+                    className="rounded-[22px] bg-surface border border-line text-fg p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.03),0_8px_20px_rgba(0,0,0,0.25)]">
                     <div className="space-y-5">
                         {lastTag && (
                             <Button
-                                colorscheme="ink"
+                                colorscheme="subtle"
                                 variant="outline"
                                 size="lg"
-                                className="w-full min-h-[52px] border-2 border-felt text-felt font-extrabold"
+                                className="w-full min-h-[52px]"
                                 onClick={handleContinueAs}
                                 disabled={isPending}
                             >
@@ -208,13 +208,13 @@ export function LandingPage() {
                         )}
 
                         {/* Mode Selector */}
-                        <div className="flex gap-1 bg-card-muted rounded-[14px] p-1">
+                        <div className="flex gap-1 bg-ground rounded-[14px] p-1">
                             <button
                                 onClick={() => setAuthMode('quick')}
                                 className={`flex-1 min-h-11 px-2 rounded-[10px] text-[15px] font-bold transition-colors duration-300 ${
                                     authMode === 'quick'
-                                        ? 'bg-felt text-card'
-                                        : 'text-ink-muted hover:text-ink'
+                                        ? 'bg-surface-2 text-fg shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]'
+                                        : 'text-fg-muted hover:text-fg'
                                 }`}
                             >
                                 Quick Join
@@ -223,8 +223,8 @@ export function LandingPage() {
                                 onClick={() => setAuthMode('login')}
                                 className={`flex-1 min-h-11 px-2 rounded-[10px] text-[15px] font-bold transition-colors duration-300 ${
                                     authMode === 'login'
-                                        ? 'bg-felt text-card'
-                                        : 'text-ink-muted hover:text-ink'
+                                        ? 'bg-surface-2 text-fg shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]'
+                                        : 'text-fg-muted hover:text-fg'
                                 }`}
                             >
                                 Login
@@ -233,8 +233,8 @@ export function LandingPage() {
                                 onClick={() => setAuthMode('register')}
                                 className={`flex-1 min-h-11 px-2 rounded-[10px] text-[15px] font-bold transition-colors duration-300 ${
                                     authMode === 'register'
-                                        ? 'bg-felt text-card'
-                                        : 'text-ink-muted hover:text-ink'
+                                        ? 'bg-surface-2 text-fg shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]'
+                                        : 'text-fg-muted hover:text-fg'
                                 }`}
                             >
                                 Register
@@ -243,13 +243,13 @@ export function LandingPage() {
 
                         {/* Title */}
                         <div className="text-center space-y-2">
-                            <Text size="xl" className="font-display font-extrabold text-ink">
+                            <Text size="xl" className="font-extrabold text-fg">
                                 {authMode === 'quick' && 'Quick Join'}
                                 {authMode === 'login' && 'Welcome Back!'}
                                 {authMode === 'register' && 'Create Protected Account'}
                             </Text>
                             <div>
-                                <Text size="sm" className="text-ink-muted leading-relaxed">
+                                <Text size="sm" className="text-fg-muted leading-relaxed">
                                     {authMode === 'quick' && "You'll get a tag like Tim#1234. Remember it, because it's how you get back to your private games. You can add a password later."}
                                     {authMode === 'login' && 'Log in with your name and password, or with your tag (e.g. Tim#4523) if you have no password'}
                                     {authMode === 'register' && 'Protect your account with a password, so you can always get back to your games'}
@@ -301,16 +301,16 @@ export function LandingPage() {
                             )}
 
                             {error && (
-                                <Text size="sm" className="text-suit-red font-semibold text-center">
+                                <Text size="sm" className="text-bad font-semibold text-center">
                                     {error}
                                 </Text>
                             )}
 
                             <Button
-                                colorscheme="gold"
+                                colorscheme="accent"
                                 variant="solid"
                                 size="lg"
-                                className="w-full min-h-14 rounded-full font-display text-[19px] font-extrabold"
+                                className="w-full min-h-14 text-[17px] font-extrabold"
                                 onClick={
                                     authMode === 'quick'
                                         ? handleQuickJoin
@@ -327,7 +327,7 @@ export function LandingPage() {
                                 {isPending ? (
                                     <span className="flex items-center justify-center gap-2">
                                         <div
-                                            className="w-5 h-5 border-2 border-ink/30 border-t-ink rounded-full animate-spin"></div>
+                                            className="w-5 h-5 border-2 border-accent-ink/30 border-t-accent-ink rounded-full animate-spin"></div>
                                         {authMode === 'register' ? 'Creating Account...' : 'Joining...'}
                                     </span>
                                 ) : (
@@ -343,7 +343,7 @@ export function LandingPage() {
                         {/* Info Text */}
                         {username.trim() && (
                             <div className="text-center">
-                                <Text size="sm" className="text-gold-ink">
+                                <Text size="sm" className="text-accent">
                                     {authMode === 'quick' && `You'll be assigned a unique tag like ${username}#1234`}
                                     {authMode === 'register' && `You'll log in with "${username}" and your password`}
                                 </Text>

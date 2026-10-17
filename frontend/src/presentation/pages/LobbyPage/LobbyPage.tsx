@@ -194,7 +194,7 @@ export function LobbyPage() {
     if (!currentUser) {
         return (
             <div className="flex items-center justify-center h-screen">
-                <Text size="lg" className="text-on-felt-muted">
+                <Text size="lg" className="text-fg-muted">
                     Redirecting to login...
                 </Text>
             </div>
@@ -252,22 +252,22 @@ export function LobbyPage() {
 
             <header className="flex items-center gap-1 -mr-2">
                 <div className="flex-1 min-w-0">
-                    <Text as="h1" className="font-display font-extrabold text-on-felt text-[32px] sm:text-4xl leading-tight">
+                    <Text as="h1" className="font-extrabold tracking-tight text-fg text-[30px] sm:text-4xl leading-tight">
                         Lobbies
                     </Text>
-                    <Text size="sm" className="text-gold truncate">
+                    <Text size="sm" className="text-accent truncate">
                         {currentUser.fullTag || currentUser.username}
                     </Text>
                 </div>
                 <button type="button" aria-label="Game history" onClick={handleHistorypage}
-                        className="w-11 h-11 flex-none flex items-center justify-center rounded-xl text-on-felt hover:bg-on-felt/10">
+                        className="w-11 h-11 flex-none flex items-center justify-center rounded-xl text-fg hover:bg-white/5">
                     <svg className="w-[22px] h-[22px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                         <path d="M3 12a9 9 0 109-9 9.7 9.7 0 00-6.7 2.8L3 8"/>
                         <path d="M3 3v5h5M12 7v5l3 3"/>
                     </svg>
                 </button>
                 <button type="button" aria-label="Switch user" onClick={logoutFlow.requestLogout} disabled={logoutMutation.isPending}
-                        className="w-11 h-11 flex-none flex items-center justify-center rounded-xl text-on-felt hover:bg-on-felt/10 disabled:opacity-50">
+                        className="w-11 h-11 flex-none flex items-center justify-center rounded-xl text-fg hover:bg-white/5 disabled:opacity-50">
                     <svg className="w-[22px] h-[22px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                         <path d="M15 3h4a2 2 0 012 2v14a2 2 0 01-2 2h-4M10 17l5-5-5-5M15 12H3"/>
                     </svg>
@@ -275,11 +275,11 @@ export function LobbyPage() {
             </header>
 
             {currentUser.hasPassword === false && (
-                <div className="flex items-center gap-3 px-3 py-2.5 rounded-[14px] bg-gold/15 border border-gold/45">
-                    <Text size="sm" className="flex-1 text-gold-soft">
+                <div className="flex items-center gap-3 px-3 py-2.5 rounded-[14px] bg-accent/[0.08] border border-accent/30">
+                    <Text size="sm" className="flex-1 text-fg">
                         No password yet. Add one so you can always get back to your games.
                     </Text>
-                    <Button colorscheme="gold" variant="outline" size="sm" className="min-h-11 whitespace-nowrap"
+                    <Button colorscheme="accent" variant="outline" size="sm" className="min-h-11 whitespace-nowrap"
                             onClick={() => setShowSecureAccount(true)}>
                         Secure account
                     </Button>
@@ -291,9 +291,9 @@ export function LobbyPage() {
                     e.preventDefault();
                     void handleCreateLobby();
                 }}
-                className="flex flex-col gap-2.5 p-3.5 rounded-[18px] bg-card text-ink shadow-[0_6px_16px_rgba(0,0,0,0.3)]"
+                className="flex flex-col gap-2.5 p-3.5 rounded-[18px] bg-surface border border-line text-fg"
             >
-                <Text as="h2" className="font-display text-lg font-extrabold text-ink">New lobby</Text>
+                <Text as="h2" className="text-lg font-extrabold text-fg">New lobby</Text>
                 <div className="flex gap-2">
                     <Input
                         value={lobbyName}
@@ -304,25 +304,25 @@ export function LobbyPage() {
                         className="flex-1 min-w-0 h-12"
                         disabled={createLobbyMutation.isPending}
                     />
-                    <Button type="submit" colorscheme="gold" variant="solid" className="h-12"
+                    <Button type="submit" colorscheme="accent" variant="solid" className="h-12"
                             disabled={createLobbyMutation.isPending}>
                         {createLobbyMutation.isPending ? 'Creating...' : 'Create'}
                     </Button>
                 </div>
                 <label className="flex items-center justify-between min-h-11 cursor-pointer">
-                    <Text className="text-ink text-[15px]">Private (join by code)</Text>
+                    <Text className="text-fg text-[15px]">Private (join by code)</Text>
                     <input
                         type="checkbox"
                         checked={isPrivate}
                         onChange={(e) => setIsPrivate(e.target.checked)}
-                        className="w-5 h-5 accent-felt cursor-pointer"
+                        className="w-5 h-5 accent-[#cdb27a] cursor-pointer"
                     />
                 </label>
             </form>
 
             <Button
                 onClick={() => setShowJoinByCode(true)}
-                colorscheme="felt"
+                colorscheme="subtle"
                 variant="outline"
                 className="w-full min-h-12"
             >
@@ -331,11 +331,11 @@ export function LobbyPage() {
 
             <section aria-labelledby="open-lobbies" className="flex flex-col gap-2">
                 <div className="flex items-center justify-between -mr-2">
-                    <Text as="h2" id="open-lobbies" className="font-display text-lg font-extrabold text-on-felt">
-                        Open lobbies <span className="font-sans text-on-felt-muted font-medium">· {lobbies.length}</span>
+                    <Text as="h2" id="open-lobbies" className="text-lg font-extrabold text-fg">
+                        Open lobbies <span className="font-sans text-fg-muted font-medium">· {lobbies.length}</span>
                     </Text>
                     <button type="button" aria-label="Refresh lobbies" onClick={() => refetch()} disabled={isLoading}
-                            className="w-11 h-11 flex items-center justify-center rounded-xl text-on-felt hover:bg-on-felt/10 disabled:opacity-50">
+                            className="w-11 h-11 flex items-center justify-center rounded-xl text-fg hover:bg-white/5 disabled:opacity-50">
                         <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                             <path d="M21 12a9 9 0 11-2.6-6.4L21 8"/>
                             <path d="M21 3v5h-5"/>
@@ -344,9 +344,9 @@ export function LobbyPage() {
                 </div>
 
                 {isLoading ? (
-                    <Text className="text-center text-on-felt-muted py-6">Loading lobbies...</Text>
+                    <Text className="text-center text-fg-muted py-6">Loading lobbies...</Text>
                 ) : lobbies.length === 0 ? (
-                    <Text className="text-center text-on-felt-muted py-6">No open lobbies. Create one above!</Text>
+                    <Text className="text-center text-fg-muted py-6">No open lobbies. Create one above!</Text>
                 ) : (
                     <ul className="flex flex-col gap-2">
                         {lobbies.map((lobby: Lobby) => (
@@ -376,7 +376,7 @@ export function LobbyPage() {
                 title="Private lobby created"
                 footer={
                     <Button
-                        colorscheme="gold"
+                        colorscheme="accent"
                         variant="solid"
                         className="w-full min-h-12"
                         onClick={async () => {

@@ -20,8 +20,8 @@ export const RoundStatus: React.FC<RoundStatusProps> = ({
 
     return (
         <div className={cn("flex items-center justify-between gap-2 min-h-11", className)} role="status">
-            <div className="flex items-center gap-2 text-sm text-[#e4ecdf]">
-                <span className={`w-2 h-2 rounded-full ${allPlayersSubmitted ? "bg-[#9be8c0]" : "bg-gold animate-pulse"}`} aria-hidden="true"/>
+            <div className="flex items-center gap-2 text-sm text-fg">
+                <span className={`w-2 h-2 rounded-full ${allPlayersSubmitted ? "bg-good" : "bg-accent animate-pulse"}`} aria-hidden="true"/>
                 <span>
                     {allPlayersSubmitted
                         ? "All players submitted"

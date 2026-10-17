@@ -38,7 +38,7 @@ export function DeleteConfirmationModal({
                 <div className="flex flex-col gap-2">
                     {extraAction && (
                         <Button
-                            colorscheme="gold"
+                            colorscheme="accent"
                             variant="solid"
                             className="w-full min-h-12"
                             onClick={extraAction.onClick}
@@ -49,7 +49,7 @@ export function DeleteConfirmationModal({
                     )}
                     <div className="flex gap-2">
                         <Button
-                            colorscheme="ink"
+                            colorscheme="subtle"
                             variant="ghost"
                             className="flex-1 min-h-12"
                             onClick={onCancel}
@@ -70,10 +70,10 @@ export function DeleteConfirmationModal({
                 </div>
             }
         >
-            <Text size="sm" className="text-ink-muted px-1">
+            <Text size="sm" className="text-fg-muted px-1">
                 {message}{" "}
                 {itemName && (
-                    <span className="text-suit-red font-semibold break-words">
+                    <span className="text-bad font-semibold break-words">
                         {itemName}
                     </span>
                 )}
