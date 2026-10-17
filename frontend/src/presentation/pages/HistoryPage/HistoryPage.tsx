@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { useLobbyHistory, useGameState, useDeleteLobby } from "@/core/api/hooks";
 import { DeleteConfirmationModal } from "@/presentation/components/DeleteConfirmationModal";
+import { PlayerPointsChart } from "@/presentation/components/PlayerPointsChart";
 import { UserModel } from "@/core/models/UserModel";
 import { useToast } from "@/presentation/components/Toast/useToast";
 import { logger } from "@/utils/logger";
@@ -116,7 +117,7 @@ interface LobbyCardProps {
     onDelete: (lobby: Lobby) => void;
 }
 
-function LobbyCard({ lobby, onDelete }: LobbyCardProps) {
+export function LobbyCard({ lobby, onDelete }: LobbyCardProps) {
     const [isExpanded, setIsExpanded] = useState(false);
     const [expandedPlayer, setExpandedPlayer] = useState<string | null>(null);
 
@@ -253,6 +254,9 @@ function LobbyCard({ lobby, onDelete }: LobbyCardProps) {
                                         </div>
                                     ))}
                             </div>
+
+                            {/* Seats (and so suits) follow the game's player order, as on the game page */}
+                            <PlayerPointsChart players={game.players} currentRound={game.currentRound}/>
 
                             {/* Game Info */}
                             <div className="bg-surface-2 rounded-xl p-3 space-y-1">
