@@ -35,8 +35,7 @@ import {ScoreInput} from "./components/ScoreInput";
 import {PlayerCard} from "./components/PlayerCard";
 import {GameStats} from "./components/GameStats";
 import {AdminPanel} from "@/presentation/components/AdminPanel";
-import {useStoredFlag} from "@/core/hooks/useStoredFlag";
-import {useAutoAdvance} from "@/core/hooks/useAutoAdvance";
+import {useAutoAdvance, useAutoAdvanceSetting} from "@/core/hooks/useAutoAdvance";
 import {useRefetchOnReturn} from "@/core/hooks/useRefetchOnReturn";
 import {isScoreInput, parseScore, validateScore, validateWinCondition} from "@/core/scores";
 import {useToast} from "@/presentation/components/Toast/useToast";
@@ -66,7 +65,7 @@ export function GamePage() {
     const [calculatorOpen, setCalculatorOpen] = useState(false);
     const [historyPlayerId, setHistoryPlayerId] = useState<string | null>(null);
     const [playerToRemove, setPlayerToRemove] = useState<Player | null>(null);
-    const [autoAdvance, setAutoAdvance] = useStoredFlag(`autoAdvance:${gameId}`);
+    const [autoAdvance, setAutoAdvance] = useAutoAdvanceSetting(gameId);
     const [editingWinCondition, setEditingWinCondition] = useState(false);
     const [tempWinCondition, setTempWinCondition] = useState<string>('');
     const [showSettings, setShowSettings] = useState(false);
