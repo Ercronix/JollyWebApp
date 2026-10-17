@@ -38,10 +38,6 @@ describe('access control', () => {
         await mallory.post(`/api/games/${gameId}/${action}`, body).expect(403);
     });
 
-    it('forbids non-players from forcing the next round', async () => {
-        await mallory.post(`/admin/games/${gameId}/forceNextRound`).expect(403);
-    });
-
     it('forbids outsiders from reading a private game', async () => {
         const { gameId: privateGameId } = await createLobbyWith(alice, [], { isPrivate: true });
 
@@ -136,13 +132,13 @@ describe('rounds', () => {
         await alice.post(`/api/games/${gameId}/submitScore`, { score: 5 }).expect(200);
     });
 
-    // Review finding: an admin who stops responding (without leaving) must not block the game
-    it('lets any player force the next round, counting missing scores as 0', async () => {
+    it('offers no way to skip players who have not submitted', async () => {
         await alice.post(`/api/games/${gameId}/submitScore`, { score: 10 }).expect(200);
 
-        await bob.post(`/admin/games/${gameId}/forceNextRound`).expect(200);
+        await bob.post(`/admin/games/${gameId}/forceNextRound`).expect(404);
+        await bob.post(`/api/games/${gameId}/nextRound`).expect(400);
 
-        expect(await player(bob)).toMatchObject({ totalScore: 0, pointsHistory: [0] });
+        expect((await game()).currentRound).toBe(1);
     });
 
     it('resets the submissions of the current round', async () => {
