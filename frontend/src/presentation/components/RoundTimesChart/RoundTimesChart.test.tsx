@@ -88,4 +88,14 @@ describe("RoundTimesChart", () => {
         expect(screen.getByText("Round 3")).toBeTruthy();
         expect(screen.getByText("11:00")).toBeTruthy();
     });
+
+    // Regression: a bar reaching the top of the axis put its tooltip above the chart, cutting it off
+    it("keeps the tooltip inside the chart for the tallest bar", () => {
+        const {container} = render(<RoundTimesChart durations={{rounds: [4 * MIN], liveMs: null}}/>);
+
+        fireEvent.mouseEnter(container.querySelector("rect[data-round='1']")!);
+
+        const tooltip = container.querySelector("svg rect:not([data-round])")!;
+        expect(Number(tooltip.getAttribute("y"))).toBeGreaterThanOrEqual(0);
+    });
 });

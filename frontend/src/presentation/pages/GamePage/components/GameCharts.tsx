@@ -13,6 +13,8 @@ const PAGES = ["Points history", "Round times"];
 export const GameCharts: React.FC<{ game: Game }> = ({game}) => {
     const scroller = useRef<HTMLDivElement>(null);
     const [page, setPage] = useState(0);
+    // Set while a dot click scrolls the panel, so passing the halfway point late doesn't move the dot back
+    const scrollingTo = useRef<number | null>(null);
 
     // Ticks every second, so the current round's bar grows
     const lastRoundEnd = game.roundEndedAt?.at(-1) ?? game.createdAt;
@@ -21,19 +23,37 @@ export const GameCharts: React.FC<{ game: Game }> = ({game}) => {
 
     const goTo = (index: number) => {
         const el = scroller.current;
+        // Already there: nothing will scroll, so nothing would end the lock
+        if (el && Math.abs(el.scrollLeft - index * el.clientWidth) >= 1) scrollingTo.current = index;
         el?.scrollTo({left: index * el.clientWidth, behavior: "smooth"});
         setPage(index);
     };
 
-    const onScroll = () => {
+    const pageFromScroll = () => {
         const el = scroller.current;
         if (el && el.clientWidth) setPage(Math.round(el.scrollLeft / el.clientWidth));
+    };
+
+    const onScroll = () => {
+        const el = scroller.current;
+        // Without scrollend (older Safari), reaching the clicked page ends the click's scroll
+        if (el && scrollingTo.current !== null && Math.abs(el.scrollLeft - scrollingTo.current * el.clientWidth) < 1) {
+            scrollingTo.current = null;
+            return;
+        }
+        if (scrollingTo.current === null) pageFromScroll();
+    };
+
+    const onScrollEnd = () => {
+        scrollingTo.current = null;
+        pageFromScroll();
     };
 
     return (
         <section aria-label="Charts">
             <div ref={scroller}
                  onScroll={onScroll}
+                 onScrollEnd={onScrollEnd}
                  className="flex overflow-x-auto snap-x snap-mandatory [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
                 <div className="flex w-full shrink-0 snap-start">
                     <PlayerPointsChart players={game.players} currentRound={game.currentRound}

@@ -51,4 +51,64 @@ describe("GameCharts", () => {
         expect(scrollTo).toHaveBeenCalledWith(expect.objectContaining({left: expect.any(Number)}));
         expect(screen.getByRole("button", {name: "Round times"}).getAttribute("aria-current")).toBe("true");
     });
+
+    // Regression: the smooth scroll after a dot click passed the halfway point late, so the
+    // active dot jumped back to the first page before settling on the second
+    it("keeps the clicked dot current while the panel scrolls to it", () => {
+        HTMLElement.prototype.scrollTo = vi.fn();
+        const {container} = render(<GameCharts game={game}/>);
+        const scroller = container.querySelector(".snap-x") as HTMLElement;
+        Object.defineProperty(scroller, "clientWidth", {value: 390});
+        const roundTimes = screen.getByRole("button", {name: "Round times"});
+
+        fireEvent.click(roundTimes);
+        scroller.scrollLeft = 100;
+        fireEvent.scroll(scroller);
+
+        expect(roundTimes.getAttribute("aria-current")).toBe("true");
+    });
+
+    it("follows the swipe again once the scroll has ended", () => {
+        HTMLElement.prototype.scrollTo = vi.fn();
+        const {container} = render(<GameCharts game={game}/>);
+        const scroller = container.querySelector(".snap-x") as HTMLElement;
+        Object.defineProperty(scroller, "clientWidth", {value: 390});
+
+        fireEvent.click(screen.getByRole("button", {name: "Round times"}));
+        scroller.scrollLeft = 390;
+        fireEvent(scroller, new Event("scrollend"));
+        scroller.scrollLeft = 0;
+        fireEvent.scroll(scroller);
+
+        expect(screen.getByRole("button", {name: "Points history"}).getAttribute("aria-current")).toBe("true");
+    });
+
+    // Browsers without scrollend (older iOS Safari) must not leave the dots stuck after a click
+    it("follows the swipe again once the panel reaches the clicked page", () => {
+        HTMLElement.prototype.scrollTo = vi.fn();
+        const {container} = render(<GameCharts game={game}/>);
+        const scroller = container.querySelector(".snap-x") as HTMLElement;
+        Object.defineProperty(scroller, "clientWidth", {value: 390});
+
+        fireEvent.click(screen.getByRole("button", {name: "Round times"}));
+        scroller.scrollLeft = 390;
+        fireEvent.scroll(scroller);
+        scroller.scrollLeft = 0;
+        fireEvent.scroll(scroller);
+
+        expect(screen.getByRole("button", {name: "Points history"}).getAttribute("aria-current")).toBe("true");
+    });
+
+    it("still follows the swipe after clicking the current page's dot", () => {
+        HTMLElement.prototype.scrollTo = vi.fn();
+        const {container} = render(<GameCharts game={game}/>);
+        const scroller = container.querySelector(".snap-x") as HTMLElement;
+        Object.defineProperty(scroller, "clientWidth", {value: 390});
+
+        fireEvent.click(screen.getByRole("button", {name: "Points history"}));
+        scroller.scrollLeft = 300;
+        fireEvent.scroll(scroller);
+
+        expect(screen.getByRole("button", {name: "Round times"}).getAttribute("aria-current")).toBe("true");
+    });
 });

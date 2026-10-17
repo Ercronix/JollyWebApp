@@ -93,7 +93,9 @@ export function RoundTimesChart({durations}: RoundTimesChartProps) {
     const tooltip = hovered && (() => {
         const tooltipWidth = isMobile ? 150 : 130;
         const fitsRight = hovered.x + 10 + tooltipWidth <= width;
-        return {width: tooltipWidth, x: fitsRight ? hovered.x + 10 : hovered.x - 10 - tooltipWidth};
+        // Above the bar, or below its top where it would run off the top of the chart
+        const top = hovered.y - 48 >= 0 ? hovered.y - 48 : hovered.y + 10;
+        return {width: tooltipWidth, x: fitsRight ? hovered.x + 10 : hovered.x - 10 - tooltipWidth, top};
     })();
 
     return (
@@ -196,7 +198,7 @@ export function RoundTimesChart({durations}: RoundTimesChartProps) {
                     <g>
                         <rect
                             x={tooltip.x}
-                            y={hovered.y - 48}
+                            y={tooltip.top}
                             width={tooltip.width}
                             height={isMobile ? 62 : 58}
                             rx={8}
@@ -205,7 +207,7 @@ export function RoundTimesChart({durations}: RoundTimesChartProps) {
                         />
                         <text
                             x={tooltip.x + 10}
-                            y={hovered.y - 24}
+                            y={tooltip.top + 24}
                             fill="#ece9e2"
                             fontSize={isMobile ? 18 : 15}
                             fontWeight={600}
@@ -214,7 +216,7 @@ export function RoundTimesChart({durations}: RoundTimesChartProps) {
                         </text>
                         <text
                             x={tooltip.x + 10}
-                            y={hovered.y - 2}
+                            y={tooltip.top + 46}
                             fill="#9aa39d"
                             fontSize={isMobile ? 17 : 14}
                         >
