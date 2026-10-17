@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import type { Player } from '../../../types';
 import { suitForSeat } from '@/core/suits';
+import { formatDuration } from '@/core/duration';
 
 // Calm tones on the dark panel: ivory, coral, champagne, sky, then softer tints for seats 5 to 8
 const PLAYER_COLORS = [
@@ -17,9 +18,11 @@ const PLAYER_COLORS = [
 interface PlayerPointsGraphProps {
     players: Player[];
     currentRound: number;
+    // How long each finished round took, shown in the tooltip
+    roundDurations?: number[];
 }
 
-export function PlayerPointsChart({ players, currentRound }: PlayerPointsGraphProps) {
+export function PlayerPointsChart({ players, currentRound, roundDurations }: PlayerPointsGraphProps) {
     const [hoveredPoint, setHoveredPoint] = useState<{
         playerName: string;
         round: number;
@@ -108,8 +111,9 @@ export function PlayerPointsChart({ players, currentRound }: PlayerPointsGraphPr
     });
 
     // The tooltip sits right of the point, or left of it where it would run off the chart
+    const hoveredDuration = hoveredPoint ? roundDurations?.[hoveredPoint.round - 1] : undefined;
     const tooltip = hoveredPoint && (() => {
-        const tooltipWidth = isMobile ? 190 : 170;
+        const tooltipWidth = (isMobile ? 190 : 170) + (hoveredDuration === undefined ? 0 : 60);
         const fitsRight = hoveredPoint.x + 10 + tooltipWidth <= width;
         return {width: tooltipWidth, x: fitsRight ? hoveredPoint.x + 10 : hoveredPoint.x - 10 - tooltipWidth};
     })();
@@ -262,7 +266,9 @@ export function PlayerPointsChart({ players, currentRound }: PlayerPointsGraphPr
                             fontSize={isMobile ? 18 : 15}
                             fontWeight={600}
                         >
-                            Round {hoveredPoint.round}
+                            {hoveredDuration === undefined
+                                ? `Round ${hoveredPoint.round}`
+                                : `Round ${hoveredPoint.round} · ${formatDuration(hoveredDuration)}`}
                         </text>
                         <text
                             x={tooltip.x + 10}
