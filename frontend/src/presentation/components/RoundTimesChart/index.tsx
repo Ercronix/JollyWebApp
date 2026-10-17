@@ -100,8 +100,9 @@ export function RoundTimesChart({durations}: RoundTimesChartProps) {
         <figure className="m-0 w-full px-2.5 pt-3.5 pb-3.5 sm:p-4 rounded-[18px] bg-surface border border-line">
             {header}
 
-            <div className="grid grid-cols-4 gap-2 px-1 mt-2">
-                <Stat label="Total">{formatDuration(stats ? stats.totalMs : durations.liveMs ?? 0)}</Stat>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 px-1 mt-2">
+                {/* The whole game so far, including the round still running */}
+                <Stat label="Total">{formatDuration((stats?.totalMs ?? 0) + (durations.liveMs ?? 0))}</Stat>
                 <Stat label="Avg">{stats ? formatDuration(stats.averageMs) : '–'}</Stat>
                 <Stat label="Longest">{stats ? `R${stats.longest.round} ${formatDuration(stats.longest.ms)}` : '–'}</Stat>
                 <Stat label="Shortest">{stats ? `R${stats.shortest.round} ${formatDuration(stats.shortest.ms)}` : '–'}</Stat>

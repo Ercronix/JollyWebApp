@@ -16,10 +16,11 @@ describe("RoundTimesChart", () => {
         expect(live[0].getAttribute("data-round")).toBe("4");
     });
 
-    it("shows total, average, longest and shortest", () => {
+    // Review: Total froze after round 1, so the page no longer showed how long the game has been running
+    it("shows total, average, longest and shortest, with the live round in the total", () => {
         render(<RoundTimesChart durations={{rounds: [4 * MIN, 2 * MIN, 11 * MIN], liveMs: 3 * MIN}}/>);
 
-        expect(stat("Total")).toBe("17:00");
+        expect(stat("Total")).toBe("20:00");
         expect(stat("Avg")).toBe("5:40");
         expect(stat("Longest")).toBe("R3 11:00");
         expect(stat("Shortest")).toBe("R2 2:00");
@@ -61,6 +62,15 @@ describe("RoundTimesChart", () => {
         expect(container.querySelectorAll("rect[data-round]")).toHaveLength(40);
         const labels = Array.from(container.querySelectorAll("svg text")).filter(el => /^R\d+$/.test(el.textContent ?? ""));
         expect(labels.length).toBeLessThanOrEqual(6);
+    });
+
+    // Review: four stats in a row truncated values like "R12 11:20" on phones
+    it("puts the stats in two columns on phones", () => {
+        render(<RoundTimesChart durations={{rounds: [4 * MIN], liveMs: null}}/>);
+
+        const row = screen.getByText("Total").closest(".grid")!;
+        expect(row.className).toContain("grid-cols-2");
+        expect(row.className).toContain("sm:grid-cols-4");
     });
 
     it("says when round times weren't recorded", () => {
