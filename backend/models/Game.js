@@ -73,6 +73,6 @@ const gameSchema = new mongoose.Schema({
         type: Number,
         default: 1000
     }
-});
+}, { timestamps: { createdAt: false } }); // updatedAt: when the game was last touched, for auto-archiving
 
 module.exports = mongoose.model('Game', gameSchema);
