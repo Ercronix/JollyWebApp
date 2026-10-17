@@ -211,19 +211,6 @@ module.exports.getLobbyByCodeGET = async function(accessCode) {
 };
 
 /**
- * Force next round, even if not every player has submitted
- */
-module.exports.forceNextRoundPOST = async function(user, gameId) {
-    try {
-        // Any player may force it, so an unresponsive admin can't block the game
-        await getGameForPlayer(gameId, user);
-        return await GamesService.nextRound(gameId, true);
-    } catch (error) {
-        throw httpError(error, 400);
-    }
-};
-
-/**
  * Get current logged-in user
  */
 module.exports.getCurrentUserGET = async function (sessionId) {
@@ -305,7 +292,7 @@ module.exports.logoutUserPOST = async function (sessionId) {
 module.exports.nextRoundPOST = async function (user, gameId) {
     try {
         await getGameForPlayer(gameId, user);
-        return await GamesService.nextRound(gameId, false);
+        return await GamesService.nextRound(gameId);
     } catch (error) {
         throw httpError(error, 400);
     }
