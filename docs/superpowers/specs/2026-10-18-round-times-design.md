@@ -20,7 +20,7 @@ Show how long each round takes, where the points graph is, instead of a running 
 
 **Recording** (`GamesService.nextRound`): when a round completes, push `new Date()` onto `roundEndedAt`. The final round, the one that produces a winner, is recorded too, at the same moment as `finishedAt`. Other mutations (`resetRound`, `updateHistoryScore`, adding or removing players) don't change it.
 
-**API** (`GamesService.getGameState`): return `roundEndedAt` (an empty array if missing).
+**API** (`GamesService.getGameResponse`): return `roundEndedAt` (an empty array if missing).
 
 **Duration of round i** (1-based): `roundEndedAt[i-1] - (i === 1 ? createdAt : roundEndedAt[i-2])`.
 
