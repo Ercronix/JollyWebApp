@@ -90,7 +90,7 @@ This project uses test-driven development. For every change:
 
 Every bug fix gets a regression test. Name the issue in a comment above it (e.g. `// Regression: issue #13 ...`), like the existing ones. Never delete or weaken a failing test to make the suite pass; fix the code, or ask if the test itself is wrong.
 
-CI (`.github/workflows/ci.yml`) runs on every push to `main` and on every pull request. Backend job: production dependency audit, lint and tests. Frontend job: audit, lint, typecheck, unit tests and build. Dependabot (`.github/dependabot.yml`) opens weekly update PRs.
+CI (`.github/workflows/ci.yml`) runs on every push to `main` and on every pull request. Backend job: production dependency audit, lint and tests. Frontend job: audit, lint, typecheck, unit tests and build. On pushes to `main`, a `deploy` job then deploys to the production server through a self-hosted runner there (setup in `docs/deployment.md`). Dependabot (`.github/dependabot.yml`) opens weekly update PRs.
 
 Backend tests (`backend/tests/*.test.mjs`):
 - They're ES modules because Vitest can't be `require()`d, but app code must be loaded through `requireApp` from `tests/helpers.mjs` (Node's `require`). Importing app files directly loads a second copy of the models and fails with `OverwriteModelError`.
