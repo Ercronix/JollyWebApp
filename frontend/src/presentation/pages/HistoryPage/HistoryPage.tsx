@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { useLobbyHistory, useGameState, useDeleteLobby } from "@/core/api/hooks";
 import { DeleteConfirmationModal } from "@/presentation/components/DeleteConfirmationModal";
-import { PlayerPointsChart } from "@/presentation/components/PlayerPointsChart";
+import { GameCharts } from "@/presentation/pages/GamePage/components/GameCharts";
 import { UserModel } from "@/core/models/UserModel";
 import { useToast } from "@/presentation/components/Toast/useToast";
 import { logger } from "@/utils/logger";
@@ -256,8 +256,8 @@ export function LobbyCard({ lobby, onDelete }: LobbyCardProps) {
                                     ))}
                             </div>
 
-                            {/* Seats (and so suits) follow the game's player order, as on the game page */}
-                            <PlayerPointsChart players={game.players} currentRound={game.currentRound}/>
+                            {/* The game page's charts; an archived game nobody finished has no round running */}
+                            <GameCharts game={game} live={!isFinished && !lobby.archived}/>
 
                             {/* Game Info */}
                             <div className="bg-surface-2 rounded-xl p-3 space-y-1">
