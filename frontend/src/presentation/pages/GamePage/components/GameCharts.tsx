@@ -9,9 +9,10 @@ import {PointsOverTimeChart} from "@/presentation/components/PointsOverTimeChart
 const PAGES = ["Points history", "Round times", "Points over time"];
 
 /**
- * The points history, the round times and the points over time as pages you swipe between
+ * The points history, the round times and the points over time as pages you swipe between.
+ * Unless live (by default while the game runs), the current round is left out instead of timed.
  */
-export const GameCharts: React.FC<{ game: Game }> = ({game}) => {
+export const GameCharts: React.FC<{ game: Game; live?: boolean }> = ({game, live = !game.isFinished}) => {
     const scroller = useRef<HTMLDivElement>(null);
     const [page, setPage] = useState(0);
     // Set while a dot click scrolls the panel, so passing the halfway point late doesn't move the dot back
@@ -19,8 +20,9 @@ export const GameCharts: React.FC<{ game: Game }> = ({game}) => {
 
     // Ticks every second, so the current round's bar grows
     const lastRoundEnd = game.roundEndedAt?.at(-1) ?? game.createdAt;
-    const liveMs = useElapsedTime(game.isFinished ? undefined : lastRoundEnd);
-    const durations = roundDurations(game, new Date(lastRoundEnd).getTime() + (liveMs ?? 0));
+    const liveMs = useElapsedTime(live ? lastRoundEnd : undefined);
+    const timed = roundDurations(game, new Date(lastRoundEnd).getTime() + (liveMs ?? 0));
+    const durations = timed && !live ? {...timed, liveMs: null} : timed;
 
     const goTo = (index: number) => {
         const el = scroller.current;

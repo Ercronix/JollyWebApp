@@ -36,6 +36,14 @@ describe("GameCharts", () => {
         expect(screen.getByRole("button", {name: "Points over time"})).toBeTruthy();
     });
 
+    // Issue #67: the history shows games nobody will finish, whose current round must not keep running
+    it("leaves out the current round when not live", () => {
+        const {container} = render(<GameCharts game={game} live={false}/>);
+
+        expect(container.querySelectorAll("rect[data-round]")).toHaveLength(2);
+        expect(container.querySelector("[data-live]")).toBeNull();
+    });
+
     it("labels the page dots and marks the first as current", () => {
         render(<GameCharts game={game}/>);
 
