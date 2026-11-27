@@ -27,4 +27,24 @@ describe("PlayerHistoryModal", () => {
 
         await waitFor(() => expect(onUpdateScore).toHaveBeenCalledWith(1, 25));
     });
+
+    // Regression: issue #62 "nach spielende punkte bearbeiten unmöglich machen" -
+    // players could still edit their scores after the game had ended
+    it("offers no editing once the game is over", () => {
+        render(<PlayerHistoryModal {...baseProps} currentUserId="bob" canEditOthers readOnly onUpdateScore={vi.fn()}/>);
+
+        expect(screen.queryByRole("button", {name: "Edit"})).toBeNull();
+        expect(screen.queryByText(/Admin mode/)).toBeNull();
+    });
+
+    it("closes an open edit when the game ends", () => {
+        const {rerender} = render(<PlayerHistoryModal {...baseProps} currentUserId="bob" onUpdateScore={vi.fn()}/>);
+        fireEvent.click(screen.getAllByRole("button", {name: "Edit"})[0]);
+        expect(screen.getByRole("button", {name: "Save"})).toBeTruthy();
+
+        rerender(<PlayerHistoryModal {...baseProps} currentUserId="bob" readOnly onUpdateScore={vi.fn()}/>);
+
+        expect(screen.queryByRole("button", {name: "Save"})).toBeNull();
+        expect(screen.queryByRole("textbox")).toBeNull();
+    });
 });

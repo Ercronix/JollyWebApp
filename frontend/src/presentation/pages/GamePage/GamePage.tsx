@@ -107,6 +107,7 @@ export function GamePage() {
         isOwner,
         isLastLobbyPlayer,
         hasScores,
+        isEditable,
     } = useMemo(() => deriveGameState(game, currentUser?.id), [game, currentUser?.id]);
 
     // Follow the live game state, so the modal shows updated scores
@@ -309,7 +310,7 @@ export function GamePage() {
                 <GameHeader
                     lobbyName={searchParams.lobbyName}
                     accessCode={searchParams.accessCode}
-                    onOpenSettings={game.isFinished ? undefined : () => setShowSettings(true)}
+                    onOpenSettings={isEditable ? () => setShowSettings(true) : undefined}
                 />
 
                 {game.isFinished && (
@@ -441,7 +442,7 @@ export function GamePage() {
                 </div>
             )}
 
-            <Sheet isOpen={showSettings && !game.isFinished} onClose={() => setShowSettings(false)} title="Game settings">
+            <Sheet isOpen={showSettings && isEditable} onClose={() => setShowSettings(false)} title="Game settings">
                 <div className="flex flex-col gap-2">
                     <label className={`${settingRow} cursor-pointer`}>
                         <span>Auto-advance rounds</span>
@@ -540,6 +541,7 @@ export function GamePage() {
                 currentUserId={currentUser.id}
                 gameId={gameId}
                 canEditOthers={canEditOthersHistory(historyPlayer, {isOwner, isAdminMode})}
+                readOnly={!isEditable}
                 onUpdateScore={handleUpdateHistoryScore}
             />
 

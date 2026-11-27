@@ -174,6 +174,36 @@ describe('ending the game', () => {
         expect(new Date(finishedAt).getTime()).toBeGreaterThanOrEqual(new Date(createdAt).getTime());
     });
 
+    // Regression: issue #62 "nach spielende punkte bearbeiten unmöglich machen" -
+    // players could still correct their scores after the game had ended
+    it.each([
+        ['updateHistoryScore', () => ({ roundIndex: 0, newScore: 500 })],
+        ['updateHistoryScoreForPlayer', () => ({ playerId: bob.user.id, roundIndex: 0, newScore: 500 })],
+        ['submitScoreForPlayer', () => ({ playerId: bob.user.id, score: 500 })],
+    ])('rejects %s once the game has ended', async (action, body) => {
+        await alice.post(`/api/games/${gameId}/submitWinCondition`, { winCondition: 100 }).expect(200);
+        await playRound([[alice, 100], [bob, 50]]);
+
+        const res = await alice.post(`/api/games/${gameId}/${action}`, body()).expect(400);
+
+        expect(res.body.message).toBe('Game has already ended');
+        expect(await player(alice)).toMatchObject({ totalScore: 100, pointsHistory: [100] });
+        expect(await player(bob)).toMatchObject({ totalScore: 50, pointsHistory: [50] });
+        expect(await game()).toMatchObject({ isFinished: true, winner: alice.user.id });
+    });
+
+    // Regression: issue #61 "win condition nach ende bearbeiten können" -
+    // the win condition could still be changed after the game had ended
+    it('rejects changing the win condition once the game has ended', async () => {
+        await alice.post(`/api/games/${gameId}/submitWinCondition`, { winCondition: 100 }).expect(200);
+        await playRound([[alice, 100], [bob, 50]]);
+
+        const res = await bob.post(`/api/games/${gameId}/submitWinCondition`, { winCondition: 5000 }).expect(400);
+
+        expect(res.body.message).toBe('Game has already ended');
+        expect(await game()).toMatchObject({ isFinished: true, winner: alice.user.id, winCondition: 100 });
+    });
+
     it.each([99, 10001, 150.5])('rejects win condition %j', async (winCondition) => {
         await alice.post(`/api/games/${gameId}/submitWinCondition`, { winCondition }).expect(400);
     });

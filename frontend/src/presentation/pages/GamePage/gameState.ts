@@ -13,6 +13,8 @@ export type DerivedGameState = {
     // Leaving as the last real player archives a played game and deletes an unplayed one
     isLastLobbyPlayer: boolean;
     hasScores: boolean;
+    // Scores and the win condition can only change while the game is running
+    isEditable: boolean;
 };
 
 /**
@@ -37,6 +39,7 @@ export function deriveGameState(game: Game | undefined, currentUserId: string | 
         isLastLobbyPlayer: game?.lobbyPlayerIds?.length === 1 && game.lobbyPlayerIds[0] === currentUserId,
         // Keep in sync with GamesService.hasScores
         hasScores: (game?.currentRound ?? 1) > 1 || players.some(p => p.hasSubmitted),
+        isEditable: !!game && !game.isFinished,
     };
 }
 

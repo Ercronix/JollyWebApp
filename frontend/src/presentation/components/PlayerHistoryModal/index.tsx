@@ -16,6 +16,8 @@ type PlayerHistoryModalProps = {
     gameId?: string;
     // Lobby admin: may edit this player's history too, not just their own (see canEditOthersHistory)
     canEditOthers?: boolean;
+    // The game is over: scores can no longer be changed
+    readOnly?: boolean;
     onUpdateScore?: (roundIndex: number, newScore: number) => Promise<void>;
 };
 
@@ -26,6 +28,7 @@ export function PlayerHistoryModal({
                                        currentUserId,
                                        gameId,
                                        canEditOthers = false,
+                                       readOnly = false,
                                        onUpdateScore
                                    }: PlayerHistoryModalProps) {
     const [editingRound, setEditingRound] = useState<number | null>(null);
@@ -37,7 +40,7 @@ export function PlayerHistoryModal({
 
     const pointsHistory = player.pointsHistory || [];
     const hasHistory = pointsHistory.length > 0;
-    const canEdit = (canEditOthers || currentUserId === player.userId) && !!onUpdateScore && !!gameId;
+    const canEdit = !readOnly && (canEditOthers || currentUserId === player.userId) && !!onUpdateScore && !!gameId;
 
     const handleEditClick = (roundIndex: number, currentScore: number) => {
         setEditingRound(roundIndex);
@@ -102,7 +105,7 @@ export function PlayerHistoryModal({
             ) : (
                 <ol>
                     {pointsHistory.map((points, index) => {
-                        const isEditing = editingRound === index;
+                        const isEditing = canEdit && editingRound === index;
                         const inputId = `history-round-${index}`;
 
                         return (

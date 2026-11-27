@@ -97,6 +97,15 @@ describe("deriveGameState", () => {
         expect(deriveGameState(game([player("a", {hasSubmitted: true})]), "a").hasScores).toBe(true);
         expect(deriveGameState(game([player("a")], {currentRound: 2}), "a").hasScores).toBe(true);
     });
+
+    // Regression: issue #61 "win condition nach ende bearbeiten können" and
+    // issue #62 "nach spielende punkte bearbeiten unmöglich machen" -
+    // scores and the win condition could still be edited after the game had ended
+    it("locks scores and the win condition once the game is over", () => {
+        expect(deriveGameState(game([player("a")]), "a").isEditable).toBe(true);
+        expect(deriveGameState(game([player("a")], {isFinished: true, winner: "a"}), "a").isEditable).toBe(false);
+        expect(deriveGameState(undefined, "a").isEditable).toBe(false);
+    });
 });
 
 // Issue #50: the admin should be able to edit the past scores of the players they added

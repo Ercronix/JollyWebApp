@@ -434,6 +434,10 @@ class GamesService {
                 throw new Error('Game not found');
             }
 
+            if (game.isFinished) {
+                throw new Error('Game has already ended');
+            }
+
             const player = game.players.find(p => p.userId.toString() === playerId.toString());
             if (!player) {
                 throw new Error('Player not found in game');
