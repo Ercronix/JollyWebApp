@@ -56,14 +56,14 @@ export const GameCharts: React.FC<{ game: Game }> = ({game}) => {
                  onScroll={onScroll}
                  onScrollEnd={onScrollEnd}
                  className="flex overflow-x-auto snap-x snap-mandatory [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-                <div className="flex w-full shrink-0 snap-start">
+                <div className="flex w-full shrink-0 snap-start snap-always">
                     <PlayerPointsChart players={game.players} currentRound={game.currentRound}
                                        roundDurations={durations?.rounds}/>
                 </div>
-                <div className="flex w-full shrink-0 snap-start">
+                <div className="flex w-full shrink-0 snap-start snap-always">
                     <RoundTimesChart durations={durations}/>
                 </div>
-                <div className="flex w-full shrink-0 snap-start">
+                <div className="flex w-full shrink-0 snap-start snap-always">
                     <PointsOverTimeChart players={game.players} durations={durations}/>
                 </div>
             </div>

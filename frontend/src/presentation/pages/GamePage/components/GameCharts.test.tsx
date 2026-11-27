@@ -36,6 +36,16 @@ describe("GameCharts", () => {
         expect(screen.getByRole("button", {name: "Points over time"})).toBeTruthy();
     });
 
+    // Regression: issue #65 a fast swipe on a phone flung past the next chart, since mandatory
+    // snapping alone lets momentum skip snap points; each page must stop the scroll
+    it("stops a swipe at every page", () => {
+        const {container} = render(<GameCharts game={game}/>);
+        const pages = Array.from(container.querySelector(".snap-x")!.children);
+
+        expect(pages).toHaveLength(3);
+        for (const page of pages) expect(page.classList).toContain("snap-always");
+    });
+
     it("labels the page dots and marks the first as current", () => {
         render(<GameCharts game={game}/>);
 
